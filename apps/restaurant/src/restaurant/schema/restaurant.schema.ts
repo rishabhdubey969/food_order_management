@@ -32,7 +32,7 @@ export class Restaurant extends Document {
   };
 
   @Prop({ type: Types.ObjectId, ref: 'Manager' }) // One manager per restaurant
-  manager: Types.ObjectId;
+  managerId: Types.ObjectId;
 
   @Prop({ default: true })
   isActive: boolean;

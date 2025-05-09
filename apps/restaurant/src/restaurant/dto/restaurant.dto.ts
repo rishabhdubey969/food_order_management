@@ -1,13 +1,16 @@
-import { IsString, IsNotEmpty, IsArray, IsOptional, IsNumber, ValidateNested } from 'class-validator';
+import { IsString, IsNotEmpty, IsArray, IsOptional, IsNumber, ValidateNested, ArrayMinSize, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class LocationDto {
-  @IsNumber()
-  longitude: number;
-
-  @IsNumber()
-  latitude: number;
-}
+    @IsString()
+    @IsIn(['Point'])
+    type: string;
+  
+    @IsArray()
+    @ArrayMinSize(2)
+    @IsNumber({}, { each: true }) // Ensures both values are numbers
+    coordinates: number[]; // [longitude, latitude]
+  }
 
 export class CreateRestaurantDto {
   @IsString()
@@ -38,4 +41,8 @@ export class CreateRestaurantDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  @IsOptional()
+  @IsArray()  
+  copons?: string[];
 }

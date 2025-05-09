@@ -15,5 +15,6 @@ import { RestaurantModule } from './restaurant/restaurant.module';
   ],
   controllers: [],
   providers: [],
+  exports: [],
 })
 export class AppModule {}
