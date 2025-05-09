@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { RestaurantModule } from './restaurant.module';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(RestaurantModule);
-  const restaurantPort: number = Number(process.env.RESTAURANT_PORT); // PORT CONNECTED WITH ENV
+  const app = await NestFactory.create(AppModule);
+  const restaurantPort: number = Number(process.env.RESTAURANT_PORT||3000); // PORT CONNECTED WITH ENV
   await app.listen(restaurantPort);
 }
 bootstrap();
