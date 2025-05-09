@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .  # Path to Dockerfile
+    env_file:
+      - .env
+    environment:
+      - MONGO_URL=${MONGO_CONNECTION}
+    command: npm run start:dev
+    ports:
+      - "9000:${PORT}"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - db_network
+
+networks:
+  db_network:
+    driver: bridge
