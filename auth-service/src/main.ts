@@ -9,7 +9,8 @@ async function bootstrap() {
     transport: Transport.GRPC,
     options: {
       package: 'auth',
-      protoPath: path.resolve(__dirname, 'src/auth/proto/auth.proto'),
+      protoPath: path.resolve(__dirname, '../src/auth/proto/auth.proto'),
+      url: '127.0.0.1:5003',
     },
   });
 
