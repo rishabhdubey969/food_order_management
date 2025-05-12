@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { ProfileModule } from './profile/profile.module';
+import { AuthModule } from './api/auth/auth.module';
+import { ProfileModule } from './api/profile/profile.module';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from 'logger/winston.logger';
 import { JwtConstant } from 'jwt_security/jwt.const';
 import { JwtModule } from '@nestjs/jwt';
+import { AddressModule } from './api/address/address.module';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { JwtModule } from '@nestjs/jwt';
       secret: JwtConstant.SECRET,
       signOptions: { expiresIn: JwtConstant.EXPIRE_TIME },
     }),
-    AuthModule, ProfileModule],
+    AuthModule, ProfileModule, AddressModule],
   controllers: [AppController],
   providers: [AppService],
 })
