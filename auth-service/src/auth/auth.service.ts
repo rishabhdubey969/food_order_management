@@ -36,6 +36,7 @@ export class AuthService {
 
   async validateAccessToken(token: string) {
     try {
+      console.log(token);
       const payload = this.jwtService.verify(token);
 
       const key = `access:${payload.userId}:${payload.deviceId}`;

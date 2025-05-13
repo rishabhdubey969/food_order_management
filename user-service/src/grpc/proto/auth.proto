@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package auth;
+
+service AuthService {
+  rpc ValidateToken (ValidateTokenRequest) returns (TokenValidationResponse);
+  rpc RefreshToken (RefreshTokenRequest) returns (TokenResponse);
+  rpc GenerateToken (GenerateTokenRequest) returns (TokenResponse);
+}
+
+message ValidateTokenRequest {
+  string accessToken = 1;
+}
+
+message TokenValidationResponse {
+  bool isValid = 1;
+  string message = 2;
+}
+
+message RefreshTokenRequest {
+  string refreshToken = 1;
+}
+
+message TokenResponse {
+  string accessToken = 1;
+  string refreshToken = 2;
+}
+
+message GenerateTokenRequest {
+  string userId = 1;
+  string email = 2;
+  string name = 3;
+  string role = 4;
+  string deviceId = 5;
+}

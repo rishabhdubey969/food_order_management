@@ -10,6 +10,7 @@ import { AuthenticationDocument, Auth } from './entities/auth.entity';
 import { Model } from 'mongoose';
 import { Auth as AuthConst } from 'const/auth.const';
 import { LoginAuthDto } from './dto/login-auth.dto';
+import { AuthClient } from 'src/grpc/authentication/auth.client';
 
 
 @Injectable()
@@ -19,7 +20,9 @@ export class AuthService {
     @InjectModel(Auth.name)
     private authenticationModel: Model<AuthenticationDocument>,
     private jwtService: JwtService,
-    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: WinstonLogger
+    @Inject(WINSTON_MODULE_PROVIDER) 
+    private readonly logger: WinstonLogger,
+    private authClient:AuthClient
   ) { }
 
   async signUpService(createAuthDto: CreateAuthDto) {
@@ -64,9 +67,12 @@ export class AuthService {
       email: existingAuthenticationLogin.email,
     };
     this.logger.info('token store success');
-    return {
-       access_token: await this.jwtService.signAsync(payload),
-    };
+    // return {
+    //    access_token: await this.jwtService.signAsync(payload),
+    // };
+    const token = await this.jwtService.signAsync(payload);
+ return await this.authClient.getLoginAccess(token);
+
   }
 
   findOne(id: number) {

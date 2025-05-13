@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -7,25 +7,22 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
-  @Post()
-  create(@Body() createProfileDto: CreateProfileDto) {
-    return this.profileService.create(createProfileDto);
-  }
-
   @Get()
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   profileGet(@Req() req: any) {
-    console.log(req);
     return this.profileService.profileGetService();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.profileService.findOne(+id);
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  profileFindOne(@Param('id') id: string) {
+    return this.profileService.profileFindOneService(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProfileDto: UpdateProfileDto) {
-    return this.profileService.update(+id, updateProfileDto);
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  profileUpdate(@Param('id') id: string, @Body() updateProfileDto: UpdateProfileDto) {
+    return this.profileService.profileUpdateService(id, updateProfileDto); 
   }
 
   @Delete(':id')

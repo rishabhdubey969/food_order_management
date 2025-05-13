@@ -10,9 +10,13 @@ import { winstonConfig } from 'logger/winston.logger';
 import { JwtConstant } from 'jwt_security/jwt.const';
 import { JwtModule } from '@nestjs/jwt';
 import { AddressModule } from './api/address/address.module';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { join } from 'path';
+
 
 @Module({
   imports: [
+    AuthModule, AddressModule, ProfileModule,
     ConfigModule.forRoot({
       // Globally Env Connection
       isGlobal: true,
@@ -25,7 +29,7 @@ import { AddressModule } from './api/address/address.module';
       secret: JwtConstant.SECRET,
       signOptions: { expiresIn: JwtConstant.EXPIRE_TIME },
     }),
-    AuthModule, ProfileModule, AddressModule],
+    ],
   controllers: [AppController],
   providers: [AppService],
 })

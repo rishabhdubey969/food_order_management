@@ -9,6 +9,7 @@ export class AuthController {
 
   @GrpcMethod('AuthService', 'ValidateToken')
   async validateToken({ accessToken }: { accessToken: string }) {
+    console.log(accessToken);
     return await this.authService.validateAccessToken(accessToken);
   }
 
