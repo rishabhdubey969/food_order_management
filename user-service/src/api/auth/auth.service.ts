@@ -20,20 +20,21 @@ export class AuthService {
     @InjectModel(Auth.name)
     private authenticationModel: Model<AuthenticationDocument>,
     private jwtService: JwtService,
-    @Inject(WINSTON_MODULE_PROVIDER) 
+    @Inject(WINSTON_MODULE_PROVIDER)
     private readonly logger: WinstonLogger,
-    private authClient:AuthClient
+    private authClient: AuthClient
   ) { }
 
   async signUpService(createAuthDto: CreateAuthDto) {
-    const { email, password } = createAuthDto;
-    // const existingAuthenticationLogin = await this.authenticationModel
-    //   .findOne({ email })
-    //   .exec();
 
-    // if (existingAuthenticationLogin) {
-    //   throw new HttpException(AuthConst.EmailExist, HttpStatus.FORBIDDEN);
-    // }
+    const { email, password } = createAuthDto;
+    const existingAuthenticationLogin = await this.authenticationModel
+      .findOne({ email })
+      .exec();
+
+    if (existingAuthenticationLogin) {
+      throw new HttpException(AuthConst.EmailExist, HttpStatus.FORBIDDEN);
+    }
 
     // Hash the password before saving the user
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -44,13 +45,13 @@ export class AuthService {
     });
     await createdAuthentication.save();
 
-const newUSerPayload = {
-  id : createdAuthentication.id,
-  email: createdAuthentication.email,
-  phone: createdAuthentication.phone,
-  role: createdAuthentication.role,
- isActive: createdAuthentication.is_active
-}
+    const newUSerPayload = {
+      id: createdAuthentication.id,
+      email: createdAuthentication.email,
+      phone: createdAuthentication.phone,
+      role: createdAuthentication.role,
+      isActive: createdAuthentication.is_active
+    }
 
     this.logger.info('user store success');
     return await this.authClient.getSignUpAccess(newUSerPayload);
@@ -76,10 +77,11 @@ const newUSerPayload = {
     //    access_token: await this.jwtService.signAsync(payload),
     // };
     const token = await this.jwtService.signAsync(payload);
- //return await this.authClient.getLoginAccess(token);
+    //return await this.authClient.getLoginAccess(token);
 
   }
 
+  
   findOne(id: number) {
     return `This action returns a #${id} auth`;
   }

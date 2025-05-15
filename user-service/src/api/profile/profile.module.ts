@@ -3,6 +3,7 @@ import { ProfileService } from './profile.service';
 import { ProfileController } from './profile.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Profile, ProfileSchema } from './entities/profile.entity';
+import { AuthClient } from 'src/grpc/authentication/auth.client';
 
 @Module({
   imports: [
@@ -11,6 +12,6 @@ import { Profile, ProfileSchema } from './entities/profile.entity';
         ]),
   ],
   controllers: [ProfileController],
-  providers: [ProfileService],
+  providers: [ProfileService, AuthClient],
 })
 export class ProfileModule {}

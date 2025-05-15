@@ -11,10 +11,17 @@ export interface TokenData {
   isActive: boolean;
 }
 
-export interface PaymentById {
-  orderid: number;
+export interface accessTokenRequest {
+  accessToken: string;
 }
 
+export interface accessTokenResponse {
+  isValid: boolean;
+  message: string;
+}
+
+
 export interface GrpcAuthService {
+    ValidateToken(accessToken): Observable<accessTokenResponse>;
     GenerateToken(data) : Observable<TokenData>;
 }

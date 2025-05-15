@@ -4,11 +4,13 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
+  
   @UsePipes(new ValidationPipe({ whitelist: true }))
   signUp(@Body() createAuthDto: CreateAuthDto) {
     return this.authService.signUpService(createAuthDto);

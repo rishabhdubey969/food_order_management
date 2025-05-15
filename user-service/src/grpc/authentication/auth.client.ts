@@ -29,5 +29,12 @@ export class AuthClient implements OnModuleInit {
     console.log(response);
     return response;
   }
+
+    async ValidateTokenAuthService(accessToken) {
+  console.log(accessToken);
+    const response  = await lastValueFrom(this.grpcAuthService.ValidateToken( accessToken ));
+    console.log(response);
+    return response;
+  }
   
   }

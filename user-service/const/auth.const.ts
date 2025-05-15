@@ -17,7 +17,9 @@ export const Auth = {
 
     LOGOUT:'Logged out successfully',
 
-    PASSWORD_REST: 'Password reset successful'
+    PASSWORD_REST: 'Password reset successful',
+
+     TOKEN_REQUIRED:'Token required'
 
 
 }
