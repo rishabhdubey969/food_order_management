@@ -10,9 +10,8 @@ import { winstonConfig } from 'logger/winston.logger';
 import { JwtConstant } from 'jwt_security/jwt.const';
 import { JwtModule } from '@nestjs/jwt';
 import { AddressModule } from './api/address/address.module';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
-
+// import { ClientsModule, Transport } from '@nestjs/microservices';
+// import { join } from 'path';
 
 @Module({
   imports: [

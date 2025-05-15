@@ -1,11 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UsePipes, ValidationPipe, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('profile')
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
+
+   @Post()
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  profileCreate(@Body() createProfileDto: CreateProfileDto) {
+    return this.profileService.profileCreateService(createProfileDto);
+  }
+
 
   @Get()
   @UsePipes(new ValidationPipe({ whitelist: true }))
@@ -29,4 +37,5 @@ export class ProfileController {
   remove(@Param('id') id: string) {
     return this.profileService.remove(+id);
   }
+
 }

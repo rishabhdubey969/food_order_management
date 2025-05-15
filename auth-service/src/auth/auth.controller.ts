@@ -9,7 +9,6 @@ export class AuthController {
 
   @GrpcMethod('AuthService', 'ValidateToken')
   async validateToken({ accessToken }: { accessToken: string }) {
-    console.log(accessToken);
     return await this.authService.validateAccessToken(accessToken);
   }
 
@@ -19,8 +18,10 @@ export class AuthController {
   }
   @GrpcMethod('AuthService', 'GenerateToken')
   async generateToken(payload) {
-    return this.authService.generateTokens(payload);
+   //console.log(payload);
+    return await this.authService.generateTokens(payload);
   }
+
   @UseGuards(AuthGuard('google'))
   @Get('google')
   async googleLogin() {

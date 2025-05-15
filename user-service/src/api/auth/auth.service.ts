@@ -27,13 +27,13 @@ export class AuthService {
 
   async signUpService(createAuthDto: CreateAuthDto) {
     const { email, password } = createAuthDto;
-    const existingAuthenticationLogin = await this.authenticationModel
-      .findOne({ email })
-      .exec();
+    // const existingAuthenticationLogin = await this.authenticationModel
+    //   .findOne({ email })
+    //   .exec();
 
-    if (existingAuthenticationLogin) {
-      throw new HttpException(AuthConst.EmailExist, HttpStatus.FORBIDDEN);
-    }
+    // if (existingAuthenticationLogin) {
+    //   throw new HttpException(AuthConst.EmailExist, HttpStatus.FORBIDDEN);
+    // }
 
     // Hash the password before saving the user
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -44,11 +44,16 @@ export class AuthService {
     });
     await createdAuthentication.save();
 
-    // we removed password from the response for security reasons
-    const { password: string, ...userWithoutPassword } = createdAuthentication.toObject();
+const newUSerPayload = {
+  id : createdAuthentication.id,
+  email: createdAuthentication.email,
+  phone: createdAuthentication.phone,
+  role: createdAuthentication.role,
+ isActive: createdAuthentication.is_active
+}
 
     this.logger.info('user store success');
-    return userWithoutPassword;
+    return await this.authClient.getSignUpAccess(newUSerPayload);
   }
 
 
@@ -71,7 +76,7 @@ export class AuthService {
     //    access_token: await this.jwtService.signAsync(payload),
     // };
     const token = await this.jwtService.signAsync(payload);
- return await this.authClient.getLoginAccess(token);
+ //return await this.authClient.getLoginAccess(token);
 
   }
 

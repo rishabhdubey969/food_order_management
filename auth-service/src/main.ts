@@ -9,7 +9,7 @@ async function bootstrap() {
     options: {
       package: 'auth',
       protoPath: path.resolve(process.cwd(), 'src/auth/proto/auth.proto'),
-      url: '127.0.0.1:5003',
+      url: '127.0.0.1:5009',
     },
   });
 

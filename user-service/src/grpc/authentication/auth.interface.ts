@@ -3,11 +3,12 @@ import { Observable } from "rxjs";
 export const AUTH_PACKAGE_NAME = 'auth';
 export const AUTH_SERVICE_NAME = 'AuthService';
 
-export interface Payment {
-  paymentID: string;
-  paymentStatus: string;
-  paymentmessage: number;
-  paymentmode: number;
+export interface TokenData {
+  id: string;
+  email: string;
+  phone: number;
+  role: number;
+  isActive: boolean;
 }
 
 export interface PaymentById {
@@ -15,5 +16,5 @@ export interface PaymentById {
 }
 
 export interface GrpcAuthService {
-    ValidateToken(data: {accessToken: string}) : Observable<Payment>;
+    GenerateToken(data) : Observable<TokenData>;
 }

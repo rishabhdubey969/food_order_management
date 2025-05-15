@@ -12,7 +12,7 @@ export class AuthClient implements OnModuleInit {
     options: {
       package: AUTH_PACKAGE_NAME,
       protoPath: join(path.resolve(), 'src/grpc/proto/auth.proto'),
-      url: '127.0.0.1:5003',
+      url: '127.0.0.1:5009',
     },
   })
   private client: ClientGrpc;
@@ -23,9 +23,9 @@ export class AuthClient implements OnModuleInit {
     console.log("grpc started");
   }
 
-  async getLoginAccess(accessToken: string) {
-    console.log({accessToken});
-    const response  = await lastValueFrom(this.grpcAuthService.ValidateToken({ accessToken }));
+  async getSignUpAccess(userData) {
+  console.log(userData);
+    const response  = await lastValueFrom(this.grpcAuthService.GenerateToken( userData ));
     console.log(response);
     return response;
   }

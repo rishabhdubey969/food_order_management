@@ -11,28 +11,50 @@ export class AuthService {
   ) {}
 
   async generateTokens(payload: {
-    userId: string;
-    email: string;
-    name: string;
-    role: string;
-    deviceId: string;
-  }) {
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: process.env.JWT_EXPIRES_IN,
-    });
+  id: string;
+  email: string;
+  phone: string;
+  role: string;
+  is_active: boolean;
+}) {
+  const secretKey = process.env.JWT_SECRET;
 
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
-    });
-
-    const accessKey = `access:${payload.userId}:${payload.deviceId}`;
-    const refreshKey = `refresh:${payload.userId}:${payload.deviceId}`;
-
-    await this.redisService.set(accessKey, accessToken);
-    await this.redisService.set(refreshKey, refreshToken);
-
-    return { accessToken, refreshToken };
+  // Ensure that the secret key is provided
+  if (!secretKey) {
+    throw new Error('JWT_SECRET is not defined');
   }
+
+  // Get the expiration times from environment variables and ensure they are defined
+  const jwtExpiresIn = process.env.JWT_EXPIRES_IN;
+  const refreshTokenExpiresIn = process.env.REFRESH_TOKEN_EXPIRES_IN;
+
+  if (!jwtExpiresIn || !refreshTokenExpiresIn) {
+    throw new Error('JWT_EXPIRES_IN and REFRESH_TOKEN_EXPIRES_IN must be defined');
+  }
+
+  const accessToken = this.jwtService.sign(payload, {
+    secret: secretKey,
+    expiresIn: jwtExpiresIn,
+  });
+
+  const refreshToken = this.jwtService.sign(payload, {
+    secret: secretKey,
+    expiresIn: refreshTokenExpiresIn,
+  });
+
+  const accessKey = `access:${payload.id}`;
+  const refreshKey = `refresh:${payload.id}`;
+
+  // Set expiration in seconds (assuming these are in seconds as strings like '3600s')
+  const accessTokenTTL = parseInt(jwtExpiresIn.replace('s', ''), 10);
+  const refreshTokenTTL = parseInt(refreshTokenExpiresIn.replace('s', ''), 10);
+
+  await this.redisService.set(accessKey, accessToken);
+  await this.redisService.set(refreshKey, refreshToken);
+
+  return { accessToken, refreshToken };
+}
+
 
   async validateAccessToken(token: string) {
     try {

@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import * as path from 'path';
+// import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+// import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

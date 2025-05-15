@@ -2,6 +2,8 @@ export const Profile = {
 
     INVALID_ID: 'Invalid object id',
     NOT_FOUND: 'Profile Data not found',
-    UPDATE_FAILED: 'Profile update failed'
+    UPDATE_FAILED: 'Profile update failed',
+
+    PROFILE_CREATED: "Profile already exits in our database",
 
 }

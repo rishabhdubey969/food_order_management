@@ -27,9 +27,9 @@ message TokenResponse {
 }
 
 message GenerateTokenRequest {
-  string userId = 1;
+  string id = 1;
   string email = 2;
   string name = 3;
-  string role = 4;
-  string deviceId = 5;
+  int32 role = 4;
+  bool isActive = 5;
 }

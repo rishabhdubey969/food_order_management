@@ -9,9 +9,6 @@ export type AuthenticationDocument = Auth & Document;
 export class Auth {
 
   @Prop({ required: true })
-  username: string;
-
-  @Prop({ required: true })
   email: string;
 
   @Prop({ required: true })
@@ -20,17 +17,8 @@ export class Auth {
   @Prop({ required: true })
   phone: string;
 
-  @Prop({ required: true })
-  gender: string;
-
-  @Prop({ required: true })
-  date_of_birth: Date;
-
   @Prop({ required: true,  default: 1 })
   role: number;
-
-  @Prop({ required: true,  default: 'user' })
-  role_name: string;
 
   @Prop({ default: true })
   is_active: boolean;
@@ -38,14 +26,8 @@ export class Auth {
   @Prop({ required: false })
   otp: string;
 
-  @Prop({ required: true })
-  country: string;
-
-  @Prop()
-  image: string;
-
-  @Prop({ default: false })
-  isVerified: Boolean;
+  @Prop({ default: true })
+  is_verified: Boolean;
 
 
   @Prop({ default: 0 })
