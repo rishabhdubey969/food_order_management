@@ -6,6 +6,8 @@ service AuthService {
   rpc ValidateToken (ValidateTokenRequest) returns (TokenValidationResponse);
   rpc RefreshToken (RefreshTokenRequest) returns (TokenResponse);
   rpc GenerateToken (GenerateTokenRequest) returns (TokenResponse);
+  rpc Login (LoginRequest) returns (TokenResponse);
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
 }
 
 message ValidateTokenRequest {
@@ -33,4 +35,19 @@ message GenerateTokenRequest {
   int32 role = 4;
   bool isActive = 5;
 
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  string deviceId = 3;
+}
+
+message LogoutRequest {
+  string userId = 1;
+  string deviceId = 2;
+}
+
+message LogoutResponse {
+  string message = 1;
 }

@@ -9,5 +9,8 @@ export class LoginAuthDto {
   @IsNotEmpty()
   @MinLength(8)
   readonly password: string;
-
+  @IsNotEmpty()
+  @IsString()
+  readonly deviceId: string;
 }
+

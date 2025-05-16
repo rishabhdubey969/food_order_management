@@ -18,5 +18,12 @@ export class RedisService {
 
   async get(key: string): Promise<string | null> {
     return await this.client.get(key);
+  } 
+  async del(keys: string | string[]): Promise<number> {
+    if (Array.isArray(keys)) {
+      return await this.client.del(...keys);
+    }
+    return await this.client.del(keys);
   }
+
 }

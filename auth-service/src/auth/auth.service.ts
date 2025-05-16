@@ -1,88 +1,184 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from './redis/redis.service';
-import {CONSTANTS} from './config/constant';
-import { constants } from 'buffer';
-@Injectable()
-export class AuthService {
-  constructor(
-    private jwtService: JwtService,
-    private redisService: RedisService,
-  ) {}
+import { CONSTANTS } from './config/constant';
+import * as bcrypt from 'bcrypt';
+import { InjectConnection } from '@nestjs/mongoose';
+import { Connection } from 'mongoose';
 
-  async generateTokens(payload: {
-  id: string;
-  email: string;
-  phone: string;
-  role: string;
-  is_active: boolean;
-}) {
-  const secretKey = process.env.JWT_SECRET;
-
-  // Ensure that the secret key is provided
-  if (!secretKey) {
-    throw new Error('JWT_SECRET is not defined');
-  }
-
-  // Get the expiration times from environment variables and ensure they are defined
-  const jwtExpiresIn = process.env.JWT_EXPIRES_IN;
-  const refreshTokenExpiresIn = process.env.REFRESH_TOKEN_EXPIRES_IN;
-
-  if (!jwtExpiresIn || !refreshTokenExpiresIn) {
-    throw new Error('JWT_EXPIRES_IN and REFRESH_TOKEN_EXPIRES_IN must be defined');
-  }
-
-  const accessToken = this.jwtService.sign(payload, {
-    secret: secretKey,
-    expiresIn: jwtExpiresIn,
-  });
-
-  const refreshToken = this.jwtService.sign(payload, {
-    secret: secretKey,
-    expiresIn: refreshTokenExpiresIn,
-  });
-
-  const accessKey = `access:${payload.id}`;
-  const refreshKey = `refresh:${payload.id}`;
-
-  // Set expiration in seconds (assuming these are in seconds as strings like '3600s')
-  const accessTokenTTL = parseInt(jwtExpiresIn.replace('s', ''), 10);
-  const refreshTokenTTL = parseInt(refreshTokenExpiresIn.replace('s', ''), 10);
-
-  await this.redisService.set(accessKey, accessToken);
-  await this.redisService.set(refreshKey, refreshToken);
-
-  return { accessToken, refreshToken };
+enum UserRole {
+  ADMIN = 0,
+  USER = 1,
+  MANAGER = 2,
+  DELIVERY = 3,
 }
 
+interface TokenPayload {
+  userId: string;
+  email: string;
+  name: string;
+  role: number;
+  deviceId: string;
+}
 
+@Injectable()
+export class AuthService {
+  private readonly roleCollections = {
+    [UserRole.ADMIN]: 'admins',
+    [UserRole.USER]: 'users',
+    [UserRole.MANAGER]: 'managers',
+    [UserRole.DELIVERY]: 'deliveries',
+  };
+
+  constructor(
+    private readonly jwtService: JwtService,
+    // private readonly redisService: RedisService,
+    @InjectConnection() private readonly connection: Connection,
+  ) {}
+
+  // ==================== TOKEN GENERATION ====================
+   async generateAccessToken(payload: TokenPayload): Promise<string> {
+    return this.jwtService.sign(payload, {
+      secret: process.env.JWT_SECRET || 'priyanshi',
+      expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+    });
+  }
+
+   async generateRefreshToken(payload: TokenPayload): Promise<string> {
+    return this.jwtService.sign(payload, {
+      secret: process.env.REFRESH_TOKEN_SECRET,
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
+    });
+  }
+
+  // ==================== CORE AUTH METHODS ====================
+  async login(email: string, password: string, deviceId: string, role: number) {
+    this.validateRole(role);
+
+    const user = await this.findUserByEmail(email, role);
+    await this.validatePassword(password, user.password);
+
+    return this.generateTokens({
+      userId: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      role,
+      deviceId,
+    });
+  }
+
+  async refreshTokens(refreshToken: string) {
+    const payload = await this.validateRefreshToken(refreshToken);
+  }
+
+  async logout(userId: string, deviceId: string) {
+    await this.invalidateTokens(userId, deviceId);
+    return { message: CONSTANTS.RESPONSE_MESSAGES.SUCCESS.LOGOUT_SUCCESS };
+  }
+
+  // ==================== TOKEN VALIDATION ====================
   async validateAccessToken(token: string) {
     try {
-      console.log(token);
-      const payload = this.jwtService.verify(token);
-
-      const key = `access:${payload.userId}:${payload.deviceId}`;
-      const stored = await this.redisService.get(key);
-
-      if (stored !== token) return { isValid: false, message: CONSTANTS.ERROR_MESSAGES.MISMATCHED };
-
-      return { isValid: true, message:CONSTANTS.ERROR_MESSAGES.VALID_TOKEN};
+      const payload = this.jwtService.verify(token, { secret: process.env.JWT_SECRET });
+      const isValid = await this.checkTokenInStorage(payload.userId, payload.deviceId, token, 'access');
+      return { isValid, message: isValid ? CONSTANTS.ERROR_MESSAGES.VALID_TOKEN : CONSTANTS.ERROR_MESSAGES.MISMATCHED };
     } catch {
-      return { isValid: false, message: CONSTANTS.ERROR_MESSAGES.INVALID_REFRESH_TOKEN };
+      return { isValid: false, message: CONSTANTS.ERROR_MESSAGES.INVALID_TOKEN };
     }
   }
 
-  async refreshAccessToken(refreshToken: string) {
+  // ==================== PRIVATE HELPERS ====================
+ async generateTokens(payload: TokenPayload) {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.generateAccessToken(payload),
+      this.generateRefreshToken(payload),
+    ]);
+
+    await this.storeTokens(payload.userId, payload.deviceId, accessToken, refreshToken);
+    return { accessToken };
+  }
+
+  private async storeTokens(userId: string, deviceId: string, accessToken: string, refreshToken: string) {
+    // Redis commented but preserved
+    // await this.redisService.set(`access:${userId}:${deviceId}`, accessToken);
+    // await this.redisService.set(`refresh:${userId}:${deviceId}`, refreshToken);
+
+    await this.connection.collection('sessions').updateOne(
+      { userId, deviceId },
+      {
+        $set: {
+          userId,
+          deviceId,
+          accessToken,
+          refreshToken,
+          isActive: true,
+          lastUpdated: new Date(),
+        },
+      },
+      { upsert: true },
+    );
+  }
+
+  private async validateRefreshToken(token: string): Promise<TokenPayload> {
     try {
-      const payload = this.jwtService.verify(refreshToken);
-      const key = `refresh:${payload.userId}:${payload.deviceId}`;
-      const stored = await this.redisService.get(key);
-
-      if (stored !== refreshToken) throw new Error();
-
-      return await this.generateTokens(payload);
+      const payload = this.jwtService.verify(token, { secret: process.env.REFRESH_TOKEN_SECRET });
+      const isValid = await this.checkTokenInStorage(payload.userId, payload.deviceId, token, 'refresh');
+      
+      if (!isValid) {
+        throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_REFRESH_TOKEN);
+      }
+      
+      return payload;
     } catch {
-      throw new Error(CONSTANTS.ERROR_MESSAGES.INVALID_REFRESH_TOKEN);
+      throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_REFRESH_TOKEN);
+    }
+  }
+
+  private async checkTokenInStorage(userId: string, deviceId: string, token: string, type: 'access' | 'refresh') {
+    // Redis check commented
+    // const storedToken = await this.redisService.get(`${type}:${userId}:${deviceId}`);
+    // if (storedToken) return storedToken === token;
+
+    const session = await this.connection.collection('sessions').findOne({
+      userId,
+      deviceId,
+      isActive: true,
+    });
+
+    return session?.[`${type}Token`] === token;
+  }
+
+  private async invalidateTokens(userId: string, deviceId: string) {
+    // Redis commented
+    // await this.redisService.del(`access:${userId}:${deviceId}`);
+    // await this.redisService.del(`refresh:${userId}:${deviceId}`);
+
+    await this.connection
+      .collection('sessions')
+      .updateOne({ userId, deviceId }, { $set: { isActive: false } });
+  }
+
+  private async findUserByEmail(email: string, role: number) {
+    const collectionName = this.roleCollections[role];
+    const user = await this.connection.collection(collectionName).findOne({ email });
+
+    if (!user) {
+      throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_CREDENTIALS);
+    }
+
+    return user;
+  }
+
+  private async validatePassword(plainPassword: string, hashedPassword: string) {
+    const isMatch = await bcrypt.compare(plainPassword, hashedPassword);
+    if (!isMatch) {
+      throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_CREDENTIALS);
+    }
+  }
+
+  private validateRole(role: number) {
+    if (!Object.values(UserRole).includes(role)) {
+      throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_ROLE);
     }
   }
 }

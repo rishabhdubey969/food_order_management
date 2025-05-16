@@ -4,9 +4,12 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { RedisService } from './redis/redis.service';
 import { GoogleStrategy } from './oauth.strategy';
+import { MongooseModule } from '@nestjs/mongoose';
+
 
 @Module({
   imports: [
+    
     JwtModule.register({
       secret: process.env.JWT_SECRET,
     }),
@@ -15,3 +18,6 @@ import { GoogleStrategy } from './oauth.strategy';
   providers: [AuthService, RedisService, GoogleStrategy],
 })
 export class AuthModule {}
+
+
+

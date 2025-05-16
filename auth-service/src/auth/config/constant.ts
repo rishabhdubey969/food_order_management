@@ -11,7 +11,9 @@ export const CONSTANTS = {
       GOOGLE_USER_NOT_FOUND: 'Google user not found.',
       UNAUTHORIZED: 'You are not authorized to access this resource.',
       INTERNAL_SERVER_ERROR: 'Something went wrong. Please try again later.',
-      MISMATCHED:"token mismatched"
+      MISMATCHED:"token mismatched",
+      INVALID_ROLE:"Invalid user",
+      INVALID_TOKEN:"Invalid token "
     },
   
     // Success Messages
@@ -48,6 +50,7 @@ export const CONSTANTS = {
       SUCCESS: {
         status: 'success',
         message: 'Operation completed successfully.',
+        LOGOUT_SUCCESS:'logout successfully',
       },
       ERROR: {
         status: 'error',

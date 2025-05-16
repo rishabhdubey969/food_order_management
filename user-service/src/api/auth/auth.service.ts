@@ -59,7 +59,7 @@ export class AuthService {
 
 
   async loginService(loginAuthDto: LoginAuthDto) {
-    const { email, password } = loginAuthDto;
+    const { email, password, deviceId } = loginAuthDto;
     const existingAuthenticationLogin = await this.authenticateUser(email);
 
     const isPasswordValid = await bcrypt.compare(password, existingAuthenticationLogin.password);
