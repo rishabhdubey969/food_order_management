@@ -6,12 +6,13 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '../../guard/auth.guard';
 @Controller('profile')
 export class ProfileController {
-  constructor(private readonly profileService: ProfileService) {}
+  constructor(private readonly profileService: ProfileService) { }
 
-   @Post()
+  @Post()
+  @UseGuards(AuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  profileCreate(@Body() createProfileDto: CreateProfileDto) {
-    return this.profileService.profileCreateService(createProfileDto);
+  profileUpdate(@Body() createProfileDto: CreateProfileDto) {
+    return this.profileService.updateProfileService(createProfileDto);
   }
 
 
@@ -28,11 +29,11 @@ export class ProfileController {
     return this.profileService.profileFindOneService(id);
   }
 
-  @Patch(':id')
-  @UsePipes(new ValidationPipe({ whitelist: true }))
-  profileUpdate(@Param('id') id: string, @Body() updateProfileDto: UpdateProfileDto) {
-    return this.profileService.profileUpdateService(id, updateProfileDto); 
-  }
+  // @Patch(':id')
+  // @UsePipes(new ValidationPipe({ whitelist: true }))
+  // profileUpdate(@Param('id') id: string, @Body() updateProfileDto: UpdateProfileDto) {
+  //   return this.profileService.profileUpdateService(id, updateProfileDto); 
+  // }
 
   @Delete(':id')
   remove(@Param('id') id: string) {

@@ -5,11 +5,8 @@ import { DataBaseConst } from 'database/mongo.const';
 // Mongoose schema document interface
 export type ProfileDocument = Profile & Document;
 
-@Schema({ collection: DataBaseConst.PROFILE, timestamps: true })
+@Schema({ collection: DataBaseConst.USER, timestamps: true })
 export class Profile {
-
-  @Prop({ required: true })
-  user_id: string;
 
   @Prop({ required: true })
   username: string;

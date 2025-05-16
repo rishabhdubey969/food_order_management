@@ -1,25 +1,13 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  HttpException,
-  HttpStatus,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { lastValueFrom, Observable } from 'rxjs';
+import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { Auth } from 'const/auth.const';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
 
 @Injectable()
- export class AuthGuard implements CanActivate {
+export class AuthGuard implements CanActivate {
 
-    constructor(
-        private authClient: AuthClient
-      ) { }
-      
-  async canActivate(
-    context: ExecutionContext,
-  ): Promise<boolean> {
+  constructor(private authClient: AuthClient) { }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const authorizationHeader = request.headers.authorization;
 
@@ -31,15 +19,17 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
 
     // Check if the token starts with 'Bearer'
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
-       throw new UnauthorizedException(Auth.TOKEN_REQUIRED);
+      throw new UnauthorizedException(Auth.TOKEN_REQUIRED);
     }
-     const token = parts[1];
+    const token = parts[1];
     try {
-      const user = this.authClient.ValidateTokenAuthService( token );
+      const user = this.authClient.ValidateTokenAuthService(token);
       request.user = user;
+      console.log("guard check", user);
       return true;
     } catch (err) {
       throw new UnauthorizedException('Invalid token');
     }
   }
+
 }

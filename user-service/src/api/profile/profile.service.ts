@@ -18,22 +18,20 @@ export class ProfileService {
   ) { }
 
 
-  async profileCreateService(createProfileDto: CreateProfileDto) {
+  async updateProfileService(createProfileDto: CreateProfileDto) {
+  const existingProfile = await this.profileModel.findOne({ _id: createProfileDto.user_id });
 
-    const existingProfileCheck = await this.profileModel
-      .findOne({ user_id: createProfileDto.user_id })
-      .lean();
-
-    if (existingProfileCheck) {
-      throw new HttpException(ProfileConst.PROFILE_CREATED, HttpStatus.FORBIDDEN);
-    }
-
-    const createdProfile = new this.profileModel(createProfileDto);
-    await createdProfile.save();
-    return createdProfile;
-
-
+  if (!existingProfile) {
+    throw new HttpException(ProfileConst.NOT_FOUND, HttpStatus.NOT_FOUND);
   }
+
+  // Update fields
+  Object.assign(existingProfile, createProfileDto);
+
+  await existingProfile.save();
+  return existingProfile;
+}
+
 
   async profileGetService() {
     try {

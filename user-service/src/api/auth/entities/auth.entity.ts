@@ -32,6 +32,7 @@ export class Auth {
 
   @Prop({ default: 0 })
   soft_delete: number;
+  
 }
 
 // Create the Mongoose schema

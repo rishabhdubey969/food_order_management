@@ -39,8 +39,8 @@ export class AuthService {
   // ==================== TOKEN GENERATION ====================
    async generateAccessToken(payload: TokenPayload): Promise<string> {
     return this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET || 'priyanshi',
-      expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+      secret: process.env.JWT_SECRET,
+      expiresIn: process.env.JWT_EXPIRES_IN,
     });
   }
 

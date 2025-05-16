@@ -7,18 +7,20 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
+import { RedisModule } from 'src/redis/redis.module';
+import { TokenService } from './token.service';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Auth.name, schema: AuthenticationSchema },
     ]),
-
+ RedisModule,
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
-//    UserGrpcService,
+ TokenService,
 AuthClient
 
   ],
