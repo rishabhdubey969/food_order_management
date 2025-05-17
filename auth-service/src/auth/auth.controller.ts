@@ -21,6 +21,7 @@ import {
   LogoutResponse,
   GrpcMethodInterface,
 } from './interfaces';
+import { LogoutRequestDto } from './dto/auth.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -29,75 +30,82 @@ export class AuthController {
 
   // ==================== gRPC METHODS WITH SWAGGER ====================
   @Post('login')
-  @GrpcMethod('AuthService', 'Login')
-  @ApiOperation({
-    summary: 'User login',
-    description: 'Authenticate user and return tokens',
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        email: { 
-          type: 'string',
-          example: 'user@example.com',
-          description: 'User email address'
-        },
-        password: {
-          type: 'string',
-          example: 'securePassword123',
-          description: 'User password'
-        },
-        deviceId: {
-          type: 'string',
-          example: 'device-12345',
-          description: 'Unique device identifier'
-        },
-        role: {
-          type: 'number',
-          example: 1,
-          description: 'User role (0=Admin, 1=User, 2=Manager, 3=Delivery)',
-          enum: [0, 1, 2, 3]
-        }
+@GrpcMethod('AuthService', 'Login')
+@ApiOperation({
+  summary: 'User login',
+  description: 'Authenticate user and return tokens',
+})
+@ApiBody({
+  schema: {
+    type: 'object',
+    properties: {
+      email: { 
+        type: 'string',
+        example: 'user@example.com',
+        description: 'User email address'
+      },
+      password: {
+        type: 'string',
+        example: 'securePassword123',
+        description: 'User password'
+      },
+      deviceId: {
+        type: 'string',
+        example: 'device-12345',
+        description: 'Unique device identifier'
+      },
+      role: {
+        type: 'number',
+        example: 1,
+        description: 'User role (0=Admin, 1=User, 2=Manager, 3=Delivery)',
+        enum: [0, 1, 2, 3]
       }
     }
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Successful login',
-    schema: {
-      type: 'object',
-      properties: {
-        accessToken: {
-          type: 'string',
-          example: 'eyJhbGciOi...',
-          description: 'JWT access token'
-        },
-        refreshToken: {
-          type: 'string',
-          example: 'eyJhbGciOi...',
-          description: 'JWT refresh token'
-        }
+  }
+})
+@ApiResponse({
+  status: 200,
+  description: 'Successful login',
+  schema: {
+    type: 'object',
+    properties: {
+      accessToken: {
+        type: 'string',
+        example: 'eyJhbGciOi...',
+        description: 'JWT access token'
+      },
+      refreshToken: {
+        type: 'string',
+        example: 'eyJhbGciOi...',
+        description: 'JWT refresh token'
       }
     }
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async login(
-  @Body() body: {
+  }
+})
+@ApiResponse({ status: 401, description: 'Unauthorized' })
+async login(
+  @Body() restBody: {
     email: string;
     password: string;
     deviceId: string;
     role: number;
-  }
+  },
+  ...grpcArgs: Parameters<GrpcMethodInterface<LoginRequest, TokenResponse>>
 ) {
-  if (!body.email || !body.password || !body.deviceId || body.role === undefined) {
+  // Determine if this is a gRPC call
+  const isGrpcCall = grpcArgs.length > 0 && grpcArgs[0]?.email;
+  
+  const loginData = isGrpcCall ? grpcArgs[0] : restBody;
+
+  if (!loginData.email || !loginData.password || !loginData.deviceId || loginData.role === undefined) {
     throw new BadRequestException('Missing required fields');
   }
-   return this.authService.login(
-    body.email,
-    body.password,
-    body.deviceId,
-    body.role
+
+  return this.authService.login(
+    loginData.email,
+    loginData.password,
+    loginData.deviceId,
+    loginData.role
   );
 }
 
@@ -138,11 +146,44 @@ export class AuthController {
       }
     }
   })
-  logout(...args: Parameters<GrpcMethodInterface<LogoutRequest, LogoutResponse>>) {
-    const [data] = args;
-    return this.authService.logout(data.userId, data.deviceId);
+ @Post('logout')
+@GrpcMethod('AuthService', 'Logout')
+@ApiOperation({
+  summary: 'User logout',
+  description: 'Invalidate user session and tokens',
+})
+@ApiBearerAuth()
+@ApiBody({
+  type: LogoutRequestDto, // Create this DTO class
+  examples: {
+    example: {
+      value: {
+        userId: '507f1f77bcf86cd799439011',
+        deviceId: 'device-12345'
+      }
+    }
+  }
+})
+@ApiResponse({
+  status: 200,
+  description: 'Successful logout',
+  
+})
+async logout(
+  @Body() restBody: LogoutRequestDto,
+  ...grpcArgs: Parameters<GrpcMethodInterface<LogoutRequest, LogoutResponse>>
+): Promise<LogoutResponse> {
+  // Determine if this is a gRPC call
+  const isGrpcCall = grpcArgs.length > 0 && grpcArgs[0]?.userId;
+  
+  const logoutData = isGrpcCall ? grpcArgs[0] : restBody;
+
+  if (!logoutData.userId || !logoutData.deviceId) {
+    throw new BadRequestException('userId and deviceId are required');
   }
 
+  return this.authService.logout(logoutData.userId, logoutData.deviceId);
+}
   @Post('validate-token')
   @GrpcMethod('AuthService', 'ValidateToken')
   @ApiOperation({
@@ -180,10 +221,19 @@ export class AuthController {
       }
     }
   })
-  validateToken(...args: Parameters<GrpcMethodInterface<TokenRequest, ValidationResponse>>) {
-    const [data] = args;
-    return this.authService.validateAccessToken(data.accessToken);
+async validateToken(
+  @Body() body: { accessToken: string },
+  ...args: Parameters<GrpcMethodInterface<TokenRequest, ValidationResponse>>
+): Promise<ValidationResponse> {
+  const [data] = args;
+  const token = body?.accessToken || data?.accessToken;
+  
+  if (!token) {
+    throw new BadRequestException('Access token is required');
   }
+
+  return this.authService.validateAccessToken(token);
+}
 
   @Post('refresh-token')
   @GrpcMethod('AuthService', 'RefreshToken')
@@ -222,10 +272,19 @@ export class AuthController {
       }
     }
   })
-  refreshToken(...args: Parameters<GrpcMethodInterface<RefreshRequest, TokenResponse>>) {
-    const [data] = args;
-    return this.authService.refreshTokens(data.refreshToken);
+refreshToken(
+    @Body() body: { refreshToken: string },
+  ...args: Parameters<GrpcMethodInterface<RefreshRequest, TokenResponse>>
+){
+  const [data] = args;
+  const token = body?.refreshToken || data?.refreshToken;
+  
+  if (!token) {
+    throw new BadRequestException('Access token is required');
   }
+
+  return this.authService.refreshTokens(token);
+}
 
   @Post('generate-token')
   @GrpcMethod('AuthService', 'GenerateToken')

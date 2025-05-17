@@ -6,6 +6,8 @@ export interface TokenResponse {
 export interface ValidationResponse {
   isValid: boolean;
   message: string;
+  userId?: string;
+  role?: number;
 }
 
 export interface LogoutResponse {

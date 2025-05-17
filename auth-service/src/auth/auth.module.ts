@@ -11,7 +11,9 @@ import { MongooseModule } from '@nestjs/mongoose';
   imports: [
     
     JwtModule.register({
-      secret: process.env.JWT_SECRET,
+      secret: process.env.JWT_SECRET || 'myjwtsecret',
+            signOptions: { expiresIn: '60m' }
+
     }),
   ],
   controllers: [AuthController],

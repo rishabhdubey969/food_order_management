@@ -1,4 +1,9 @@
+syntax = "proto3";
+
+package auth;
+
 service AuthService {
+  // Authentication methods
   rpc Login (LoginRequest) returns (TokenResponse);
   rpc Logout (LogoutRequest) returns (LogoutResponse);
   rpc ValidateToken (TokenRequest) returns (ValidationResponse);
@@ -6,11 +11,13 @@ service AuthService {
   rpc GenerateToken (GenerateTokenRequest) returns (TokenResponse);
 }
 
+// Request/Response messages
+
 message LoginRequest {
   string email = 1;
   string password = 2;
   string deviceId = 3;
-  int32 role = 4;
+  int32 role = 4;  // 0=Admin, 1=User, 2=Manager, 3=Delivery
 }
 
 message TokenResponse {

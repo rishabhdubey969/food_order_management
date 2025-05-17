@@ -13,7 +13,9 @@ export const CONSTANTS = {
       INTERNAL_SERVER_ERROR: 'Something went wrong. Please try again later.',
       MISMATCHED:"token mismatched",
       INVALID_ROLE:"Invalid user",
-      INVALID_TOKEN:"Invalid token "
+      INVALID_TOKEN:"Invalid token ",
+      EXPIRED_TOKEN: "Token Expired"
+
     },
   
     // Success Messages

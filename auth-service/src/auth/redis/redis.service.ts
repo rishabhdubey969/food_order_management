@@ -3,16 +3,17 @@ import Redis from 'ioredis';
 
 @Injectable()
 export class RedisService {
+  [x: string]: any;
   private client: Redis;
 
   constructor() {
     this.client = new Redis({
-      host: process.env.REDIS_HOST,
+      host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT||"6379"),
     });
   }
 
-  async set(key: string, value: string) {
+  async set(key: string, value: string, p0: string, p1: number) {
     await this.client.set(key, value);
   }
 
