@@ -68,7 +68,7 @@ export class AuthService {
     const userId = user._id.toString();
     console.log(userId);
     const token = await this.tokenService.generate(userId);
-
+console.log(token);
     return { message: 'Reset link sent' };
   }
 

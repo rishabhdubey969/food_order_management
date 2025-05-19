@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { RedisService } from './redis/redis.service';
-import { CONSTANTS } from './config/constant';
+import { RedisService } from '../redis/redis.service';
+import { CONSTANTS } from '../../config/constant';
 import * as bcrypt from 'bcrypt';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
