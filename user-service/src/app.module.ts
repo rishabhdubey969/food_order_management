@@ -13,10 +13,11 @@ import { AddressModule } from './api/address/address.module';
 // import { ClientsModule, Transport } from '@nestjs/microservices';
 // import { join } from 'path';
 
-
 @Module({
   imports: [
-    AuthModule, AddressModule, ProfileModule,
+    AuthModule,
+    AddressModule,
+    ProfileModule,
     ConfigModule.forRoot({
       // Globally Env Connection
       isGlobal: true,
@@ -28,8 +29,8 @@ import { AddressModule } from './api/address/address.module';
       global: true,
       secret: JwtConstant.SECRET,
       signOptions: { expiresIn: JwtConstant.EXPIRE_TIME },
-    })
-    ],
+    }),
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

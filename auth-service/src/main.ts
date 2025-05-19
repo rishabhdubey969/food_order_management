@@ -11,7 +11,7 @@ async function bootstrap() {
 
   // HTTP Configuration
   const port = configService.get<number>('PORT') || 3000;
-  
+
   // Swagger Configuration
   const config = new DocumentBuilder()
     .setTitle('Food Order Auth Service')
@@ -19,7 +19,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
@@ -36,8 +36,8 @@ async function bootstrap() {
         enums: String,
         defaults: true,
         oneofs: true,
-        includeDirs: [join(__dirname, 'auth/proto')]
-      }
+        includeDirs: [join(__dirname, 'auth/proto')],
+      },
     },
   };
 
@@ -47,7 +47,9 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`HTTP server running on port ${port}`);
-  console.log(`gRPC server running on port ${configService.get<number>('GRPC_PORT') || 5009}`);
+  console.log(
+    `gRPC server running on port ${configService.get<number>('GRPC_PORT') || 5009}`,
+  );
 }
 
 bootstrap();

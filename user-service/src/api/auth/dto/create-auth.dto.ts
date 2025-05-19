@@ -1,4 +1,3 @@
-import { int } from 'aws-sdk/clients/datapipeline';
 import {
   IsNotEmpty,
   IsString,
@@ -10,7 +9,6 @@ import {
 } from 'class-validator';
 
 export class CreateAuthDto {
-
   @IsNotEmpty()
   @IsEmail()
   @IsString()
@@ -26,6 +24,4 @@ export class CreateAuthDto {
 
   @IsNotEmpty()
   readonly role: number;
-
 }
-

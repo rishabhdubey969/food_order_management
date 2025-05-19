@@ -7,7 +7,6 @@ export type AuthenticationDocument = Auth & Document;
 
 @Schema({ collection: DataBaseConst.USER, timestamps: true })
 export class Auth {
-
   @Prop({ required: true })
   email: string;
 
@@ -17,7 +16,7 @@ export class Auth {
   @Prop({ required: true })
   phone: string;
 
-  @Prop({ required: true,  default: 1 })
+  @Prop({ required: true, default: 1 })
   role: number;
 
   @Prop({ default: true })
@@ -27,12 +26,13 @@ export class Auth {
   otp: string;
 
   @Prop({ default: true })
-  is_verified: Boolean;
+  is_verified: boolean;
 
+  @Prop({ default: false })
+  is_deleted: boolean;
 
-  @Prop({ default: 0 })
-  soft_delete: number;
-  
+  @Prop()
+  deleted_at?: Date;
 }
 
 // Create the Mongoose schema

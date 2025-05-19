@@ -1,13 +1,19 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Auth } from 'const/auth.const';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+  constructor(private authClient: AuthClient) {}
 
-  constructor(private authClient: AuthClient) { }
-
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const authorizationHeader = request.headers.authorization;
 
@@ -25,11 +31,10 @@ export class AuthGuard implements CanActivate {
     try {
       const user = this.authClient.ValidateTokenAuthService(token);
       request.user = user;
-      console.log("guard check", user);
+      console.log('guard check', user);
       return true;
     } catch (err) {
       throw new UnauthorizedException('Invalid token');
     }
   }
-
 }

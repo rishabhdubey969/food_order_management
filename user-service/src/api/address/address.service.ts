@@ -9,15 +9,13 @@ import { Model } from 'mongoose';
 
 @Injectable()
 export class AddressService {
-
   constructor(
     @InjectModel(Address.name) private addressModel: Model<AddressDocument>,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: WinstonLogger,
   ) {}
 
   async addressCreateService(createAddressDto: CreateAddressDto) {
-
-     const exists = await this.addressModel.findOne({
+    const exists = await this.addressModel.findOne({
       user_id: createAddressDto.user_id,
       latitude: createAddressDto.latitude,
       longitude: createAddressDto.longitude,
@@ -30,7 +28,7 @@ export class AddressService {
     return await createdAddress.save();
   }
 
-  async getUserAddressService(user_id:string = "681dded5532116f55639eaee") {
+  async getUserAddressService(user_id: string = '681dded5532116f55639eaee') {
     return this.addressModel.find({ user_id }).exec();
   }
 

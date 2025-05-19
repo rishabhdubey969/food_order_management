@@ -7,7 +7,6 @@ export type ProfileDocument = Profile & Document;
 
 @Schema({ collection: DataBaseConst.USER, timestamps: true })
 export class Profile {
-
   @Prop({ required: true })
   username: string;
 
@@ -22,8 +21,6 @@ export class Profile {
 
   @Prop()
   image: string;
-
-
 }
 
 // Create the Mongoose schema

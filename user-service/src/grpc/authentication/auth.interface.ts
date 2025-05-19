@@ -1,4 +1,4 @@
-import { Observable } from "rxjs";
+import { Observable } from 'rxjs';
 
 export const AUTH_PACKAGE_NAME = 'auth';
 export const AUTH_SERVICE_NAME = 'AuthService';
@@ -20,8 +20,7 @@ export interface accessTokenResponse {
   message: string;
 }
 
-
 export interface GrpcAuthService {
-    ValidateToken(accessToken): Observable<accessTokenResponse>;
-    GenerateToken(data) : Observable<TokenData>;
+  ValidateToken(accessToken): Observable<accessTokenResponse>;
+  GenerateToken(data): Observable<TokenData>;
 }
