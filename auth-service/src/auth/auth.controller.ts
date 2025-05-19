@@ -196,52 +196,66 @@ export class AuthController {
 
     return this.authService.logout(logoutData.userId, logoutData.deviceId);
   }
-  @Post('validate-token')
-  @GrpcMethod('AuthService', 'ValidateToken')
-  @ApiOperation({
-    summary: 'Validate access token',
-    description: 'Check if access token is valid',
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        accessToken: {
-          type: 'string',
-          example: 'eyJhbGciOi...',
-          description: 'Access token to validate',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Token validation result',
-    schema: {
-      type: 'object',
-      properties: {
-        isValid: {
-          type: 'boolean',
-          example: true,
-          description: 'Whether token is valid',
-        },
-        message: {
-          type: 'string',
-          example: 'Token is valid',
-          description: 'Validation message',
-        },
-      },
-    },
-  })
-  async validateToken(
-    @Body() body: { accessToken: string },
-    ...args: Parameters<GrpcMethodInterface<TokenRequest, ValidationResponse>>
-  ): Promise<ValidationResponse> {
-    const [data] = args;
-    const token = body?.accessToken || data?.accessToken;
+  // @Post('validate-token')
+  //@GrpcMethod('AuthService', 'ValidateToken')
+  // @ApiOperation({
+  //   summary: 'Validate access token',
+  //   description: 'Check if access token is valid',
+  // })
+  // @ApiBody({
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       accessToken: {
+  //         type: 'string',
+  //         example: 'eyJhbGciOi...',
+  //         description: 'Access token to validate',
+  //       },
+  //     },
+  //   },
+  // })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Token validation result',
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       isValid: {
+  //         type: 'boolean',
+  //         example: true,
+  //         description: 'Whether token is valid',
+  //       },
+  //       message: {
+  //         type: 'string',
+  //         example: 'Token is valid',
+  //         description: 'Validation message',
+  //       },
+  //     },
+  //   },
+  // })
+  // async validateToken(
+  //   @Body() body: { accessToken: string },
+  //   ...args: Parameters<GrpcMethodInterface<TokenRequest, ValidationResponse>>
+  // ): Promise<ValidationResponse> {
+  //   const [data] = args;
+  //   const token = body?.accessToken || data?.accessToken;
+
+  //   if (!token) {
+  //     throw new BadRequestException('Access token is required');
+  //   }
+
+  //   return this.authService.validateAccessToken(token);
+  // }
+
+ @GrpcMethod('AuthService', 'ValidateToken')
+  async validateTokenGrpc(data: TokenRequest): Promise<ValidationResponse> {
+    const token = data?.accessToken;
 
     if (!token) {
-      throw new BadRequestException('Access token is required');
+      return {
+        isValid: false,
+        message: 'Access token is required',
+      };
     }
 
     return this.authService.validateAccessToken(token);

@@ -53,15 +53,14 @@ export class AuthService {
       secret: process.env.JWT_SECRET,
 
       expiresIn: process.env.JWT_EXPIRES_IN,
-
-    
-
     });
   }
 
   async generateRefreshToken(payload: TokenPayload): Promise<string> {
     if (!process.env.REFRESH_TOKEN_SECRET) {
-      throw new Error('REFRESH_TOKEN_SECRET is not defined in environment variables');
+      throw new Error(
+        'REFRESH_TOKEN_SECRET is not defined in environment variables',
+      );
     }
     return this.jwtService.sign(payload, {
       secret: process.env.REFRESH_TOKEN_SECRET,
@@ -104,7 +103,7 @@ export class AuthService {
     try {
       // Remove Bearer prefix if present
       token = this.sanitizeToken(token);
-      
+
       if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET is not configured');
       }
@@ -124,24 +123,23 @@ export class AuthService {
         payload.userId,
         payload.deviceId,
         token,
-        'access'
+        'access',
       );
 
       return {
         isValid,
-        message: isValid 
-          ? CONSTANTS.ERROR_MESSAGES.VALID_TOKEN 
+        message: isValid
+          ? CONSTANTS.ERROR_MESSAGES.VALID_TOKEN
           : CONSTANTS.ERROR_MESSAGES.INVALID_TOKEN,
         userId: payload.userId,
         role: payload.role,
       };
-
     } catch (error) {
       console.error('Token validation error:', {
         error: error.message,
-        token: token?.length > 50 ? `${token.substring(0, 25)}...` : token
+        token: token?.length > 50 ? `${token.substring(0, 25)}...` : token,
       });
-      
+
       return {
         isValid: false,
         message: this.getTokenErrorMessage(error),
@@ -174,34 +172,43 @@ export class AuthService {
       this.generateRefreshToken(payload),
     ]);
 
-    await this.storeTokens(payload.userId, payload.deviceId, accessToken, refreshToken);
+    await this.storeTokens(
+      payload.userId,
+      payload.deviceId,
+      accessToken,
+      refreshToken,
+    );
     return { accessToken, refreshToken };
   }
 
   private async storeTokens(
-    userId: string, 
-    deviceId: string, 
-    accessToken: string, 
-    refreshToken: string
+    userId: string,
+    deviceId: string,
+    accessToken: string,
+    refreshToken: string,
   ) {
     // Calculate expiration times
-    const accessExpiry = this.parseTimeToSeconds(process.env.JWT_EXPIRES_IN || '60m');
-    const refreshExpiry = this.parseTimeToSeconds(process.env.REFRESH_TOKEN_EXPIRES_IN || '7d');
+    const accessExpiry = this.parseTimeToSeconds(
+      process.env.JWT_EXPIRES_IN || '60m',
+    );
+    const refreshExpiry = this.parseTimeToSeconds(
+      process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
+    );
 
     // Store in Redis with expiration
     await Promise.all([
       this.redisService.set(
-        `access:${userId}:${deviceId}`, 
+        `access:${userId}:${deviceId}`,
         accessToken,
         'EX',
-        accessExpiry
+        accessExpiry,
       ),
       this.redisService.set(
-        `refresh:${userId}:${deviceId}`, 
+        `refresh:${userId}:${deviceId}`,
         refreshToken,
         'EX',
-        refreshExpiry
-      )
+        refreshExpiry,
+      ),
     ]);
 
     // Store in MongoDB for persistence
@@ -226,25 +233,30 @@ export class AuthService {
   private parseTimeToSeconds(timeString: string): number {
     const unit = timeString.slice(-1);
     const value = parseInt(timeString.slice(0, -1));
-    
+
     switch (unit) {
-      case 's': return value;
-      case 'm': return value * 60;
-      case 'h': return value * 60 * 60;
-      case 'd': return value * 60 * 60 * 24;
-      default: return parseInt(timeString) || 3600; // default to 1 hour
+      case 's':
+        return value;
+      case 'm':
+        return value * 60;
+      case 'h':
+        return value * 60 * 60;
+      case 'd':
+        return value * 60 * 60 * 24;
+      default:
+        return parseInt(timeString) || 3600; // default to 1 hour
     }
   }
 
   private async validateRefreshToken(token: string): Promise<TokenPayload> {
     try {
       token = this.sanitizeToken(token);
-      
+
       if (!process.env.REFRESH_TOKEN_SECRET) {
         throw new Error('REFRESH_TOKEN_SECRET is not configured');
       }
 
-      const payload = this.jwtService.verify(token, { 
+      const payload = this.jwtService.verify(token, {
         secret: process.env.REFRESH_TOKEN_SECRET,
         algorithms: ['HS256'],
       }) as TokenPayload;
@@ -254,14 +266,16 @@ export class AuthService {
 
       if (!storedToken || storedToken !== token) {
         const isValid = await this.checkTokenInStorage(
-          payload.userId, 
-          payload.deviceId, 
-          token, 
-          'refresh'
+          payload.userId,
+          payload.deviceId,
+          token,
+          'refresh',
         );
-        
+
         if (!isValid) {
-          throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_REFRESH_TOKEN);
+          throw new UnauthorizedException(
+            CONSTANTS.ERROR_MESSAGES.INVALID_REFRESH_TOKEN,
+          );
         }
       }
 
@@ -272,10 +286,10 @@ export class AuthService {
   }
 
   private async checkTokenInStorage(
-    userId: string, 
-    deviceId: string, 
-    token: string, 
-    type: 'access' | 'refresh'
+    userId: string,
+    deviceId: string,
+    token: string,
+    type: 'access' | 'refresh',
   ): Promise<boolean> {
     // First check Redis
     const redisKey = `${type}:${userId}:${deviceId}`;
@@ -297,7 +311,7 @@ export class AuthService {
     // Remove from Redis
     await Promise.all([
       this.redisService.del(`access:${userId}:${deviceId}`),
-      this.redisService.del(`refresh:${userId}:${deviceId}`)
+      this.redisService.del(`refresh:${userId}:${deviceId}`),
     ]);
 
     // Mark as inactive in database
@@ -308,19 +322,28 @@ export class AuthService {
 
   private async findUserByEmail(email: string, role: number) {
     const collectionName = this.roleCollections[role];
-    const user = await this.connection.collection(collectionName).findOne({ email });
+    const user = await this.connection
+      .collection(collectionName)
+      .findOne({ email });
 
     if (!user) {
-      throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_CREDENTIALS);
+      throw new UnauthorizedException(
+        CONSTANTS.ERROR_MESSAGES.INVALID_CREDENTIALS,
+      );
     }
 
     return user;
   }
 
-  private async validatePassword(plainPassword: string, hashedPassword: string) {
+  private async validatePassword(
+    plainPassword: string,
+    hashedPassword: string,
+  ) {
     const isMatch = await bcrypt.compare(plainPassword, hashedPassword);
     if (!isMatch) {
-      throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_CREDENTIALS);
+      throw new UnauthorizedException(
+        CONSTANTS.ERROR_MESSAGES.INVALID_CREDENTIALS,
+      );
     }
   }
 

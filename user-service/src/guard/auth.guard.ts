@@ -11,9 +11,9 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private authClient: AuthClient) {}
+  constructor(private readonly authClient: AuthClient) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const authorizationHeader = request.headers.authorization;
 
@@ -23,17 +23,22 @@ export class AuthGuard implements CanActivate {
 
     const parts = authorizationHeader.split(' ');
 
-    // Check if the token starts with 'Bearer'
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
       throw new UnauthorizedException(Auth.TOKEN_REQUIRED);
     }
+
     const token = parts[1];
+
     try {
-      const user = this.authClient.ValidateTokenAuthService(token);
+      const user = await this.authClient.ValidateTokenAuthService(token);
+
+      if (user.isValid) {
+        throw new UnauthorizedException(user?.message || 'Invalid token');
+      }
+
       request.user = user;
-      console.log('guard check', user);
       return true;
-    } catch (err) {
+    } catch (error) {
       throw new UnauthorizedException('Invalid token');
     }
   }
