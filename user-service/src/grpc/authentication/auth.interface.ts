@@ -21,6 +21,6 @@ export interface accessTokenResponse {
 }
 
 export interface GrpcAuthService {
-  ValidateToken(accessToken): Observable<accessTokenResponse>;
+  ValidateToken(data: accessTokenRequest): Observable<accessTokenResponse>;
   GenerateToken(data): Observable<TokenData>;
 }
