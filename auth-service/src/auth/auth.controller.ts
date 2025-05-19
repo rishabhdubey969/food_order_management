@@ -250,14 +250,6 @@ export class AuthController {
  @GrpcMethod('AuthService', 'ValidateToken')
   async validateTokenGrpc(data: TokenRequest): Promise<ValidationResponse> {
     const token = data?.accessToken;
-
-    if (!token) {
-      return {
-        isValid: false,
-        message: 'Access token is required',
-      };
-    }
-
     return this.authService.validateAccessToken(token);
   }
 

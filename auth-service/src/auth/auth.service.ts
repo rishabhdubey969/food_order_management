@@ -107,12 +107,15 @@ export class AuthService {
       if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET is not configured');
       }
+      console.log("new code jwt", token);
 
       const payload = this.jwtService.verify(token, {
         secret: process.env.JWT_SECRET,
         algorithms: ['HS256'],
         ignoreExpiration: false,
       }) as TokenPayload;
+
+      console.log(payload, "payload check");
 
       if (!payload?.userId || !payload?.deviceId) {
         throw new Error('Invalid token payload structure');
