@@ -12,7 +12,6 @@ import {
 } from 'class-validator';
 
 export class CreateProfileDto {
-
   @IsNotEmpty()
   @IsString()
   readonly user_id: string;
@@ -37,6 +36,4 @@ export class CreateProfileDto {
   @IsOptional()
   @IsString()
   readonly image: string;
-
 }
-

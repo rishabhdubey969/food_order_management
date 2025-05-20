@@ -7,9 +7,7 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
 
 @Module({
   imports: [
-     MongooseModule.forFeature([
-          { name: Profile.name, schema: ProfileSchema }
-        ]),
+    MongooseModule.forFeature([{ name: Profile.name, schema: ProfileSchema }]),
   ],
   controllers: [ProfileController],
   providers: [ProfileService, AuthClient],

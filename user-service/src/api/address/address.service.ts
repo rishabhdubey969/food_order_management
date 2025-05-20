@@ -1,4 +1,10 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { Address, AddressDocument } from './entities/address.entity';
@@ -28,19 +34,45 @@ export class AddressService {
     return await createdAddress.save();
   }
 
-  async getUserAddressService(user_id: string = '681dded5532116f55639eaee') {
-    return this.addressModel.find({ user_id }).exec();
+  async getUserAddressService() {
+    return await this.addressModel.find().exec();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} address`;
+  async findOneAddressService(id: string) {
+    return await this.addressModel.find({ _id: id }).exec();
   }
 
-  update(id: number, updateAddressDto: UpdateAddressDto) {
-    return `This action updates a #${id} address`;
+  async updateAddressService(id: string, updateAddressDto: UpdateAddressDto) {
+    if (!id)
+      throw new HttpException('Address Id not found', HttpStatus.FORBIDDEN);
+
+    const updatedAddress = await this.addressModel
+      .findOneAndUpdate(
+        { _id: id }, // Find the profile by userId
+        { $set: updateAddressDto }, // Update with the data from UpdateProfileDto
+        { new: true }, // Return the updated document
+      )
+      .exec();
+
+    if (!updatedAddress) {
+      this.logger.error(`Address update failed for id: ${id}`);
+      throw new HttpException(
+        'Address update failed',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    return updatedAddress;
   }
 
   async deleteAddressService(id: string) {
-    return await this.addressModel.findByIdAndDelete(id);
+    this.logger.info(`Deleting address with id: ${id}`);
+    if (!id)
+      throw new HttpException('Address Id not found', HttpStatus.FORBIDDEN);
+
+    const deletedData = await this.addressModel.findByIdAndDelete(id);
+    if (!deletedData)
+      throw new HttpException('Address not found', HttpStatus.FORBIDDEN);
+
+    return { message: 'Address deleted successfully', data: deletedData };
   }
 }

@@ -16,6 +16,7 @@ import { AuthenticationDocument, Auth } from './entities/auth.entity';
 import { Model } from 'mongoose';
 import { Auth as AuthConst } from 'const/auth.const';
 import { LoginAuthDto } from './dto/login-auth.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
 import { TokenService } from './token.service';
 
@@ -65,19 +66,21 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await this.authenticationModel.findOne({ email }).lean();
     if (!user) throw new NotFoundException('User not found');
+
     const userId = user._id.toString();
-    console.log(userId);
+
     const token = await this.tokenService.generate(userId);
-console.log(token);
+    console.log(token);
     return { message: 'Reset link sent' };
   }
 
-  async resetPassword(token: string, newPassword: string) {
-    const userId = await this.tokenService.validate(token);
-    if (!userId) throw new BadRequestException('Invalid or expired token');
+  async resetPassword(token: string, resetPasswordDto: ResetPasswordDto) {
+    const resetTokenValidate = await this.tokenService.validate(token);
+    if (!resetTokenValidate)
+      throw new BadRequestException('Invalid or expired token');
 
-    const hashed = await bcrypt.hash(newPassword, 10);
-    await this.updatePassword(userId, hashed);
+    const hashed = await bcrypt.hash(resetPasswordDto.password, 10);
+    await this.updatePassword(resetTokenValidate, hashed);
     await this.tokenService.remove(token);
 
     return { message: 'Password updated' };

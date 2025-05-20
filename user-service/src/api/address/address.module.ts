@@ -3,14 +3,13 @@ import { AddressService } from './address.service';
 import { AddressController } from './address.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Address, AddressSchema } from './entities/address.entity';
+import { AuthClient } from 'src/grpc/authentication/auth.client';
 
 @Module({
-  imports:[
-     MongooseModule.forFeature([
-          { name: Address.name, schema: AddressSchema },
-        ]),
+  imports: [
+    MongooseModule.forFeature([{ name: Address.name, schema: AddressSchema }]),
   ],
   controllers: [AddressController],
-  providers: [AddressService],
+  providers: [AddressService, AuthClient],
 })
 export class AddressModule {}

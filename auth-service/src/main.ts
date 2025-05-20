@@ -28,7 +28,7 @@ async function bootstrap() {
     transport: Transport.GRPC,
     options: {
       package: 'auth',
-      protoPath: join(__dirname, 'auth/proto/auth.proto'),
+      protoPath: join(__dirname, '../grpc/proto/auth.proto'),
       url: `0.0.0.0:${configService.get<number>('GRPC_PORT') || 5009}`,
       loader: {
         keepCase: true,
@@ -36,7 +36,7 @@ async function bootstrap() {
         enums: String,
         defaults: true,
         oneofs: true,
-        includeDirs: [join(__dirname, 'auth/proto')],
+        includeDirs: [join(__dirname, '../grpc/proto')],
       },
     },
   };

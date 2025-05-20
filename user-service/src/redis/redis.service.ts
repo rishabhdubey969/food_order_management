@@ -8,20 +8,24 @@ export type RedisClientType = ReturnType<typeof createClient>;
 export class RedisService {
   private readonly logger = new Logger(RedisService.name);
   protected redisClient;
-  constructor(private configService: ConfigService) { }
+  constructor(private configService: ConfigService) {}
 
   async connectToRedis() {
     try {
-      const redisHost = this.configService.get<string>('redis.redisHost');
-      const redisPort = this.configService.get<number>('redis.redisPort');
+      const redisHost = this.configService.get<string>('REDIS_HOST');
+      const redisPort = this.configService.get<number>('REDIS_PORT');
       const redisConfig = {
         host: redisHost,
-        port: redisPort
+        port: redisPort,
       };
-      const tls = process.env["NODE_ENV"] === "preprod" || process.env["NODE_ENV"] === "prod" ? true : false
-      
+      const tls =
+        process.env['NODE_ENV'] === 'preprod' ||
+        process.env['NODE_ENV'] === 'prod'
+          ? true
+          : false;
+
       if (tls) {
-        redisConfig['tls'] = true
+        redisConfig['tls'] = true;
       }
 
       this.redisClient = createClient({
@@ -58,11 +62,10 @@ export class RedisService {
     try {
       if (ttl) {
         return await this.redisClient.set(key, value, {
-          EX: ttl, 
+          EX: ttl,
         });
-      }
-      else {
-        return await this.redisClient.set(key, value)
+      } else {
+        return await this.redisClient.set(key, value);
       }
     } catch (error) {
       throw error;
@@ -77,8 +80,6 @@ export class RedisService {
     }
   }
 
-  
-
   async del(key: string) {
     try {
       return await this.redisClient.del(key);
@@ -86,6 +87,4 @@ export class RedisService {
       throw error;
     }
   }
-
-  
 }

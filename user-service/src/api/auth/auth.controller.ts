@@ -27,9 +27,13 @@ export class AuthController {
     return this.authService.forgotPassword(dto.email);
   }
 
-  @Post('reset-password')
-  async resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto.token, dto.password);
+  @Post('reset-password/:token')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async resetPassword(
+    @Param('token') token: string,
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ) {
+    return this.authService.resetPassword(token, resetPasswordDto);
   }
 
   @Delete(':id')
