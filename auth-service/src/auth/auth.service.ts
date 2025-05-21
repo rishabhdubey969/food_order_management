@@ -247,7 +247,7 @@ export class AuthService {
       case 'd':
         return value * 60 * 60 * 24;
       default:
-        return parseInt(timeString) || 3600; // default to 1 hour
+        return parseInt(timeString) || 3600; 
     }
   }
 
