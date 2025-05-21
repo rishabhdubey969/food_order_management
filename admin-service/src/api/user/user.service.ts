@@ -1,26 +1,62 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User } from './entities/user.entity';
+import { ListUsersDto } from './dto/list-users.dto';
 
 @Injectable()
 export class UserService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
-  }
+  constructor(
+    @InjectModel(User.name) private readonly userModel: Model<User>,
+  ) {}
 
-  findAll() {
-    return `This action returns all user`;
-  }
+  async findAll(listUsersDto: ListUsersDto) {
+   
+    const filter: any = {
+      is_active: true,
+      is_deleted: false
+    };
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+    // 2. Handle role conversion (string 'admin' -> number 2)
+   if (listUsersDto.role) {
+    if (listUsersDto.role === 'admin') {
+      filter.role = 1;
+    } else if (listUsersDto.role === 'users') { // Changed from 'customer' to 'user'
+      filter.role = 2;
+    }
+    // Else ignore invalid role values
   }
+    // 3. Pagination setup
+    const page = Math.max(1, Number(listUsersDto.page) || 1);
+    const limit = Math.max(1, Math.min(Number(listUsersDto.limit) || 10, 100));
+    const skip = (page - 1) * limit;
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+    // 4. Query execution (PROJECTION to match your frontend needs)
+    const [users, total] = await Promise.all([
+      this.userModel.find(filter)
+        .select('_id email phone role username createdAt') // Only these fields
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .lean()
+        .exec(),
+      this.userModel.countDocuments(filter)
+    ]);
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+    // 5. Convert numeric roles back to strings for client
+    const formattedUsers = users.map(user => ({
+      ...user,
+      role: user.role === 1 ? 'admin' : 'users' // Optional: Convert numbers to strings
+    }));
+
+    return {
+      data: formattedUsers,
+      meta: {
+        total,
+        page,
+        limit,
+        last_page: Math.ceil(total / limit),
+      },
+    };
   }
 }
