@@ -3,10 +3,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './entities/user.entity';
 import { ListUsersDto } from './dto/list-users.dto';
+import { SeederService } from '../seeder/seeder.service';
 
 @Injectable()
 export class UserService {
   constructor(
+    private readonly seederService : SeederService,
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
@@ -31,10 +33,18 @@ export class UserService {
     const limit = Math.max(1, Math.min(Number(listUsersDto.limit) || 10, 100));
     const skip = (page - 1) * limit;
 
+
+    console.log(filter)
+
+    
     // 4. Query execution (PROJECTION to match your frontend needs)
     const [users, total] = await Promise.all([
+<<<<<<< HEAD
       this.userModel
         .find(filter)
+=======
+     filter.role ===1 ? this.seederService.findAllAdmin(): this.userModel.find()
+>>>>>>> f6b1df7 (seed admin)
         .select('_id email phone role username createdAt') // Only these fields
         .skip(skip)
         .limit(limit)

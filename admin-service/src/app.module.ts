@@ -5,6 +5,7 @@ import userConfig from './api/user/config/user.config'
 import { AuthModule } from './api/auth/auth.module';
 import { UserModule } from './api/user/user.module'
 import { MongooseModule } from '@nestjs/mongoose';
+import { SeederModule } from './api/seeder/seeder.module';
 
 @Module({
   imports: [  
@@ -15,6 +16,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     }),
     AuthModule,
     UserModule, // Add this line
+    SeederModule
   ],
 })
 export class AppModule {}
