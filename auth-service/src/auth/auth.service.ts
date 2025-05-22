@@ -6,80 +6,36 @@ import * as bcrypt from 'bcrypt';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import * as jwt from 'jsonwebtoken';
-
-enum UserRole {
-  ADMIN = 0,
-  USER = 1,
-  MANAGER = 2,
-  DELIVERY = 3,
-}
-
-interface TokenPayload {
-  userId: string;
-  email: string;
-  name: string;
-  role: number;
-  deviceId: string;
-}
-
-interface ValidationResponse {
-  isValid: boolean;
-  message: string;
-  userId?: string;
-  role?: number;
-}
-
+import { LoginAuthDto } from './dto/login.dto';
+import { AuthTokenService } from './token.service'
+import { TokenPayload, ValidationResponse } from '../interface/auth-token.interface';
 @Injectable()
 export class AuthService {
+  
   private readonly roleCollections = {
-    [UserRole.ADMIN]: 'admins',
-    [UserRole.USER]: 'users',
-    [UserRole.MANAGER]: 'managers',
-    [UserRole.DELIVERY]: 'deliveries',
+    USER: 'users',
   };
 
   constructor(
+    private readonly authTokenService: AuthTokenService,
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
-  // ==================== TOKEN GENERATION ====================
-  async generateAccessToken(payload: TokenPayload): Promise<string> {
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET is not defined in environment variables');
-    }
-    return this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET,
-
-      expiresIn: process.env.JWT_EXPIRES_IN,
-    });
-  }
-
-  async generateRefreshToken(payload: TokenPayload): Promise<string> {
-    if (!process.env.REFRESH_TOKEN_SECRET) {
-      throw new Error(
-        'REFRESH_TOKEN_SECRET is not defined in environment variables',
-      );
-    }
-    return this.jwtService.sign(payload, {
-      secret: process.env.REFRESH_TOKEN_SECRET,
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
-    });
-  }
-
   // ==================== CORE AUTH METHODS ====================
-  async login(email: string, password: string, deviceId: string, role: number) {
-    this.validateRole(role);
-    const user = await this.findUserByEmail(email, role);
-    await this.validatePassword(password, user.password);
-    return this.generateTokens({
-      userId: user._id.toString(),
-      email: user.email,
-      name: user.name,
-      role,
-      deviceId,
-    });
+  async login(loginAuthDto: LoginAuthDto) {
+   // this.validateRole(loginAuthDto.role);
+    const userDetails = await this.findUserByEmail(loginAuthDto.email, loginAuthDto.role);
+    await this.validatePassword(loginAuthDto.password, userDetails.password);
+    const access_token = await this.authTokenService.generateAccessToken({
+      userId: userDetails._id.toString(),
+      email: userDetails.email,
+      name: userDetails.username,
+      role: userDetails.role,
+      deviceId:loginAuthDto.deviceId,
+    })
+  return { access_token:  access_token};
   }
 
   async refreshTokens(refreshToken: string) {
@@ -170,25 +126,25 @@ export class AuthService {
   }
 
   async generateTokens(payload: TokenPayload) {
-    const [accessToken, refreshToken] = await Promise.all([
-      this.generateAccessToken(payload),
-      this.generateRefreshToken(payload),
+    const [accessToken] = await Promise.all([
+      this.authTokenService.generateAccessToken(payload),
+    //  / this.authTokenService.generateRefreshToken(payload),
     ]);
 
     await this.storeTokens(
       payload.userId,
       payload.deviceId,
       accessToken,
-      refreshToken,
+     // refreshToken,
     );
-    return { accessToken, refreshToken };
+    return { accessToken};
   }
 
   private async storeTokens(
     userId: string,
     deviceId: string,
     accessToken: string,
-    refreshToken: string,
+   // refreshToken: string,
   ) {
     // Calculate expiration times
     const accessExpiry = this.parseTimeToSeconds(
@@ -206,12 +162,12 @@ export class AuthService {
         'EX',
         accessExpiry,
       ),
-      this.redisService.set(
-        `refresh:${userId}:${deviceId}`,
-        refreshToken,
-        'EX',
-        refreshExpiry,
-      ),
+      // this.redisService.set(
+      //   `refresh:${userId}:${deviceId}`,
+      //   refreshToken,
+      //   'EX',
+      //   refreshExpiry,
+      // ),
     ]);
 
     // Store in MongoDB for persistence
@@ -222,7 +178,7 @@ export class AuthService {
           userId,
           deviceId,
           accessToken,
-          refreshToken,
+         // refreshToken,
           isActive: true,
           lastUpdated: new Date(),
           accessExpiresAt: new Date(Date.now() + accessExpiry * 1000),
@@ -324,7 +280,7 @@ export class AuthService {
   }
 
   private async findUserByEmail(email: string, role: number) {
-    const collectionName = this.roleCollections[role];
+    const collectionName = this.roleCollections.USER;
     const user = await this.connection
       .collection(collectionName)
       .findOne({ email });
@@ -332,6 +288,11 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException(
         CONSTANTS.ERROR_MESSAGES.INVALID_CREDENTIALS,
+      );
+    }
+      if (!user.is_active) {
+      throw new UnauthorizedException(
+        CONSTANTS.ERROR_MESSAGES.ACCOUNT_INACTIVE,
       );
     }
 
@@ -350,9 +311,9 @@ export class AuthService {
     }
   }
 
-  private validateRole(role: number) {
-    if (!Object.values(UserRole).includes(role)) {
-      throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_ROLE);
-    }
-  }
+  // private validateRole(role: number) {
+  //   if (!Object.values(UserRole).includes(role)) {
+  //     throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_ROLE);
+  //   }
+  // }
 }

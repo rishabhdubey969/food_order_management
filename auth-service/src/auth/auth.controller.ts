@@ -29,6 +29,7 @@ import {
   GrpcMethodInterface,
 } from '../grpc/interfaces/auth-interface';
 import { LogoutRequestDto } from './dto/auth.dto';
+import { LoginAuthDto } from './dto/login.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -37,7 +38,6 @@ export class AuthController {
 
   // ==================== gRPC METHODS WITH SWAGGER ====================
   @Post('login')
-  @GrpcMethod('AuthService', 'Login')
   @ApiOperation({
     summary: 'User login',
     description: 'Authenticate user and return tokens',
@@ -90,77 +90,12 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async login(
-    @Body()
-    restBody: {
-      email: string;
-      password: string;
-      deviceId: string;
-      role: number;
-    },
-    ...grpcArgs: Parameters<GrpcMethodInterface<LoginRequest, TokenResponse>>
-  ) {
-    // Determine if this is a gRPC call
-    const isGrpcCall = grpcArgs.length > 0 && grpcArgs[0]?.email;
-
-    const loginData = isGrpcCall ? grpcArgs[0] : restBody;
-
-    if (
-      !loginData.email ||
-      !loginData.password ||
-      !loginData.deviceId ||
-      loginData.role === undefined
-    ) {
-      throw new BadRequestException('Missing required fields');
-    }
-
-    return this.authService.login(
-      loginData.email,
-      loginData.password,
-      loginData.deviceId,
-      loginData.role,
-    );
+  async login(@Body() loginAuthDto: LoginAuthDto) {
+    loginAuthDto;
+    return this.authService.login(loginAuthDto);
   }
 
   @Post('logout')
-  @GrpcMethod('AuthService', 'Logout')
-  @ApiOperation({
-    summary: 'User logout',
-    description: 'Invalidate user session and tokens',
-  })
-  @ApiBearerAuth()
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        userId: {
-          type: 'string',
-          example: '507f1f77bcf86cd799439011',
-          description: 'User ID',
-        },
-        deviceId: {
-          type: 'string',
-          example: 'device-12345',
-          description: 'Device ID to logout',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Successful logout',
-    schema: {
-      type: 'object',
-      properties: {
-        message: {
-          type: 'string',
-          example: 'Logout successful',
-        },
-      },
-    },
-  })
-  @Post('logout')
-  @GrpcMethod('AuthService', 'Logout')
   @ApiOperation({
     summary: 'User logout',
     description: 'Invalidate user session and tokens',
@@ -197,14 +132,13 @@ export class AuthController {
     return this.authService.logout(logoutData.userId, logoutData.deviceId);
   }
 
- @GrpcMethod('AuthService', 'ValidateToken')
+  @GrpcMethod('AuthService', 'ValidateToken')
   async validateTokenGrpc(data: TokenRequest): Promise<ValidationResponse> {
     const token = data?.accessToken;
     return this.authService.validateAccessToken(token);
   }
 
   @Post('refresh-token')
-  @GrpcMethod('AuthService', 'RefreshToken')
   @ApiOperation({
     summary: 'Refresh access token',
     description: 'Generate new access token using refresh token',
@@ -254,7 +188,6 @@ export class AuthController {
     return this.authService.refreshTokens(token);
   }
 
-  @Post('generate-token')
   @GrpcMethod('AuthService', 'GenerateToken')
   @ApiOperation({
     summary: 'Generate tokens',

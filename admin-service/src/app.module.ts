@@ -5,7 +5,9 @@ import userConfig from './api/user/config/user.config'
 import { AuthModule } from './api/auth/auth.module';
 import { UserModule } from './api/user/user.module'
 import { MongooseModule } from '@nestjs/mongoose';
-import { SeederModule } from './api/seeder/seeder.module';
+import { AppService } from './app.service';
+import { SeederModule } from  './seed/seeder.module'
+import { AppController } from './app.controller';
 
 @Module({
   imports: [  
@@ -15,8 +17,10 @@ import { SeederModule } from './api/seeder/seeder.module';
       load: [jwtConfig, userConfig] // Add userConfig here
     }),
     AuthModule,
-    UserModule, // Add this line
+    UserModule, 
     SeederModule
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

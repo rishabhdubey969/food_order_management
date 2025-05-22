@@ -8,8 +8,8 @@ export class RedisService {
 
   constructor() {
     this.client = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT||"6379"),
+      host: process.env.REDIS_HOST,
+      port: Number(process.env.REDIS_PORT),
     });
   }
 
@@ -19,7 +19,8 @@ export class RedisService {
 
   async get(key: string): Promise<string | null> {
     return await this.client.get(key);
-  } 
+  }
+
   async del(keys: string | string[]): Promise<number> {
     if (Array.isArray(keys)) {
       return await this.client.del(...keys);

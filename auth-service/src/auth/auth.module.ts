@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { RedisService } from '../redis/redis.service';
 import { GoogleStrategy } from './oauth.strategy';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AuthTokenService } from './token.service'
 
 
 @Module({
@@ -17,7 +18,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, RedisService, GoogleStrategy],
+  providers: [AuthService, RedisService, GoogleStrategy, AuthTokenService],
 })
 export class AuthModule {}
 
