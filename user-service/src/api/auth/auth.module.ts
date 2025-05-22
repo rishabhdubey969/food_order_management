@@ -6,11 +6,23 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
 import { RedisModule } from 'src/redis/redis.module';
 import { TokenService } from './token.service';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Auth.name, schema: AuthenticationSchema },
+    ]),
+      ClientsModule.register([
+      {
+        name: 'NOTIFICATION_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://localhost:5672'],
+          queue: 'notification_queue',
+          queueOptions: { durable: false },
+        },
+      },
     ]),
     RedisModule,
   ],

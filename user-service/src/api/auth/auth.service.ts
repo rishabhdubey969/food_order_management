@@ -19,6 +19,7 @@ import { LoginAuthDto } from './dto/login-auth.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
 import { TokenService } from './token.service';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +31,7 @@ export class AuthService {
     private readonly logger: WinstonLogger,
     private authClient: AuthClient,
     private tokenService: TokenService,
+    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy
   ) {}
 
   async signUpService(createAuthDto: CreateAuthDto) {
@@ -59,6 +61,7 @@ export class AuthService {
       isActive: createdAuthentication.is_active,
     };
 
+    this.client.emit('user_created', newUSerPayload);
     this.logger.info('user store success');
     return await this.authClient.getSignUpAccess(newUSerPayload);
   }
