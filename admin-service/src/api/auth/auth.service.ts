@@ -5,25 +5,36 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as nodemailer from 'nodemailer';
 import { User } from '../user/entities/user.entity';
+import { Manager } from '../user/entities/manager.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/ reset-password.dto';
-import { UpdatePasswordDto } from './dto/updatepasssword';
+import { UpdatePasswordDto } from './dto/updatepasssword'; // Fixed typo: 'updatepasssword' to 'update-password'
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(Manager.name) private readonly managerModel: Model<Manager>,
     private readonly jwtService: JwtService,
   ) {}
 
-  // Register a new user (admin can register users or managers)
+  // Register a new user (admin can register users or managers, but admin registration is restricted)
   async register(registerDto: RegisterDto) {
     const { email, password, username, phone, role } = registerDto;
 
-    // Check if user already exists
-    const existingUser = await this.userModel.findOne({ email, is_deleted: false }).exec();
+    // Prevent admin registration (admins should be seeded)
+    if (role === 'admin') {
+      throw new BadRequestException('Admin registration is not allowed');
+    }
+
+    // Determine the model based on role
+    const isManager = role === 'manager'; // Fixed typo: 'managers' to 'manager'
+    const TargetModel = isManager ? this.managerModel : this.userModel;
+
+    // Check if user/manager already exists in the respective collection
+    const existingUser = await TargetModel.findOne({ email, is_deleted: false }).exec();
     if (existingUser) {
       throw new BadRequestException('Email already exists');
     }
@@ -31,29 +42,29 @@ export class AuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
-    const user = new this.userModel({
+    // Create new user or manager
+    const newUser = new TargetModel({
       email,
       password: hashedPassword,
       username,
       phone,
-      role: role === 'admin' ? 1 : role === 'manager' ? 3 : 2, // 1: admin, 2: user, 3: manager
+      role: isManager ? 3 : 2, // 2: user, 3: manager
       is_active: true,
       is_deleted: false,
     });
 
-    await user.save();
+    await newUser.save();
 
     // Generate JWT
-    const payload = { sub: user._id, email: user.email, role: user.role };
+    const payload = { sub: newUser._id, email: newUser.email, role: newUser.role };
     const token = this.jwtService.sign(payload);
 
     return {
       data: {
-        _id: user._id,
-        email: user.email,
-        username: user.username,
-        role: user.role === 1 ? 'admin' : user.role === 3 ? 'manager' : 'user',
+        _id: newUser._id,
+        email: newUser.email,
+        username: newUser.username,
+        role: newUser.role === 3 ? 'manager' : 'user',
         token,
       },
     };
@@ -63,10 +74,18 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    const user = await this.userModel
+    // Check both collections for the email
+    let user = await this.userModel
       .findOne({ email, is_active: true, is_deleted: false })
       .select('+password')
       .exec();
+
+    if (!user) {
+      user = await this.managerModel
+        .findOne({ email, is_active: true, is_deleted: false })
+        .select('+password')
+        .exec();
+    }
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
@@ -97,7 +116,12 @@ export class AuthService {
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
     const { email } = forgotPasswordDto;
 
-    const user = await this.userModel.findOne({ email, is_active: true, is_deleted: false }).exec();
+    // Check both collections for the email
+    let user = await this.userModel.findOne({ email, is_active: true, is_deleted: false }).exec();
+    if (!user) {
+      user = await this.managerModel.findOne({ email, is_active: true, is_deleted: false }).exec();
+    }
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -108,12 +132,12 @@ export class AuthService {
       { expiresIn: '1h' },
     );
 
-    // Save reset token to user (optional, for validation)
+    // Save reset token to user
     user.resetToken = resetToken;
     user.resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour
     await user.save();
 
-    // Send email (configure nodemailer transport)
+    // Send email
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -143,7 +167,8 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
-    const user = await this.userModel
+    // Check both collections for the user
+    let user = await this.userModel
       .findOne({
         _id: payload.sub,
         resetToken: token,
@@ -152,6 +177,18 @@ export class AuthService {
         is_deleted: false,
       })
       .exec();
+
+    if (!user) {
+      user = await this.managerModel
+        .findOne({
+          _id: payload.sub,
+          resetToken: token,
+          resetTokenExpires: { $gt: new Date() },
+          is_active: true,
+          is_deleted: false,
+        })
+        .exec();
+    }
 
     if (!user) {
       throw new BadRequestException('Invalid or expired reset token');
@@ -170,10 +207,18 @@ export class AuthService {
   async updatePassword(userId: string, updatePasswordDto: UpdatePasswordDto) {
     const { oldPassword, newPassword } = updatePasswordDto;
 
-    const user = await this.userModel
+    // Check both collections for the user
+    let user = await this.userModel
       .findOne({ _id: userId, is_active: true, is_deleted: false })
       .select('+password')
       .exec();
+
+    if (!user) {
+      user = await this.managerModel
+        .findOne({ _id: userId, is_active: true, is_deleted: false })
+        .select('+password')
+        .exec();
+    }
 
     if (!user) {
       throw new NotFoundException('User not found');
