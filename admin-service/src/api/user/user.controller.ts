@@ -6,8 +6,8 @@ import { ListUsersDto } from './dto/list-users.dto';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // @Get()
-  // findAll(@Query() listUsersDto: ListUsersDto) {
-  //   //return this.userService.findAll(listUsersDto);
-  // }
+  @Get()
+  findAll(@Query() listUsersDto: ListUsersDto) {
+    return this.userService.findAll(listUsersDto);
+  }
 }

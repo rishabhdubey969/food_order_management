@@ -1,30 +1,34 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document } from 'mongoose';
 
-@Schema() 
-export class User {
-  @Prop()
-  _id: Types.ObjectId;
-
-  @Prop({ required: true })
+@Schema({ timestamps: true })
+export class User extends Document {
+  @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop()
+  @Prop({ required: true })
   password: string;
 
-  @Prop()
-  phone: string;
+  @Prop({ required: true })
+  username: string;
 
-  @Prop({ default: 1 }) 
+  @Prop()
+  phone?: string;
+
+  @Prop({ default: 2 }) // 1: admin, 2: user, 3: manager
   role: number;
 
   @Prop({ default: true })
   is_active: boolean;
 
+  @Prop({ default: false })
+  is_deleted: boolean;
 
-  @Prop({ default: Date.now })
-  createdAt: Date;
+  @Prop({ type: String, default: null }) // Allow null explicitly
+  resetToken?: string | null;
+
+  @Prop({ type: Date, default: null }) // Allow null explicitly
+  resetTokenExpires?: Date | null;
 }
-
 
 export const UserSchema = SchemaFactory.createForClass(User);
