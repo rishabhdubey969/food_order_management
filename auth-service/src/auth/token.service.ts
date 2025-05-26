@@ -1,32 +1,34 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import * as jwt from 'jsonwebtoken';
-import { TokenPayload } from '../interface/auth-token.interface';
 
 @Injectable()
 export class AuthTokenService {
+  private readonly jwtSecret = process.env.JWT_SECRET as string;
+  private readonly jwtRefreshSecret = process.env.REFRESH_TOKEN_SECRET as string;
 
-  constructor(private readonly jwtService: JwtService) {}
+  generateAccessToken(userId: string): string {
+    return jwt.sign({ sub: userId }, this.jwtSecret, { expiresIn: '15m' });
+  }
 
-  async generateAccessToken(payload: TokenPayload): Promise<string> {
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET is not defined in environment variables');
-    }
-    return this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET,
-      expiresIn: process.env.JWT_EXPIRES_IN,
+  generateRefreshToken(userId: string, sessionId: string): string {
+    return jwt.sign({ sub: userId, sid: sessionId }, this.jwtSecret, {
+      expiresIn: '7d',
     });
   }
 
-  async generateRefreshToken(payload: TokenPayload): Promise<string> {
-    if (!process.env.REFRESH_TOKEN_SECRET) {
-      throw new Error(
-        'REFRESH_TOKEN_SECRET is not defined in environment variables',
-      );
+  verifyToken(token: string): any {
+     try {
+      return jwt.verify(token, this.jwtSecret);
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired token');
     }
-    return this.jwtService.sign(payload, {
-      secret: process.env.REFRESH_TOKEN_SECRET,
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
-    });
+  }
+
+  verifyRefreshToken(token: string): any {
+    try {
+      return jwt.verify(token, this.jwtRefreshSecret);
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
   }
 }

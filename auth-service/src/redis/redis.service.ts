@@ -13,8 +13,17 @@ export class RedisService {
     });
   }
 
-  async set(key: string, value: string, p0: string, p1: number) {
-    await this.client.set(key, value);
+  // async set(key: string, value: string, p0: string, p1: number) {
+  //   await this.client.set(key, value);
+  // }
+
+  async set(key: string, value: any, p0: string, ttlSeconds?: number): Promise<void> {
+    const serialized = JSON.stringify(value);
+    if (ttlSeconds) {
+      await this.client.setex(key, ttlSeconds, serialized);
+    } else {
+      await this.client.set(key, serialized);
+    }
   }
 
   async get(key: string): Promise<string | null> {
@@ -27,5 +36,4 @@ export class RedisService {
     }
     return await this.client.del(keys);
   }
-
 }

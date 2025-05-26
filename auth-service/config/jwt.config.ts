@@ -3,5 +3,5 @@ export default () => ({
   jwtExpiresIn: process.env.JWT_EXPIRES_IN,
   refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
   redisHost: process.env.REDIS_HOST,
-  redisPort: parseInt(process.env.REDIS_PORT || ''),
+  redisPort: Number(process.env.REDIS_PORT),
 });

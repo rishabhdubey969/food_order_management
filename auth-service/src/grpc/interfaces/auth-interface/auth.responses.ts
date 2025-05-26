@@ -9,7 +9,3 @@ export interface ValidationResponse {
   userId?: string;
   role?: number;
 }
-
-export interface LogoutResponse {
-  message: string;
-}

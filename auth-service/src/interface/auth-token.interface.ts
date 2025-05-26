@@ -12,3 +12,4 @@ export interface ValidationResponse {
   userId?: string;
   role?: number;
 }
+

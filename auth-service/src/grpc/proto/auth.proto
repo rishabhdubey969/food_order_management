@@ -1,56 +1,30 @@
 syntax = "proto3";
 
 package auth;
+import "google/protobuf/struct.proto";
 
 service AuthService {
-  // Authentication methods
-  rpc Login (LoginRequest) returns (TokenResponse);
-  rpc Logout (LogoutRequest) returns (LogoutResponse);
-  rpc ValidateToken (TokenRequest) returns (ValidationResponse);
-  rpc RefreshToken (RefreshRequest) returns (TokenResponse);
+  rpc ValidateToken (ValidateTokenRequest) returns (TokenValidationResponse);
   rpc GenerateToken (GenerateTokenRequest) returns (TokenResponse);
 }
 
-// Request/Response messages
+message ValidateTokenRequest {
+  string accessToken = 1;
+}
 
-message LoginRequest {
-  string email = 1;
-  string password = 2;
-  string deviceId = 3;
-  int32 role = 4;  // 0=Admin, 1=User, 2=Manager, 3=Delivery
+message TokenValidationResponse {
+  bool isValid = 1;
+  string message = 2;
 }
 
 message TokenResponse {
   string accessToken = 1;
   string refreshToken = 2;
-}
-
-message LogoutRequest {
-  string userId = 1;
-  string deviceId = 2;
-}
-
-message LogoutResponse {
-  string message = 1;
-}
-
-message TokenRequest {
-  string accessToken = 1;
-}
-
-message ValidationResponse {
-  bool isValid = 1;
-  string message = 2;
-}
-
-message RefreshRequest {
-  string refreshToken = 1;
+  google.protobuf.Struct userData = 3;
 }
 
 message GenerateTokenRequest {
-  string userId = 1;
-  string email = 2;
-  string name = 3;
-  int32 role = 4;
-  string deviceId = 5;
+  string id = 1;
+  string userAgent = 2;
+  string ip = 3;
 }

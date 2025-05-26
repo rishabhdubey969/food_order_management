@@ -16,6 +16,7 @@ export const CONSTANTS = {
     INVALID_TOKEN: 'Invalid token ',
     EXPIRED_TOKEN: 'Token Expired',
     ACCOUNT_INACTIVE: 'Your account is inactive',
+    INVALID_OR_EXPIRED_TOKEN: 'Invalid or expired token.',
   },
 
   // Success Messages
@@ -68,7 +69,8 @@ export const CONSTANTS = {
 
   REDIS_EXPIRY_TIMES: {
     ACCESS_TOKEN_EXPIRY: 15 * 60, // 15 minutes in seconds
-    REFRESH_TOKEN_EXPIRY: 7 * 24 * 60 * 60, // 7 days in seconds
+    REFRESH_TOKEN_EXPIRY: 7 * 24 * 60 * 60, // 7 days in second
+    SEVEN_DAYS:  7 * 86400 // 7 Days Store
   },
 
   // Environment Variables (you can use these for sensitive information)

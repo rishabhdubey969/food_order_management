@@ -6,6 +6,7 @@ import {
   Delete,
   ValidationPipe,
   UsePipes,
+  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
@@ -18,8 +19,8 @@ export class AuthController {
 
   @Post('signup')
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  signUp(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.signUpService(createAuthDto);
+  signUp(@Body() createAuthDto: CreateAuthDto, @Req() req: any) {
+    return this.authService.signUpService(createAuthDto, req);
   }
 
   @Post('forgot-password')

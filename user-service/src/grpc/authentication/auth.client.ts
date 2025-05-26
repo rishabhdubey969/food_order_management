@@ -5,6 +5,7 @@ import {
   accessTokenRequest,
   AUTH_PACKAGE_NAME,
   AUTH_SERVICE_NAME,
+  generateTokenData,
   GrpcAuthService,
 } from './auth.interface';
 import { lastValueFrom } from 'rxjs';
@@ -28,17 +29,16 @@ export class AuthClient implements OnModuleInit {
     console.log('grpc started');
   }
 
-  async getSignUpAccess(userData) {
-    console.log(userData);
-    const response = await lastValueFrom(
-      this.grpcAuthService.GenerateToken(userData),
+  async getSignUpAccess(id: string, ip:string, userAgent: string) {
+    const generateRequest: generateTokenData = { id, userAgent, ip };
+    const SignupResponse = await lastValueFrom(
+      this.grpcAuthService.GenerateToken(generateRequest),
     );
-    console.log(response);
-    return response;
+    console.log(SignupResponse);
+    return SignupResponse;
   }
 
   async ValidateTokenAuthService(accessToken: string) {
-    //console.log(accessToken);
     const request: accessTokenRequest = { accessToken };
 
     const response = await lastValueFrom(

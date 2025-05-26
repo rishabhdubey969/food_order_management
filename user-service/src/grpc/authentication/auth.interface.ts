@@ -3,12 +3,10 @@ import { Observable } from 'rxjs';
 export const AUTH_PACKAGE_NAME = 'auth';
 export const AUTH_SERVICE_NAME = 'AuthService';
 
-export interface TokenData {
+export interface generateTokenData {
   id: string;
-  email: string;
-  phone: number;
-  role: number;
-  isActive: boolean;
+  userAgent: string;
+  ip : string;
 }
 
 export interface accessTokenRequest {
@@ -20,7 +18,14 @@ export interface accessTokenResponse {
   message: string;
 }
 
+export interface generateTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  userData: Record<string, any>; // Struct is deserialized to JS object
+
+}
+
 export interface GrpcAuthService {
-  ValidateToken(data: accessTokenRequest): Observable<accessTokenResponse>;
-  GenerateToken(data): Observable<TokenData>;
+ GenerateToken( data:generateTokenData): Observable<generateTokenResponse>;
+ValidateToken(data: accessTokenRequest): Observable<accessTokenResponse>;
 }

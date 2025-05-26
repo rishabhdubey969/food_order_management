@@ -29,7 +29,7 @@ async function bootstrap() {
     options: {
       package: 'auth',
       protoPath: join(__dirname, '../grpc/proto/auth.proto'),
-      url: `0.0.0.0:${configService.get<number>('GRPC_PORT') || 5009}`,
+      url: `0.0.0.0:${configService.get<number>('GRPC_PORT')}`,
       loader: {
         keepCase: true,
         longs: String,
@@ -48,7 +48,7 @@ async function bootstrap() {
 
   console.log(`HTTP server running on port ${port}`);
   console.log(
-    `gRPC server running on port ${configService.get<number>('GRPC_PORT') || 5009}`,
+    `gRPC server running on port ${configService.get<number>('GRPC_PORT')}`,
   );
 }
 

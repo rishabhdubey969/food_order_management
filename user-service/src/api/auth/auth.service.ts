@@ -13,7 +13,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { AuthenticationDocument, Auth } from './entities/auth.entity';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Auth as AuthConst } from 'const/auth.const';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -31,10 +31,11 @@ export class AuthService {
     private readonly logger: WinstonLogger,
     private authClient: AuthClient,
     private tokenService: TokenService,
-    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy
+    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
   ) {}
 
-  async signUpService(createAuthDto: CreateAuthDto) {
+  async signUpService(createAuthDto: CreateAuthDto, req: any) {
+    this.logger.info('user store start');
     const { email, password } = createAuthDto;
     const existingAuthenticationLogin = await this.authenticationModel
       .findOne({ email })
@@ -51,7 +52,10 @@ export class AuthService {
       ...createAuthDto,
       password: hashedPassword,
     });
+
     await createdAuthentication.save();
+     const id = (createdAuthentication._id as Types.ObjectId).toString();
+
 
     const newUSerPayload = {
       id: createdAuthentication._id,
@@ -61,9 +65,13 @@ export class AuthService {
       isActive: createdAuthentication.is_active,
     };
 
+    
+
     this.client.emit('user_created', newUSerPayload);
     this.logger.info('user store success');
-    return await this.authClient.getSignUpAccess(newUSerPayload);
+
+    const tokensData = await this.authClient.getSignUpAccess(id, req.ip, req.headers['user-agent']);
+    return { message: "Congratulations, you’ve successfully signed up!", data: tokensData };
   }
 
   async forgotPassword(email: string) {
