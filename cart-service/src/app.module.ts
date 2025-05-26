@@ -9,6 +9,7 @@ import { CartModule } from './cart/cart.module';
       isGlobal: true,
     }),
     MongooseModule.forRoot('mongodb+srv://FoodOrder:FoodAdmin123@cluster0.hcogxon.mongodb.net/food?retryWrites=true&w=majority&appName=Cluster0'),
+    // MongooseModule.forRoot('mongodb://localhost:27017/food'),
     CartModule,
   ],
   providers: [],
