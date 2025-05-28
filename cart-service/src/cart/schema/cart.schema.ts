@@ -20,6 +20,7 @@ export class Cart {
     },
   ])
   items: {
+    tax: number;
     itemId: string;
     name: string;
     quantity: number;

@@ -24,6 +24,7 @@ export class Coupon {
 
   @Prop()
   freeItem?: string;
+  discountPercentage: number;
 }
 
 export const CouponSchema = SchemaFactory.createForClass(Coupon);
