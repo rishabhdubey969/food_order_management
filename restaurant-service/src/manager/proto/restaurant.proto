@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package restaurant;
+
+service RestaurantService {
+  rpc IsItemAvailable (ItemAvailabilityRequest) returns (ItemAvailabilityResponse);
+}
+
+message ItemAvailabilityRequest {
+  string cartId = 1;
+}
+
+message ItemAvailabilityResponse {
+  bool available = 1;
+}
