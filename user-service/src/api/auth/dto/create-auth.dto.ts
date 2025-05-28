@@ -1,31 +1,27 @@
 import {
-    IsNotEmpty,
-    IsString,
-    IsEmail,
-    MinLength,
-    IsInt,
-    IsBoolean,
-    IsArray,
-  } from 'class-validator';
+  IsNotEmpty,
+  IsString,
+  IsEmail,
+  MinLength,
+  IsInt,
+  IsBoolean,
+  IsArray,
+} from 'class-validator';
 
-  export class CreateAuthDto {
+export class CreateAuthDto {
+  @IsNotEmpty()
+  @IsEmail()
+  @IsString()
+  readonly email: string;
 
-    @IsNotEmpty()
-    @IsString()
-    readonly username: string;
+  @IsNotEmpty()
+  @MinLength(8)
+  readonly password: string;
 
-    @IsNotEmpty()
-    @IsEmail()
-    @IsString()
-    readonly email: string;
+  @IsNotEmpty()
+  @MinLength(10)
+  readonly phone: string;
 
-    @IsNotEmpty()
-    @MinLength(8)
-    readonly password: string;
-
-    @IsNotEmpty()
-    @IsBoolean()
-    readonly is_active: boolean;
-
-  }
-  
+  @IsNotEmpty()
+  readonly role: number;
+}

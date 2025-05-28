@@ -1,18 +1,55 @@
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import * as path from 'path';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
+  const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+
+  // HTTP Configuration
+  const port = configService.get<number>('PORT') || 3000;
+
+  // Swagger Configuration
+  const config = new DocumentBuilder()
+    .setTitle('Food Order Auth Service')
+    .setDescription('Authentication Service API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
+  // gRPC Configuration
+  const grpcOptions: MicroserviceOptions = {
     transport: Transport.GRPC,
     options: {
       package: 'auth',
-      protoPath: path.resolve(process.cwd(), 'src/auth/proto/auth.proto'),
-      url: '127.0.0.1:5003',
+      protoPath: join(__dirname, '../grpc/proto/auth.proto'),
+      url: `0.0.0.0:${configService.get<number>('GRPC_PORT')}`,
+      loader: {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true,
+        includeDirs: [join(__dirname, '../grpc/proto')],
+      },
     },
-  });
+  };
 
-  await app.listen();
+  app.connectMicroservice(grpcOptions);
+
+  await app.startAllMicroservices();
+  await app.listen(port);
+
+  console.log(`HTTP server running on port ${port}`);
+  console.log(
+    `gRPC server running on port ${configService.get<number>('GRPC_PORT')}`,
+  );
 }
+
 bootstrap();

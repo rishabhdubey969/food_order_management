@@ -6,16 +6,16 @@ export const winstonConfig = {
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.timestamp(),
-        nestWinstonModuleUtilities.format.nestLike(), 
+        nestWinstonModuleUtilities.format.nestLike(),
       ),
     }),
     new winston.transports.File({
-        filename: 'logs/app.log',
-        level: 'info', // Make sure you're logging at 'info' or lower (e.g., debug)
-        format: winston.format.combine(
-          winston.format.timestamp(),
-          winston.format.json(),
-        ),
-      }),
+      filename: 'logs/app.log',
+      level: 'info', // Make sure you're logging at 'info' or lower (e.g., debug)
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json(),
+      ),
+    }),
   ],
 };

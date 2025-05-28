@@ -1,8 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ValidationPipe, UsePipes } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Param,
+  Delete,
+  ValidationPipe,
+  UsePipes,
+  Req,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
-import { LoginAuthDto } from './dto/login-auth.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -10,24 +19,22 @@ export class AuthController {
 
   @Post('signup')
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  signUp(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.signUpService(createAuthDto);
+  signUp(@Body() createAuthDto: CreateAuthDto, @Req() req: any) {
+    return this.authService.signUpService(createAuthDto, req);
   }
 
-  @Post('login')
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Post('reset-password/:token')
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  login(@Body() loginAuthDto: LoginAuthDto) {
-    return this.authService.loginService(loginAuthDto);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
+  async resetPassword(
+    @Param('token') token: string,
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ) {
+    return this.authService.resetPassword(token, resetPasswordDto);
   }
 
   @Delete(':id')

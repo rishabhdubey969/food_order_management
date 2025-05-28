@@ -1,3 +1,5 @@
-export const  DataBaseConst = {
-    USER: 'users',
+export const DataBaseConst = {
+  USER: 'users',
+  PROFILE: 'profiles',
+  ADDRESS: 'address',
 };

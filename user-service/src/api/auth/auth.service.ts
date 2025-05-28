@@ -1,31 +1,41 @@
-import { Injectable, Inject, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { AuthenticationDocument, Auth } from './entities/auth.entity';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Auth as AuthConst } from 'const/auth.const';
 import { LoginAuthDto } from './dto/login-auth.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
-
+import { TokenService } from './token.service';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AuthService {
-
   constructor(
     @InjectModel(Auth.name)
     private authenticationModel: Model<AuthenticationDocument>,
     private jwtService: JwtService,
-    @Inject(WINSTON_MODULE_PROVIDER) 
+    @Inject(WINSTON_MODULE_PROVIDER)
     private readonly logger: WinstonLogger,
-    private authClient:AuthClient
-  ) { }
+    private authClient: AuthClient,
+    private tokenService: TokenService,
+    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
+  ) {}
 
-  async signUpService(createAuthDto: CreateAuthDto) {
+  async signUpService(createAuthDto: CreateAuthDto, req: any) {
+    this.logger.info('user store start');
     const { email, password } = createAuthDto;
     const existingAuthenticationLogin = await this.authenticationModel
       .findOne({ email })
@@ -40,57 +50,60 @@ export class AuthService {
 
     const createdAuthentication = new this.authenticationModel({
       ...createAuthDto,
-      password: hashedPassword
+      password: hashedPassword,
     });
+
     await createdAuthentication.save();
-
-    // we removed password from the response for security reasons
-    const { password: string, ...userWithoutPassword } = createdAuthentication.toObject();
-
-    this.logger.info('user store success');
-    return userWithoutPassword;
-  }
+     const id = (createdAuthentication._id as Types.ObjectId).toString();
 
 
-  async loginService(loginAuthDto: LoginAuthDto) {
-    const { email, password } = loginAuthDto;
-    const existingAuthenticationLogin = await this.authenticateUser(email);
-
-    const isPasswordValid = await bcrypt.compare(password, existingAuthenticationLogin.password);
-
-    if (!isPasswordValid) {
-      throw new HttpException(AuthConst.PASSWORD_NOT_FOUND, HttpStatus.FORBIDDEN);
-    }
-
-    const payload = {
-      id: existingAuthenticationLogin._id,
-      email: existingAuthenticationLogin.email,
+    const newUSerPayload = {
+      id: createdAuthentication._id,
+      email: createdAuthentication.email,
+      phone: createdAuthentication.phone,
+      role: createdAuthentication.role,
+      isActive: createdAuthentication.is_active,
     };
-    this.logger.info('token store success');
-    // return {
-    //    access_token: await this.jwtService.signAsync(payload),
-    // };
-    const token = await this.jwtService.signAsync(payload);
- return await this.authClient.getLoginAccess(token);
 
+    
+
+    this.client.emit('user_created', newUSerPayload);
+    this.logger.info('user store success');
+
+    const tokensData = await this.authClient.getSignUpAccess(id, req.ip, req.headers['user-agent']);
+    return { message: "Congratulations, you’ve successfully signed up!", data: tokensData };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
+  async forgotPassword(email: string) {
+    const user = await this.authenticationModel.findOne({ email }).lean();
+    if (!user) throw new NotFoundException('User not found');
+
+    const userId = user._id.toString();
+
+    const token = await this.tokenService.generate(userId);
+    console.log(token);
+    return { message: 'Reset link sent' };
   }
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
+  async resetPassword(token: string, resetPasswordDto: ResetPasswordDto) {
+    const resetTokenValidate = await this.tokenService.validate(token);
+    if (!resetTokenValidate)
+      throw new BadRequestException('Invalid or expired token');
+
+    const hashed = await bcrypt.hash(resetPasswordDto.password, 10);
+    await this.updatePassword(resetTokenValidate, hashed);
+    await this.tokenService.remove(token);
+
+    return { message: 'Password updated' };
   }
 
   remove(id: number) {
     return `This action removes a #${id} auth`;
   }
 
-
   /**
    * @description  Authentication User (Private function)
-   * @param email 
+   * @param email
    * @returns Return user information if email is authenticated
    */
   async authenticateUser(email: string) {
@@ -102,5 +115,16 @@ export class AuthService {
       throw new HttpException(AuthConst.EMAIL_NOT_FOUND, HttpStatus.FORBIDDEN);
     }
     return existingAuthenticationLogin;
+  }
+
+  async findByEmail(email: string): Promise<Auth | null> {
+    return this.authenticationModel.findOne({ email }).exec();
+  }
+
+  async updatePassword(userId: string, newPassword: string): Promise<void> {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.authenticationModel
+      .updateOne({ _id: userId }, { $set: { password: hashedPassword } })
+      .exec();
   }
 }

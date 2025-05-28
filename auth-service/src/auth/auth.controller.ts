@@ -1,36 +1,54 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthGuard } from '@nestjs/passport';
+import { LoginAuthDto } from './dto/login.dto';
+import { CONSTANTS } from 'config/constant';
+import {
+  GenerateTokenRequest,
+  TokenRequest,
+  TokenResponse,
+  ValidationResponse,
+} from 'src/grpc/interfaces/auth-interface';
+import { GrpcMethod } from '@nestjs/microservices';
 
-@Controller()
+@Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @GrpcMethod('AuthService', 'ValidateToken')
-  async validateToken({ accessToken }: { accessToken: string }) {
-    console.log(accessToken);
-    return await this.authService.validateAccessToken(accessToken);
+  @Post('login')
+  async login(@Body() loginDto: LoginAuthDto, @Req() req: Request) {
+    const user = await this.authService.validateUser(loginDto); // assume a function
+    return this.authService.login(user, req);
   }
 
-  @GrpcMethod('AuthService', 'RefreshToken')
-  async refreshToken({ refreshToken }: { refreshToken: string }) {
-    return await this.authService.refreshAccessToken(refreshToken);
+  @Post('refresh')
+  async refresh(@Body() body: { refreshToken: string }, @Req() req: Request) {
+    return this.authService.refreshToken(body.refreshToken, req);
   }
+
+  @Post('logout')
+  async logout(@Body() body: { sessionId: string }) {
+    return this.authService.logout(body.sessionId);
+  }
+
+  @Post('logout-all')
+  async logoutAll(@Req() req) {
+    return this.authService.logoutAll(req.user.sub);
+  }
+
   @GrpcMethod('AuthService', 'GenerateToken')
-  async generateToken(payload) {
-    return this.authService.generateTokens(payload);
-  }
-  @UseGuards(AuthGuard('google'))
-  @Get('google')
-  async googleLogin() {
-    return 'This route will redirect you to Google for authentication';
+  async generateToken(request: GenerateTokenRequest) {
+    const req = { userAgent: request.userAgent, ip: request.ip };
+    return this.authService.generateTokenService(request.id, req);
   }
 
-  @UseGuards(AuthGuard('google'))
-  @Get('google/redirect')
-  googleRedirect() {
-  
-    return 'Google Authentication successful, now you can handle your post-login logic here';
+  @GrpcMethod('AuthService', 'ValidateToken')
+  async ValidateToken(data: TokenRequest) {
+    return this.authService.ValidateTokenService(data.accessToken);
   }
 }

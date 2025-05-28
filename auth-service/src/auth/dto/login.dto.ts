@@ -1,0 +1,19 @@
+import { IsNotEmpty, IsString, IsEmail, MinLength } from 'class-validator';
+export class LoginAuthDto {
+  @IsNotEmpty()
+  @IsEmail()
+  @IsString()
+  readonly email: string;
+
+  @IsNotEmpty()
+  @MinLength(8)
+  readonly password: string;
+
+  @IsNotEmpty()
+  @IsString()
+  readonly deviceId: string;
+
+  @IsNotEmpty()
+  @IsString()
+  readonly role: number;
+}
