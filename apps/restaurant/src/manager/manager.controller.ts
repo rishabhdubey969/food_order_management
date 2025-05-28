@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import ManagerLoginDto from 'apps/restaurant/src/manager/dto/managerLogin.dto';
 import { ManagerService } from './manager.service';
 import ManagerSignupDto from 'apps/restaurant/src/manager/dto/managerSignup.dto';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('manager')
 export class ManagerController {
@@ -22,4 +23,11 @@ export class ManagerController {
     getManagerById(@Query('id') id: string) {
         return this.managerService.getManagerById(id);
     }
+
+    @MessagePattern({ cmd: 'approve_manager' })
+    approveManager(@Payload() data: { managerId: string }) {
+    return this.managerService.activateManager(data.managerId);
+    }
+
 }
+

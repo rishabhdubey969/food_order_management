@@ -15,8 +15,22 @@ export class Manager extends Document {
   @Prop({ required: true })
   password: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Restaurant', required: false })
-  restaurantId: Types.ObjectId;
+  @Prop({ required: true })
+  restaurantId: string;
+
+  @Prop({ default: 'pending', enum: ['pending', 'active', 'rejected'] })
+  isActive: string
+
+  @Prop()
+  accountNumber: string;
+
+  @Prop()
+  ifscCode: string;
+
+  @Prop()
+  bankName: string;
 }
+export type ManagerDocument = Manager & Document;
 
 export const ManagerSchema = SchemaFactory.createForClass(Manager);
+
