@@ -1,4 +1,5 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
+// src/auth/auth.service.ts
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
@@ -10,7 +11,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/ reset-password.dto';
-import { UpdatePasswordDto } from './dto/updatepasssword'; // Fixed typo: 'updatepasssword' to 'update-password'
+import { UpdatePasswordDto } from './dto/updatepasssword';
 
 @Injectable()
 export class AuthService {
@@ -20,42 +21,38 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  // Register a new user (admin can register users or managers, but admin registration is restricted)
   async register(registerDto: RegisterDto) {
     const { email, password, username, phone, role } = registerDto;
 
-    // Prevent admin registration (admins should be seeded)
     if (role === 'admin') {
-      throw new BadRequestException('Admin registration is not allowed');
+      throw new Error('Admin registration is not allowed');
     }
 
-    // Determine the model based on role
-    const isManager = role === 'manager'; // Fixed typo: 'managers' to 'manager'
+    const isManager = role === 'manager';
     const TargetModel = isManager ? this.managerModel : this.userModel;
 
-    // Check if user/manager already exists in the respective collection
-    const existingUser = await TargetModel.findOne({ email, is_deleted: false }).exec();
+    const existingUser = await TargetModel.findOne({
+      email,
+      is_deleted: false,
+    }).exec();
     if (existingUser) {
-      throw new BadRequestException('Email already exists');
+      throw new Error('Email already exists');
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user or manager
     const newUser = new TargetModel({
       email,
       password: hashedPassword,
       username,
       phone,
-      role: isManager ? 3 : 2, // 2: user, 3: manager
+      role: isManager ? 3 : 2,
       is_active: true,
       is_deleted: false,
     });
 
     await newUser.save();
 
-    // Generate JWT
     const payload = { sub: newUser._id, email: newUser.email, role: newUser.role };
     const token = this.jwtService.sign(payload);
 
@@ -70,11 +67,9 @@ export class AuthService {
     };
   }
 
-  // Login for users/managers (admin can use this to log in others)
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    // Check both collections for the email
     let user = await this.userModel
       .findOne({ email, is_active: true, is_deleted: false })
       .select('+password')
@@ -88,10 +83,9 @@ export class AuthService {
     }
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new Error('Invalid credentials');
     }
 
-    // Generate JWT
     const payload = { sub: user._id, email: user.email, role: user.role };
     const token = this.jwtService.sign(payload);
 
@@ -106,38 +100,35 @@ export class AuthService {
     };
   }
 
-  // Logout (invalidate token by client-side removal, server can optionally blacklist)
   async logout(userId: string) {
-    // In a real app, you might blacklist the token in Redis or a DB
     return { message: 'Logged out successfully' };
   }
 
-  // Forgot Password (send reset link via email)
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
     const { email } = forgotPasswordDto;
 
-    // Check both collections for the email
-    let user = await this.userModel.findOne({ email, is_active: true, is_deleted: false }).exec();
+    let user = await this.userModel
+      .findOne({ email, is_active: true, is_deleted: false })
+      .exec();
     if (!user) {
-      user = await this.managerModel.findOne({ email, is_active: true, is_deleted: false }).exec();
+      user = await this.managerModel
+        .findOne({ email, is_active: true, is_deleted: false })
+        .exec();
     }
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new Error('User not found');
     }
 
-    // Generate reset token
     const resetToken = this.jwtService.sign(
       { sub: user._id, email: user.email },
       { expiresIn: '1h' },
     );
 
-    // Save reset token to user
     user.resetToken = resetToken;
-    user.resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour
+    user.resetTokenExpires = new Date(Date.now() + 3600000);
     await user.save();
 
-    // Send email
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -156,18 +147,17 @@ export class AuthService {
     return { message: 'Password reset email sent' };
   }
 
-  // Reset Password (using reset token)
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
     const { token, newPassword } = resetPasswordDto;
 
     let payload;
+    // We need a local try-catch here for token verification
     try {
       payload = this.jwtService.verify(token);
     } catch (error) {
-      throw new BadRequestException('Invalid or expired reset token');
+      throw new Error('Invalid or expired reset token');
     }
 
-    // Check both collections for the user
     let user = await this.userModel
       .findOne({
         _id: payload.sub,
@@ -191,48 +181,14 @@ export class AuthService {
     }
 
     if (!user) {
-      throw new BadRequestException('Invalid or expired reset token');
+      throw new Error('Invalid or expired reset token');
     }
 
-    // Update password
     user.password = await bcrypt.hash(newPassword, 10);
     user.resetToken = null;
     user.resetTokenExpires = null;
     await user.save();
 
     return { message: 'Password reset successfully' };
-  }
-
-  // Update Password (for logged-in users or admin updating for others)
-  async updatePassword(userId: string, updatePasswordDto: UpdatePasswordDto) {
-    const { oldPassword, newPassword } = updatePasswordDto;
-
-    // Check both collections for the user
-    let user = await this.userModel
-      .findOne({ _id: userId, is_active: true, is_deleted: false })
-      .select('+password')
-      .exec();
-
-    if (!user) {
-      user = await this.managerModel
-        .findOne({ _id: userId, is_active: true, is_deleted: false })
-        .select('+password')
-        .exec();
-    }
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Verify old password
-    if (!(await bcrypt.compare(oldPassword, user.password))) {
-      throw new UnauthorizedException('Invalid old password');
-    }
-
-    // Update password
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-
-    return { message: 'Password updated successfully' };
   }
 }

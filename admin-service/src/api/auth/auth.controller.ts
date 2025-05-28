@@ -36,8 +36,4 @@ export class AuthController {
     return this.authService.resetPassword(resetPasswordDto);
   }
 
-  @Post('update-password/:userId')
-  updatePassword(@Param('userId') userId: string, @Body() updatePasswordDto: UpdatePasswordDto) {
-    return this.authService.updatePassword(userId, updatePasswordDto);
-  }
 }
