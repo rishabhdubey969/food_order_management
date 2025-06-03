@@ -24,4 +24,8 @@ export class CreateAuthDto {
 
   @IsNotEmpty()
   readonly role: number;
+
+   @IsNotEmpty()
+   @IsString()
+  readonly otp: string;
 }

@@ -7,7 +7,11 @@ import {
   UnauthorizedException,
   Inject,
 } from '@nestjs/common';
+<<<<<<< Updated upstream
 import { Auth } from 'const/auth.const';
+=======
+import { Auth, AUTH_GUARD_MESSAGE } from 'constants/auth.const';
+>>>>>>> Stashed changes
 import { AuthClient } from 'src/grpc/authentication/auth.client';
 import { Request } from 'express';
 import { Logger as WinstonLogger } from 'winston';
@@ -53,8 +57,13 @@ console.log(user);
       request.user = user;
       return true;
     } catch (error) {
+<<<<<<< Updated upstream
       this.logger.info(`Authentication header have some issues: ${error}`);
       throw new UnauthorizedException('Invalid token');
+=======
+      this.logger.info(`${AUTH_GUARD_MESSAGE.AUTHORIZATION_HEADER_ISSUE}: ${error}`);
+      throw new UnauthorizedException(error);
+>>>>>>> Stashed changes
     }
   }
 }

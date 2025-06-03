@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+<<<<<<< Updated upstream
 // import RedisClient from '@redis/client/dist/lib/client';
+=======
+import { REDIS_LOGGER } from 'constants/redis.const';
+>>>>>>> Stashed changes
 import { createClient } from 'redis';
 
 export type RedisClientType = ReturnType<typeof createClient>;
@@ -86,5 +90,13 @@ export class RedisService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async incr(key: string): Promise<number> {
+    return this.redisClient.incr(key); // Ensure you return the result!
+  }
+
+  async expire(key: string, ttl: number): Promise<number> {
+    return this.redisClient.expire(key, ttl); // Ensure you return the result!
   }
 }
