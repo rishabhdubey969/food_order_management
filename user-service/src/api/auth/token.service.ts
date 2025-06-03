@@ -1,13 +1,8 @@
-<<<<<<< Updated upstream
 import { Injectable } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
-=======
-import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
->>>>>>> Stashed changes
 import { createHash, randomBytes } from 'crypto';
 import { RedisService } from '../../redis/redis.service';
 import { ConfigService } from '@nestjs/config';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class TokenService {
@@ -32,49 +27,5 @@ export class TokenService {
 
   async remove(token: string): Promise<void> {
     await this.redisService.del(`reset:${token}`);
-  }
-
-  async signupOtp(email: string) {
-    try {
-      const isBlocked = await this.redisService.get(`otp:blocked:${email}`);
-      if (isBlocked) throw new ForbiddenException('You are temporarily blocked for 24 hours.');
-
-      const otp = uuidv4().slice(0, 6); // shorter UUID
-      await this.redisService.set(`otp:${email}`, otp, 300); // 5 min
-      await this.redisService.del(`otp:attempts:${email}`); // reset if previously sent
-    } catch (error) {
-      console.error('Error in signupOtp:', error);
-      throw new Error('Failed to send OTP');
-    }
-  }
-
-  async validateOtp(email: string, otp: string) {
-    try {
-      const isBlocked = await this.redisService.get(`otp:blocked:${email}`);
-      if (isBlocked) throw new ForbiddenException('You are blocked for 24 hours.');
-
-      const savedOtp = await this.redisService.get(`otp:${email}`);
-      if (!savedOtp) throw new HttpException('OTP expired or invalid.', HttpStatus.FORBIDDEN);
-
-      if (savedOtp !== otp) {
-        const attempts = await this.redisService.incr(`otp:attempts:${email}`);
-        if (attempts === 1) await this.redisService.expire(`otp:attempts:${email}`, 86400); // 1 day
-        if (attempts >= 3) await this.redisService.set(`otp:blocked:${email}`, 'true', 86400); // block 24h
-        throw new HttpException('Invalid OTP.', HttpStatus.FORBIDDEN);
-      }
-    } catch (error) {
-      console.error('Error validating OTP:', error);
-      throw new Error('Failed to validate OTP');
-    }
-  }
-
-  async removeOtp(email: string) {
-    try {
-      await this.redisService.del(`otp:${email}`);
-      await this.redisService.del(`otp:attempts:${email}`);
-    } catch (error) {
-      console.error('Error removing OTP:', error);
-      throw new Error('Failed to remove OTP');
-    }
   }
 }

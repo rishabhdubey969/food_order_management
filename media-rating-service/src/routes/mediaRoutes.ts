@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { mediaController } from '../controllers/mediaController';
 import { uploadSingle, uploadArray } from '../middleware/uploadMiddleware';
-import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -55,7 +54,7 @@ const router = Router();
  * 500:
  * description: Server error.
  */
-router.post('/upload-single',  uploadSingle, mediaController.uploadSingleImage);
+router.post('/upload-single', uploadSingle, mediaController.uploadSingleImage);
 
 /**
  * @swagger
@@ -168,7 +167,7 @@ router.delete('/delete', mediaController.deleteImage);
  * 500:
  * description: Server error.
  */
-router.get('/list', authMiddleware,  mediaController.getAllUrls);
+router.get('/list', mediaController.getAllUrls);
 
 /**
  * @swagger

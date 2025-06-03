@@ -5,7 +5,7 @@ import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Profile as ProfileConst } from 'constants/profile.const';
+import { Profile as ProfileConst } from 'const/profile.const';
 
 @Injectable()
 export class ProfileService {

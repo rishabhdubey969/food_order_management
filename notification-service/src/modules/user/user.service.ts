@@ -10,16 +10,7 @@ export class UserService {
     readonly notificationHelperService: NotificationHelperService,
   ) {}
 
-<<<<<<< Updated upstream
   async signupUser(data: CreateUserDto) {
     return this.notificationHelperService.welcomeEmail();
-=======
-  async signupUser(data: any) {
-    return this.notificationHelperService.welcomeEmail(data, 'Welcome to FoodApp!', 'welcome-email');
-  }
-
-  async signupOtp(data: any) {
-    return this.notificationHelperService.welcomeEmail(data, 'Signup OTP', 'signup-otp');
->>>>>>> Stashed changes
   }
 }
