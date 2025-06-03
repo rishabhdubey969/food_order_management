@@ -54,8 +54,4 @@ export class AuthController {
     return this.authService.resetPassword(token, resetPasswordDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
-  }
 }

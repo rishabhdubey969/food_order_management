@@ -1,11 +1,8 @@
 import * as nodemailer from 'nodemailer';
 import * as dotenv from 'dotenv';
-<<<<<<< Updated upstream
-=======
 import { renderEmailTemplate } from '../utils/template.util';
 import { renderEmailTemplate as template } from '../interface/template-interface';
 
->>>>>>> Stashed changes
 dotenv.config();
 
 var transporter = nodemailer.createTransport({
@@ -17,16 +14,6 @@ var transporter = nodemailer.createTransport({
     }
 });
 
-<<<<<<< Updated upstream
-console.log(process.env.MAIL_HOST);
-export const sendMail = async (to: string, subject: string, text: string) => {
-    const info = await transporter.sendMail({
-        from: '"OTP" <rishabh@yopmail.com>', // sender address
-        to, // recipient
-        subject, // Subject line
-        text, // plain text body
-    });
-=======
 export const sendMail = async (to: string, subject: string, name: string, template, otp: string|null) => {
   const info = await transporter.sendMail({
     from: '"foodApp" <foodapp@yopmail.com>', // sender address
@@ -38,7 +25,6 @@ export const sendMail = async (to: string, subject: string, name: string, templa
       subject: subject,
     }),
   });
->>>>>>> Stashed changes
 
     console.log('Message sent: %s', info.messageId);
 };
