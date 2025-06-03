@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { DeliveryPartnerService } from './deliveryPartnerService';
-import { DeliveryPartnerController } from './deliveryPartnerController';
+import { DeliveryPartnerService } from './deliveryPartner.service';
+import { DeliveryPartnerController } from './deliveryPartner.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { DeliveryPartner, DeliveryPartnerSchema } from './modles/deliveryPartnerModel';
+import { DeliveryPartner, DeliveryPartnerSchema } from './modles/deliveryPartner.model';
 
 @Module({
   imports: [

@@ -8,11 +8,6 @@ export default () => {
 
         db: {
             uri: process.env.MONGO_URI
-        },
-
-        redis: {
-            port: process.env.REDIS_PORT,
-            host: process.env.REDIS_HOST
         }
     })
 }
