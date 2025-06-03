@@ -87,4 +87,12 @@ export class RedisService {
       throw error;
     }
   }
+
+  async incr(key: string): Promise<number> {
+    return this.redisClient.incr(key); // Ensure you return the result!
+  }
+
+  async expire(key: string, ttl: number): Promise<number> {
+    return this.redisClient.expire(key, ttl); // Ensure you return the result!
+  }
 }

@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
+import { SendOtpDto } from './dto/send-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
@@ -17,6 +18,22 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  /**
+   * @description Endpoint to send an OTP to the user's email
+   * @param sendOtpDto - Data Transfer Object containing the user's email
+   * @returns Response from the send OTP service
+   */
+  @Post('send-otp')
+  sendOtp(@Body() sendOtpDto: SendOtpDto) {
+    return this.authService.sendOtpService(sendOtpDto.email);
+  }
+
+  /**
+   * @description Sign up endpoint for user registration
+   * @param createAuthDto - Data Transfer Object containing user registration details
+   * @param req - Request object containing additional information
+   * @returns Response from the sign-up service
+   */
   @Post('signup')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   signUp(@Body() createAuthDto: CreateAuthDto, @Req() req: any) {
