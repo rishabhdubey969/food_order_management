@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package order;
+
+service managerService {
+    rpc GetKitchenStatus (CartById) returns (KitchenStatus) {}
+}
+
+message CartById {
+    string cartId = 1;
+}
+
+message KitchenStatus {
+   string kitchenStatus =1;
+}
