@@ -4,18 +4,32 @@ import {
   Get,
   Post,
   Query,
-  Inject,
   Param,
   Put,
   Delete,
+  UseGuards,
+  Headers,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiQuery,
+  ApiParam,
+} from '@nestjs/swagger';
 import ManagerLoginDto from 'src/manager/dto/managerLogindto';
 import ManagerSignupDto from 'src/manager/dto/managerSignuodto';
 import { ManagerService } from './manager.service';
 import { GrpcMethod } from '@nestjs/microservices';
+import { Roles } from 'src/manager/common/roles.decorator';
+// import { JwtAuthGuard } from 'src/manager/guard/jwt.auth.guard';
+import { AdminGuard } from 'src/manager/guard/admin.guard';
+import { JwtAuthGuard } from './guard/authguard';
 
 @ApiTags('Manager')
+@ApiBearerAuth('access-token')
 @Controller('manager')
 export class ManagerController {
   constructor(private readonly managerService: ManagerService) {}
@@ -36,14 +50,24 @@ export class ManagerController {
     return this.managerService.login(managerLoginDto);
   }
 
-  @Get()
+ @Post('logout')
+// @UseGuards(JwtAuthGuard)
+@ApiOperation({ summary: 'Logout Manager (JWT verified)' })
+@ApiResponse({ status: 200, description: 'Manager logged out successfully' })
+logout(@Headers('authorization') authHeader: string) {
+  const token = authHeader?.split(' ')[1];
+  return this.managerService.logout(token);
+}
+
+   @UseGuards(JwtAuthGuard)
+     @Get()
   @ApiOperation({ summary: 'Get Manager by ID' })
   @ApiQuery({ name: 'id', required: true, description: 'Manager ID' })
   @ApiResponse({ status: 200, description: 'Manager details fetched successfully' })
   getManagerById(@Query('id') id: string) {
     return this.managerService.getManagerById(id);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Put('update/:id')
   @ApiOperation({ summary: 'Update Manager Details' })
   @ApiParam({ name: 'id', required: true, description: 'Manager ID' })
@@ -52,7 +76,7 @@ export class ManagerController {
   updateManager(@Param('id') id: string, @Body() updateData: Partial<ManagerSignupDto>) {
     return this.managerService.updateManager(id, updateData);
   }
-
+   @UseGuards(JwtAuthGuard)
   @Delete('delete/:id')
   @ApiOperation({ summary: 'Delete Manager by ID' })
   @ApiParam({ name: 'id', required: true, description: 'Manager ID' })
@@ -61,6 +85,15 @@ export class ManagerController {
     return this.managerService.deleteManager(id);
   }
 
+@UseGuards(AdminGuard)
+  @Get('all')
+  @ApiOperation({ summary: 'Get all Managers (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Managers fetched successfully' })
+  getAllManagers(@Headers('authorization') authHeader: string) {
+    const token = authHeader?.split(' ')[1];
+    return this.managerService.getAllManagers(token);
+  }
+  
   @GrpcMethod('managerService', 'GetKitchenStatus')
   async getKitchenStatus(data: { cartId: string }): Promise<{ kitchenStatus: boolean }> {
     const result = await this.managerService.fetchKitchenStatus(data.cartId);

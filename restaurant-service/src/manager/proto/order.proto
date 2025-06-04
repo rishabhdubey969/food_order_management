@@ -3,11 +3,11 @@ syntax = "proto3";
 package order;
 
 service managerService {
-    rpc GetKitchenStatus (CartById) returns (KitchenStatus) {}
+    rpc GetKitchenStatus (OrderById) returns (KitchenStatus) {}
 }
 
-message CartById {
-    string cartId = 1;
+message  OrderById {
+    string ordertId = 1;
 }
 
 message KitchenStatus {

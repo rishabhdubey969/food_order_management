@@ -17,7 +17,7 @@ async function bootstrap() {
    const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-    .setTitle('Manager API')
+    .setTitle('Manager & Restaurant API')
     .setDescription('API for Manager signup, login, and management')
     .setVersion('1.0')
     .addTag('Manager')
@@ -26,18 +26,17 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
   
-  
   const restaurantPort: number = Number(process.env.RESTAURANT_PORT||3000);
   
-  const grpcMicroservice = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.GRPC,
-    options: {
-      package: 'order', // name defined in your .proto file
-      protoPath: join(__dirname, './manager/proto/order.proto'), // path to your proto
-      url: '0.0.0.0:50051', // gRPC server address
-    },
-  });
-  await app.startAllMicroservices(); // start microservices
-  await app.listen(restaurantPort);
+  // const grpcMicroservice = app.connectMicroservice<MicroserviceOptions>({
+  //   transport: Transport.GRPC,
+  //   options: {
+  //     package: 'order', // name defined in your .proto file
+  //     protoPath: join(__dirname, './manager/proto/order.proto'), // path to your proto
+  //     url: '0.0.0.0:50051', // gRPC server address
+  //   },
+  // });
+  // await app.startAllMicroservices(); // start microservices
+  await app.listen(3000);
 }
 bootstrap();
