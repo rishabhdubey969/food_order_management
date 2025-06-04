@@ -1,29 +1,25 @@
-
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model, Mongoose } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Cart, CartDocument } from './schema/cart.schema';
 import { AddToCartDto } from './dto/addCart.dto';
 import { UpdateCartDto } from './dto/updateCart.dto';
 import { Address, AddressDocument } from './schema/address.schema';
-
-import { RestaurantCouponsDocument } from './schema/coupon.schema';
-import { RestaurantDocument } from './schema/restaurant.schema';
-import { Types } from 'mongoose';
-
+import { Coupon, CouponDocument } from './schema/coupon.schema';
+import { Restaurant } from './schema/restaurant.schema';
 
 @Injectable()
 export class CartService {
   constructor(
     @InjectModel(Cart.name) private readonly cartModel: Model<CartDocument>,
-    @InjectModel('Coupons') private readonly couponModel: Model<RestaurantCouponsDocument>,
+    @InjectModel('Coupons') private readonly couponModel: Model<CouponDocument>,
     @InjectModel(Address.name) private readonly addressModel: Model<AddressDocument>,
-    @InjectModel('Restaurant') private readonly restaurantModel: Model<RestaurantDocument>
-
+    @InjectModel('Restaurant') private readonly restaurantModel: Model<Restaurant>
   ) {}
 
   private toRad(value: number): number {
@@ -44,231 +40,177 @@ export class CartService {
   }
 
   private calculateDeliveryCharges(distance: number): number {
-    return Math.ceil(distance) * 5; // ₹10 per km
+    return Math.ceil(distance) * 5; // ₹5 per km
   }
 
+  async addToCartService(userId: string, restaurantId: string, dto: AddToCartDto, addressId: string) {
+    const existingCart = await this.cartModel.findOne({ userId, deleted: false });
+    if (existingCart && existingCart.restaurantId.toString() !== restaurantId) {
+      throw new ConflictException('You already have a cart for another restaurant. Please clear it first.');
+    }
 
-async addToCartService(userId: string, restaurantId: string, dto: AddToCartDto, ) {
-  const restaurant = await this.restaurantModel.findById(restaurantId);
-  if (!restaurant) throw new NotFoundException('Restaurant not found');
+    const restaurant = await this.restaurantModel.findById(restaurantId);
+    if (!restaurant) throw new NotFoundException('Restaurant not found');
 
-  const userAddress = await this.addressModel.findOne({ user_id: userId });
+    const address = await this.addressModel.findOne({ _id: addressId, user_id: userId });
+    if (!address) throw new NotFoundException('User address not found');
 
-  if (!userAddress) throw new NotFoundException('User address not found');
-  console.log(userAddress)
+    const userLat = Number(address.latitude);
+    const userLon = Number(address.longitude);
+    const restLat = Number(restaurant.location.coordinates[1]); // Latitude
+    const restLon = Number(restaurant.location.coordinates[0]); // Longitude
 
-  // Validate latitude and longitude
-  const restaurantLat = Number(restaurant.latitude);
-  const restaurantLon = Number(restaurant.longitude);
-  const userLat = Number(userAddress.latitude);
-  const userLon = Number(userAddress.longitude);
+    if ([userLat, userLon, restLat, restLon].some(isNaN)) {
+      throw new BadRequestException('Invalid location coordinates');
+    }
 
-  console.log('Restaurant Latitude:', restaurant.latitude);
-console.log('Restaurant Longitude:', restaurant.longitude);
-console.log('User Latitude:', userAddress.latitude);
-console.log('User Longitude:', userAddress.longitude);
+    const distance = this.calculateDistance(userLat, userLon, restLat, restLon);
+    const deliveryCharges = this.calculateDeliveryCharges(distance);
+    const platformFee = 9;
+    const taxPercent = 5;
 
-  if (
-    isNaN(restaurantLat) ||
-    isNaN(restaurantLon) ||
-    isNaN(userLat) ||
-    isNaN(userLon)
-  ) {
-    throw new BadRequestException('Invalid latitude or longitude values');
-  }
-
-  const distance = this.calculateDistance(restaurantLat, restaurantLon, userLat, userLon);
-  if (isNaN(distance)) {
-    throw new BadRequestException('Failed to calculate distance');
-  }
-
-  const deliveryCharges = this.calculateDeliveryCharges(distance);
-  if (isNaN(deliveryCharges)) {
-    throw new BadRequestException('Failed to calculate delivery charges');
-  }
-
-  const platformFee = 9;
-  const itemTotal = dto.price * dto.quantity;
-  const itemTax = restaurant.taxPercentage
-    ? (itemTotal * restaurant.taxPercentage) / 100
-    : 0;
-
-  const newItem = {
-    itemId: dto.itemId,
-    name: dto.itemName,
-    quantity: dto.quantity,
-    price: dto.price,
-    tax: itemTax,
-  };
-
-  let cart = await this.cartModel.findOne({ userId, restaurantId, deleted: false });
-
-  if (!cart) {
+    const itemTotal = dto.price * dto.quantity;
+    const tax = (itemTotal * taxPercent) / 100;
     const subtotal = itemTotal;
-    const total = subtotal + itemTax + deliveryCharges + platformFee;
+    const total = subtotal + tax + deliveryCharges + platformFee;
 
-    cart = new this.cartModel({
-      userId,
-      restaurantId,
-      items: [newItem],
-      itemTotal,
-      subtotal,
-      tax: itemTax,
-      platformFee,
-      deliveryCharges,
-      distanceInKm: parseFloat(distance.toFixed(2)),
-      total,
-      deleted: false,
-    });
+    const newItem = {
+      itemId: dto.itemId,
+      name: dto.itemName,
+      quantity: dto.quantity,
+      price: dto.price,
+      tax,
+    };
+
+    let cart = existingCart;
+    if (!cart) {
+      cart = new this.cartModel({
+        userId,
+        restaurantId,
+        items: [newItem],
+        itemTotal,
+        subtotal,
+        tax,
+        platformFee,
+        deliveryCharges,
+        total,
+        distanceInKm: parseFloat(distance.toFixed(2)),
+        discount: 0,
+        couponCode: null,
+        couponId: null,
+        deleted: false,
+      });
+    } else {
+      const itemIndex = cart.items.findIndex(item => item.itemId === dto.itemId);
+      if (itemIndex >= 0) {
+        cart.items[itemIndex].quantity += dto.quantity;
+        cart.items[itemIndex].tax += tax;
+      } else {
+        cart.items.push(newItem);
+      }
+
+      const updatedItemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const updatedTax = (updatedItemTotal * taxPercent) / 100;
+      const updatedTotal = updatedItemTotal + updatedTax + deliveryCharges + platformFee;
+
+      Object.assign(cart, {
+        itemTotal: updatedItemTotal,
+        subtotal: updatedItemTotal,
+        tax: updatedTax,
+        deliveryCharges,
+        platformFee,
+        total: updatedTotal - (cart.discount || 0),
+        distanceInKm: parseFloat(distance.toFixed(2)),
+      });
+    }
 
     return await cart.save();
   }
 
-  // For adding new item
-  const existingItemIndex = cart.items.findIndex(item => item.itemId === dto.itemId);
-  if (existingItemIndex >= 0) {
-    cart.items[existingItemIndex].quantity += dto.quantity;
-    cart.items[existingItemIndex].tax += itemTax;
-  } else {
-    cart.items.push(newItem);
+  async updateCartService(userId: string, dto: UpdateCartDto) {
+    const cart = await this.cartModel.findOne({ userId, deleted: false });
+    if (!cart) throw new NotFoundException('Cart not found');
+
+    const taxPercent = 5;
+    const itemIndex = cart.items.findIndex(item => item.itemId === dto.itemId);
+    if (itemIndex === -1) throw new NotFoundException('Item not found in cart');
+
+    cart.items[itemIndex] = {
+      itemId: dto.itemId,
+      name: dto.itemName,
+      price: dto.price,
+      quantity: dto.quantity,
+      tax: (dto.price * dto.quantity * taxPercent) / 100,
+    };
+
+    const itemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const tax = (itemTotal * taxPercent) / 100;
+    const subtotal = itemTotal;
+    const total = subtotal + cart.deliveryCharges + cart.platformFee + tax - (cart.discount || 0);
+
+    Object.assign(cart, { itemTotal, subtotal, tax, total });
+    return await cart.save();
   }
 
-  const updatedItemTotal = cart.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
-
-  const updatedTax = restaurant.taxPercentage
-    ? (updatedItemTotal * restaurant.taxPercentage) / 100
-    : 0;
-
-  const updatedTotal = updatedItemTotal + updatedTax + deliveryCharges + platformFee;
-
-  Object.assign(cart, {
-    itemTotal: updatedItemTotal,
-    subtotal: updatedItemTotal,
-    tax: updatedTax,
-    total: updatedTotal,
-    distanceInKm: parseFloat(distance.toFixed(2)),
-    deliveryCharges,
-  });
-
-  return await cart.save();
-}
-
-
-
-    async updateCartService(userId: string, restaurantId: string, dto: UpdateCartDto) {
-      const cart = await this.cartModel.findOne({ userId, restaurantId, deleted: false });
-      if (!cart) throw new NotFoundException('Cart not found');
-    
-      const restaurant = await this.restaurantModel.findById(restaurantId);
-      if (!restaurant) throw new NotFoundException('Restaurant not found');
-    
-      const itemIndex = cart.items.findIndex(item => item.itemId === dto.itemId);
-      if (itemIndex === -1) throw new NotFoundException('Item not found in cart');
-    
-      cart.items[itemIndex] = {
-        itemId: dto.itemId,
-        name: dto.itemName,
-        price: dto.price,
-        quantity: dto.quantity,
-        tax: (dto.price * dto.quantity * (restaurant.taxPercentage || 0)) / 100,
-      };
-    
-      const itemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const tax = restaurant.taxPercentage ? (itemTotal * restaurant.taxPercentage) / 100 : 0;
-      const subtotal = itemTotal;
-      const total = subtotal + cart.deliveryCharges + cart.platformFee + tax;
-    
-      Object.assign(cart, { itemTotal, subtotal, tax, total });
-      return await cart.save();
-    }
-    
-  
-  async deleteCartService(cartId: string) {
-    const cart = await this.cartModel.findOne({ _id: cartId });
+  async deleteCartService(userId: string) {
+    const cart = await this.cartModel.findOne({ userId, deleted: false });
     if (!cart) throw new NotFoundException('Cart not found');
     cart.deleted = true;
     return await cart.save();
   }
 
-  async removeCartService(userId: string, restaurantId: string) {
-    const cart = await this.cartModel.findOne({ userId, restaurantId, deleted: false });
-    if (!cart) throw new NotFoundException('Cart not found');
-    await this.cartModel.deleteOne({ _id: cart._id });
-    return { message: 'Cart has been permanently deleted' };
-}
-
-  async viewAllCartsService(userId: string) {
-    return await this.cartModel.find({ userId, deleted: false });
-  }
-
-  async specificCartService(userId: string, restaurantId: string) {
-    const cart = await this.cartModel.findOne({ userId, restaurantId, deleted: false });
-    if (!cart) throw new NotFoundException('Cart not found');
+  async getCartService(userId: string) {
+    const cart = await this.cartModel.findOne({ userId, deleted: false });
+    if (!cart) throw new NotFoundException('No active cart found');
     return cart;
   }
 
   async viewCouponsService(restaurantId: string) {
-    const coupons = await this.couponModel.findOne({ restaurantId });
-    if (!coupons) throw new NotFoundException('Coupons not found for this restaurant');
-    return coupons;
+    return this.couponModel.find({
+      $or: [
+        { restaurantId: new Types.ObjectId(restaurantId) },
+        { restaurantId: null },
+      ],
+      isActive: true,
+      expiryDate: { $gt: new Date() },
+    });
   }
 
-  async applyCouponService(cartId: string, couponCode: string) {
-    const cart = await this.cartModel.findById(cartId);
-    if (!cart || cart.deleted) throw new NotFoundException('Cart not found');
+  async applyCouponService(userId: string, couponId: string) {
+    const cart = await this.cartModel.findOne({ userId, deleted: false });
+    if (!cart) {
+      throw new NotFoundException('Cart not found');
+    }
 
-    const couponDoc = await this.couponModel.findOne({ restaurantId: cart.restaurantId });
-    if (!couponDoc || !couponDoc.coupons || !couponDoc.coupons.length)
-      throw new NotFoundException('No coupons found for this restaurant');
+    const coupon = await this.couponModel.findById(couponId);
+    if (!coupon) {
+      throw new NotFoundException('Coupon not found');
+    }
 
-    const coupon = couponDoc.coupons.find(c => c.code === couponCode);
-    if (!coupon) throw new BadRequestException('Invalid coupon code');
+    const now = new Date();
+    if (!coupon.isActive || coupon.expiryDate < now) {
+      throw new BadRequestException('Coupon is expired or inactive');
+    }
 
-    const discountAmount = (cart.total * coupon.discountPercentage) / 100;
-    const newTotal = cart.total - discountAmount;
+    if (cart.total < coupon.minOrderAmount) {
+      throw new BadRequestException(`Minimum order amount should be ₹${coupon.minOrderAmount}`);
+    }
 
-    cart.couponCode = couponCode;
-    cart.discount = discountAmount;
-    cart.total = parseFloat(newTotal.toFixed(2));
+    const percentageDiscount = (cart.total * coupon.discountPercent) / 100;
+    const discount = Math.min(percentageDiscount, coupon.maxDiscount);
+
+    cart.total = cart.total - discount;
+    cart.couponCode = coupon.code;
+    cart.couponId = coupon._id as string;
+    cart.discount = discount;
 
     await cart.save();
-    return { message: 'Coupon applied successfully', cart };
+
+    return {
+      message: 'Coupon applied successfully',
+      newTotal: cart.total,
+      discountApplied: discount,
+      couponCode: coupon.code,
+    };
   }
-
-
-async checkoutAllCarts(userId: string) {
-  const userCarts = await this.cartModel.find({ userId, deleted:false});
-
-  if (userCarts.length === 0) {
-    throw new NotFoundException('No carts found for this user');
-  }
-
-  let itemsTotal = 0;
-  let taxTotal = 0;
-  let deliveryTotal = 0;
-  const PLATFORM_FEE = 9;
-
-  for (const cart of userCarts) {
-    for (const item of cart.items) {
-      itemsTotal += item.price * item.quantity;
-      taxTotal += item.tax ?? 0;
-    }
-    deliveryTotal += cart.deliveryCharges ?? 0;
-  }
-
-  const grandTotal = itemsTotal + taxTotal + deliveryTotal + PLATFORM_FEE;
-
-  return {
-    itemsTotal,
-    taxTotal,
-    deliveryTotal,
-    platformFee: PLATFORM_FEE,
-    grandTotal,
-  };
-}
-
-
 }
