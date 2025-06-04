@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
   Inject,
 } from '@nestjs/common';
-import { Auth } from 'const/auth.const';
+import { Auth } from 'constants/auth.const';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
 import { Request } from 'express';
 import { Logger as WinstonLogger } from 'winston';

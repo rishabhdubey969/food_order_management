@@ -12,4 +12,10 @@ export class UserController {
   async handleUserCreated(@Payload() data: any) {
     await this.userService.signupUser(data);
   }
+
+ @EventPattern('signup_otp')
+  async handleSignupOtp(@Payload() data: any) {
+    await this.userService.signupOtp(data);
+  }
+
 }

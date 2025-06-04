@@ -1,5 +1,7 @@
 import * as nodemailer from 'nodemailer';
 import * as dotenv from 'dotenv';
+import { renderEmailTemplate } from '../utils/template.util';
+
 dotenv.config();
 
 var transporter = nodemailer.createTransport({
@@ -11,14 +13,18 @@ var transporter = nodemailer.createTransport({
     }
 });
 
-console.log(process.env.MAIL_HOST);
-export const sendMail = async (to: string, subject: string, text: string) => {
-    const info = await transporter.sendMail({
-        from: '"OTP" <rishabh@yopmail.com>', // sender address
-        to, // recipient
-        subject, // Subject line
-        text, // plain text body
-    });
+export const sendMail = async (to: string, subject: string, name: string, template, otp: string|null) => {
+  console.log('Sending email to:', template, otp);
+  const info = await transporter.sendMail({
+    from: '"foodApp" <foodapp@yopmail.com>', // sender address
+    to, // recipient
+    html: renderEmailTemplate(template, {
+      name: to,
+      otp: otp,
+      year: new Date().getFullYear(),
+      subject: subject,
+    }),
+  });
 
     console.log('Message sent: %s', info.messageId);
 };

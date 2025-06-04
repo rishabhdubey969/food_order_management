@@ -193,6 +193,10 @@ class S3Service {
    * @param folder The target folder (prefix) in the S3 bucket.
    * @returns A promise that resolves to the pre-signed upload URL and the S3 key.
    */
+<<<<<<< HEAD
+=======
+<<<<<<< Updated upstream
+>>>>>>> be2d0ab40ab8d9dd869af73d0d984144e1f8cc47
    public async generatePresignedUrlForUpload(filename: string, filetype: string, folder: string = 'misc'): Promise<{ url: string, key: string }> {
         const uniqueFilename = `${folder}/${uuidv4()}-${filename}`;
         const putObjectParams = {
@@ -201,6 +205,23 @@ class S3Service {
             ContentType: filetype,
             ACL: ObjectCannedACL.public_read, // <--- REMOVE OR COMMENT OUT THIS LINE!
         };
+<<<<<<< HEAD
+=======
+=======
+  public async generatePresignedUrlForUpload(
+    filename: string,
+    filetype: string,
+    folder: string = 'misc',
+  ): Promise<{ url: string; key: string }> {
+    const uniqueFilename = `${folder}/${uuidv4()}-${filename}`;
+    const putObjectParams = {
+      Bucket: S3_BUCKET_NAME,
+      Key: uniqueFilename,
+      ContentType: filetype,
+      //ACL: ObjectCannedACL.public_read, // <--- REMOVE OR COMMENT OUT THIS LINE!
+    };
+>>>>>>> Stashed changes
+>>>>>>> be2d0ab40ab8d9dd869af73d0d984144e1f8cc47
 
         try {
             const url = await getSignedUrl(s3Client, new PutObjectCommand(putObjectParams), { expiresIn: 600 });

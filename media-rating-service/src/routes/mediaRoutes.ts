@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import { mediaController } from '../controllers/mediaController';
 import { uploadSingle, uploadArray } from '../middleware/uploadMiddleware';
+<<<<<<< HEAD
+=======
+import { authMiddleware } from '../middleware/auth.middleware';
+>>>>>>> be2d0ab40ab8d9dd869af73d0d984144e1f8cc47
 
 const router = Router();
 
@@ -54,7 +58,11 @@ const router = Router();
  * 500:
  * description: Server error.
  */
+<<<<<<< HEAD
 router.post('/upload-single', uploadSingle, mediaController.uploadSingleImage);
+=======
+router.post('/upload-single',  uploadSingle, mediaController.uploadSingleImage);
+>>>>>>> be2d0ab40ab8d9dd869af73d0d984144e1f8cc47
 
 /**
  * @swagger
@@ -167,7 +175,11 @@ router.delete('/delete', mediaController.deleteImage);
  * 500:
  * description: Server error.
  */
+<<<<<<< HEAD
 router.get('/list', mediaController.getAllUrls);
+=======
+router.get('/list', authMiddleware,  mediaController.getAllUrls);
+>>>>>>> be2d0ab40ab8d9dd869af73d0d984144e1f8cc47
 
 /**
  * @swagger

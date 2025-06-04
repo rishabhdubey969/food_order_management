@@ -1,43 +1,30 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type CouponDocument = Coupon & Document;
 
-export type DiscountType = 'PERCENT' | 'FLAT' | 'FREE_ITEM';
-
-@Schema()
+@Schema({ timestamps: true })
 export class Coupon {
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
   code: string;
 
-  @Prop({ required: true, enum: ['PERCENT', 'FLAT', 'FREE_ITEM'] })
-  discountType: DiscountType;
+  @Prop({ required: true })
+  discountPercent: number;  //in  percentage
 
   @Prop({ required: true })
-  discountValue: number;
-
-  @Prop()
-  maxDiscount?: number;
+  maxDiscount: number;
 
   @Prop({ required: true })
-  minCartValue: number;
+  expiryDate: Date;
 
-  @Prop()
-  freeItem?: string;
-  discountPercentage: number;
+  @Prop({ required: true })
+  minOrderAmount: number;
+
+  @Prop({ type: Types.ObjectId, ref: 'Restaurant', required: false })
+  restaurantId?: Types.ObjectId; 
+
+  @Prop({ default: true })
+  isActive: boolean;
 }
 
 export const CouponSchema = SchemaFactory.createForClass(Coupon);
-
-@Schema()
-export class RestaurantCoupons {
-  @Prop({ required: true, unique: true })
-  restaurantId: string;
-
-  @Prop({ type: [CouponSchema], default: [] })
-  coupons: Coupon[];
-}
-
-export type RestaurantCouponsDocument = RestaurantCoupons & Document;
-
-export const RestaurantCouponsSchema = SchemaFactory.createForClass(RestaurantCoupons);

@@ -1,47 +1,47 @@
-// src/restaurant/schema/restaurant.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
-export type RestaurantDocument = Restaurant & Document;
-
-@Schema()
-export class Restaurant {
+@Schema({ timestamps: true })
+export class Restaurant extends Document {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ required: true })
-  latitude: number;
-
-  @Prop({ required: true })
-  longitude: number;
-
   @Prop()
+  description: string;
+
+  @Prop({ required: true })
   address: string;
 
-  @Prop({ default: 0 })
-  taxPercentage: number;
-
-  @Prop()
+  @Prop({ required: true })
   phone: string;
 
-  @Prop()
-  email: string;
+  @Prop({
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point',
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true,
+    },
+  })
+  location: {
+    type: 'Point';
+    coordinates: number[];
+  };
 
-  @Prop()
-  openingHours: string;
+  @Prop({ type: Types.ObjectId, ref: 'Manager' }) // One manager per restaurant
+  managerId: Types.ObjectId;
 
-  @Prop([String])
-  cuisine: string[];
+  @Prop({ default: true })
+  isActive: boolean;
 
-  @Prop()
-  isOpen: boolean;
-
-  @Prop()
-  createdAt: Date;
-
-  @Prop()
-  updatedAt: Date;
+  @Prop({ default: [] })
+  tags: string[];
 }
 
 export const RestaurantSchema = SchemaFactory.createForClass(Restaurant);
 
+// Enable geospatial index
+RestaurantSchema.index({ location: '2dsphere' });
