@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ManagerModule } from './manager/manager.module';
+import { RestaurantModule } from './restaurant/restaurant.module';
 // import { RestaurantModule } from './restaurant/restaurant.module';
 
 @Module({
@@ -11,6 +12,7 @@ import { ManagerModule } from './manager/manager.module';
       isGlobal: true, // This makes the config globally available
     }),
     ManagerModule, 
+    RestaurantModule
     // RestaurantModule
   ],
   controllers: [],
