@@ -20,4 +20,5 @@ export const Auth = {
   PASSWORD_REST: 'Password reset successful',
 
   TOKEN_REQUIRED: 'Token required',
+  USER_MATCH: 'User already exists with this email',
 };

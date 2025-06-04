@@ -29,7 +29,7 @@ export class TokenService {
     await this.redisService.del(`reset:${token}`);
   }
 
-  async signupOtp(email: string) {
+  async signupOtp(email: string): Promise<string> {
     try {
       const isBlocked = await this.redisService.get(`otp:blocked:${email}`);
       if (isBlocked) throw new ForbiddenException('You are temporarily blocked for 24 hours.');
@@ -37,6 +37,7 @@ export class TokenService {
       const otp = uuidv4().slice(0, 6); // shorter UUID
       await this.redisService.set(`otp:${email}`, otp, 300); // 5 min
       await this.redisService.del(`otp:attempts:${email}`); // reset if previously sent
+      return otp; // return OTP for testing purposes, in production you would send this via email
     } catch (error) {
       console.error('Error in signupOtp:', error);
       throw new Error('Failed to send OTP');
@@ -59,7 +60,7 @@ export class TokenService {
       }
     } catch (error) {
       console.error('Error validating OTP:', error);
-      throw new Error('Failed to validate OTP');
+      throw new HttpException('Invalid OTP.', HttpStatus.FORBIDDEN);
     }
   }
 

@@ -15,6 +15,7 @@ export class UserService {
   }
 
   async signupOtp(data: any) {
+    console.log('Sending signup OTP:', data);
     return this.notificationHelperService.welcomeEmail(data, 'Signup OTP', 'signup-otp');
   }
 }

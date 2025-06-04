@@ -1,4 +1,11 @@
-import { Injectable, Inject, HttpException, HttpStatus, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { InjectModel } from '@nestjs/mongoose';
@@ -32,8 +39,10 @@ export class AuthService {
   async sendOtpService(email: string) {
     try {
       this.logger.info('Sending OTP to user');
-      this.tokenService.signupOtp(email);
-       this.client.emit('signup_otp', email);
+      const otp = await this.tokenService.signupOtp(email);
+      const mailData = { otp, email };
+
+      this.client.emit('signup_otp', mailData);
       return { message: 'OTP sent successfully' };
     } catch (error) {
       this.logger.error('Error sending OTP', error);
@@ -61,20 +70,31 @@ export class AuthService {
         })
         .exec();
 
-      if (existingAuthenticationLogin) throw new HttpException(AuthConst.USER_MATCH, HttpStatus.FORBIDDEN);
+      if (existingAuthenticationLogin)
+        throw new HttpException(AuthConst.USER_MATCH, HttpStatus.FORBIDDEN);
 
       // Hash the password before saving the user
       const hashedPassword = await bcrypt.hash(password, 10);
-      const createdAuthentication = new this.authenticationModel({ ...createAuthDto, password: hashedPassword });
+      const createdAuthentication = new this.authenticationModel({
+        ...createAuthDto,
+        password: hashedPassword,
+      });
 
       await createdAuthentication.save();
       id = (createdAuthentication._id as Types.ObjectId).toString();
 
       this.client.emit('user_created', createdAuthentication);
       this.logger.info('user store success');
-      const tokensData = await this.authClient.getSignUpAccess(id, req.ip, req.headers['user-agent']);
+      const tokensData = await this.authClient.getSignUpAccess(
+        id,
+        req.ip,
+        req.headers['user-agent'],
+      );
 
-      return { message: 'Congratulations, you’ve successfully signed up!', data: tokensData };
+      return {
+        message: 'Congratulations, you’ve successfully signed up!',
+        data: tokensData,
+      };
     } catch (error) {
       this.logger.error('User signup error', error);
       await this.authenticationModel.findByIdAndDelete(id);
@@ -111,7 +131,8 @@ export class AuthService {
   async resetPassword(token: string, resetPasswordDto: ResetPasswordDto) {
     try {
       const resetTokenValidate = await this.tokenService.validate(token);
-      if (!resetTokenValidate) throw new BadRequestException('Invalid or expired token');
+      if (!resetTokenValidate)
+        throw new BadRequestException('Invalid or expired token');
 
       const hashed = await bcrypt.hash(resetPasswordDto.password, 10);
       await this.updatePassword(resetTokenValidate, hashed);
@@ -132,7 +153,9 @@ export class AuthService {
   async updatePassword(userId: string, newPassword: string): Promise<void> {
     try {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-      await this.authenticationModel.updateOne({ _id: userId }, { $set: { password: hashedPassword } }).exec();
+      await this.authenticationModel
+        .updateOne({ _id: userId }, { $set: { password: hashedPassword } })
+        .exec();
     } catch (error) {
       this.logger.error('Error updating password', error);
       throw new BadRequestException(error);

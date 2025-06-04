@@ -1,7 +1,6 @@
 import * as nodemailer from 'nodemailer';
 import * as dotenv from 'dotenv';
 import { renderEmailTemplate } from '../utils/template.util';
-import { renderEmailTemplate as template } from '../interface/template-interface';
 
 dotenv.config();
 
@@ -15,6 +14,7 @@ var transporter = nodemailer.createTransport({
 });
 
 export const sendMail = async (to: string, subject: string, name: string, template, otp: string|null) => {
+  console.log('Sending email to:', template, otp);
   const info = await transporter.sendMail({
     from: '"foodApp" <foodapp@yopmail.com>', // sender address
     to, // recipient
