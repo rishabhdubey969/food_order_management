@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
-export class Manager extends Document {
+export class Manager {
   @Prop({ required: true })
   name: string;
 
@@ -19,7 +19,7 @@ export class Manager extends Document {
   restaurantId: string;
 
   @Prop({ default: 'pending', enum: ['pending', 'active', 'rejected'] })
-  isActive: string
+  isActive: string;
 
   @Prop()
   accountNumber: string;
@@ -32,9 +32,7 @@ export class Manager extends Document {
 
   @Prop({ default: false })
   isActiveManager: boolean;
-
 }
 export type ManagerDocument = Manager & Document;
 
 export const ManagerSchema = SchemaFactory.createForClass(Manager);
-

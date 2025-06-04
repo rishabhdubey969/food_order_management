@@ -3,32 +3,43 @@ import { ManagerService } from './manager.service';
 import { ManagerController } from './manager.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Manager, ManagerSchema } from './schema/manager.schema';
-import { JwtModule } from '@nestjs/jwt';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
+import { TokenModule } from '../manager/token/token.module';
+import { ComplaintModule } from './complain-service/complainmodule';
+import { EmailQueue } from './queue/email.queue'; 
 
 @Module({
-    imports: [MongooseModule.forFeature([
-      { name: Manager.name, schema: ManagerSchema }
-        ]),
-        JwtModule.register({ // Add JWT configuration
-      secret: process.env.JWT_SECRET, // Use an environment variable
-      signOptions: { expiresIn: '1d' },
-    }),
-     ClientsModule.register([
+  imports: [
+    MongooseModule.forFeature([
+      { name: Manager.name, schema: ManagerSchema },
+    ]),
+
+    ClientsModule.register([
       {
         name: 'RESTAURANT_PACKAGE',
         transport: Transport.GRPC,
         options: {
-          package: 'restaurant', // This should match your proto package name
-          protoPath: 'src/manager/proto/restaurant.proto', // Path to your proto file
-          url: 'restaurant-service:50051', // URL to your restaurant service
+          package: 'restaurant',
+          protoPath: 'src/manager/proto/restaurant.proto',
+          url: 'restaurant-service:50051',
+        },
+      },
+      {
+        name: 'EMAIL_SERVICE', 
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://localhost:5672'],
+          queue: 'email_queue',
         },
       },
     ]),
-    ],
-    providers: [ManagerService],
-    controllers: [ManagerController],
-    exports: [ManagerService]
+
+    TokenModule,
+    ComplaintModule,
+  ],
+
+  controllers: [ManagerController],
+  providers: [ManagerService, EmailQueue],
+  exports: [ManagerService],
 })
 export class ManagerModule {}

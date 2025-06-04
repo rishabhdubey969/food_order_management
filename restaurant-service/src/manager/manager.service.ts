@@ -5,15 +5,17 @@ import {
   UnauthorizedException,
   Inject,
   OnModuleInit,
+  InternalServerErrorException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
 import ManagerLoginDto from 'src/manager/dto/managerLogindto';
 import ManagerSignupDto from 'src/manager/dto/managerSignuodto';
 import { Manager, ManagerDocument } from './schema/manager.schema';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from 'src/manager/constants/errorand success';
+import { TokenService } from 'src/manager/token/token.service';
 import { ClientGrpc } from '@nestjs/microservices';
 
 interface RestaurantServiceClient {
@@ -25,70 +27,71 @@ export class ManagerService implements OnModuleInit {
   private restaurantClient: RestaurantServiceClient;
 
   constructor(
-    @InjectModel(Manager.name)
-    private readonly managerModel: Model<ManagerDocument>,
-    private readonly jwtService: JwtService,
-    // gRPC client to talk to Restaurant service
-    @Inject('RESTAURANT_PACKAGE') private readonly client: ClientGrpc,
+    @InjectModel(Manager.name) private readonly managerModel: Model<ManagerDocument>,
+    @Inject('RESTAURANT_PACKAGE') private readonly restaurantClientGrpc: ClientGrpc,
+    private readonly tokenService: TokenService, // Local TokenService
   ) {}
 
-  // gRPC Client Initialization
   onModuleInit() {
-    this.restaurantClient = this.client.getService<RestaurantServiceClient>('RestaurantService');
+    this.restaurantClient = this.restaurantClientGrpc.getService<RestaurantServiceClient>('RestaurantService');
   }
 
-  // gRPC call to Restaurant to check item availability
   async fetchKitchenStatus(cartId: string): Promise<boolean> {
-    const response = await this.restaurantClient.IsItemAvailable({ cartId });
-    return response.kitchenStatus === 'true';
+    try {
+      const response = await this.restaurantClient.IsItemAvailable({ cartId });
+      return response.kitchenStatus === 'true';
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to fetch kitchen status');
+    }
   }
-
-
-// @Injectable()
-// export class ManagerService {
-//   fetchKitchenStatus(cartId: string) {
-//       throw new Error('Method not implemented.');
-//   }
-//   constructor(
-//        @InjectModel(Manager.name) 
-//        private readonly managerModel: Model<ManagerDocument>,
-
-//     private readonly jwtService: JwtService,
-//   ) {}
 
   async login(managerLoginDto: ManagerLoginDto) {
-    const { email, password } = managerLoginDto;
+  const { email, password } = managerLoginDto;
+  const manager = await this.managerModel.findOne({ email });
+  if (!manager) {
+    throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+  }
 
-    const manager = await this.managerModel.findOne({ email });
-    if (!manager) {
-      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
-    }
+  const isPasswordValid = await bcrypt.compare(password, manager.password);
+  if (!isPasswordValid) {
+    throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+  }
 
-    const isPasswordValid = await bcrypt.compare(password, manager.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
-    }
+  const payload = {
+    sub: manager._id,
+    email: manager.email,
+    role: 'manager',
+  };
 
-    if (manager.isActiveManager !== true) {
-      throw new UnauthorizedException(ERROR_MESSAGES.MANAGER_NOT_APPROVED);
-    }
+  const token = await this.tokenService.sign(payload);
 
-    const payload = {
-      sub: manager._id,
+  return {
+    message: SUCCESS_MESSAGES.MANAGER_LOGIN,
+    token,
+    data: {
+      id: manager._id,
+      name: manager.name,
       email: manager.email,
-      role: 'manager',
-    };
-    const token = this.jwtService.sign(payload, { expiresIn: '1d' });
+      phone: manager.phone,
+    },
+  };
+}
 
+  async logout(token: string) {
+    // i have to implement blacklist with Redis
+    return { message: 'Manager successfully logged out' };
+  }
+
+  async getAllManagers(token: string) {
+    const user = await this.tokenService.verify(token);
+    if (user.role !== 'admin') {
+      throw new ForbiddenException('Only admins can access this route');
+    }
+
+    const managers = await this.managerModel.find().select('-password');
     return {
-      message: SUCCESS_MESSAGES.MANAGER_LOGIN,
-      token,
-      data: {
-        id: manager._id,
-        name: manager.name,
-        email: manager.email,
-        phone: manager.phone,
-      },
+      message: SUCCESS_MESSAGES.OPERATION_SUCCESS,
+      data: managers,
     };
   }
 
@@ -110,6 +113,7 @@ export class ManagerService implements OnModuleInit {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const newManager = new this.managerModel({
       name,
       email,
@@ -182,6 +186,4 @@ export class ManagerService implements OnModuleInit {
       message: SUCCESS_MESSAGES.MANAGER_DELETED,
     };
   }
-
-
 }
