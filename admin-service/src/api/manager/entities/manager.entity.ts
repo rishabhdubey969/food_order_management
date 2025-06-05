@@ -1,34 +1,37 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-@Schema({ timestamps: true, collection: 'managers' }) // Explicitly set collection name
+@Schema({ timestamps: true })
 export class Manager extends Document {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, select: false })
   password: string;
 
   @Prop({ required: true })
   username: string;
 
-  @Prop()
-  phone?: string;
-
-  @Prop({ default: 3 }) // Role is always 3 for managers
+  @Prop({ required: true, default: 3 }) // 3 for manager role
   role: number;
 
-  @Prop({ default: true })
+  @Prop({ required: true, default: true })
   is_active: boolean;
 
-  @Prop({ default: false })
+  @Prop({ required: true, default: false })
   is_deleted: boolean;
 
-  @Prop({ type: String, default: null })
-  resetToken?: string | null;
+  @Prop()
+  otp?: string;
 
-  @Prop({ type: Date, default: null })
-  resetTokenExpires?: Date | null;
+  @Prop()
+  otpExpires?: Date;
+
+  @Prop()
+  resetToken?: string;
+
+  @Prop()
+  resetTokenExpires?: Date;
 }
 
 export const ManagerSchema = SchemaFactory.createForClass(Manager);

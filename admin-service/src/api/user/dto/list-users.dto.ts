@@ -11,6 +11,6 @@ export class ListUsersDto {
   @Min(1)
   limit: number = 10;
   @IsOptional()
-  @IsIn(['users', 'admin']) // Now accepts string values
+  @IsIn(['users', 'admin','manager']) // Now accepts string values
   role?: string;
 }
