@@ -1,17 +1,4 @@
-import {
-  Controller,
-  Get,
-  Body,
-  Param,
-  Delete,
-  UsePipes,
-  ValidationPipe,
-  Patch,
-  UseGuards,
-  // UseInterceptors,
-  // UploadedFile,
-  // UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Body, Param, Delete, UsePipes, ValidationPipe, Patch, UseGuards } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 // import { FileInterceptor } from '@nestjs/platform-express';
@@ -23,10 +10,7 @@ export class ProfileController {
   @Patch(':id')
   @UseGuards(AuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  profileUpdate(
-    @Param('id') id: string,
-    @Body() updateProfileDto: UpdateProfileDto,
-  ) {
+  profileUpdate(@Param('id') id: string, @Body() updateProfileDto: UpdateProfileDto) {
     return this.profileService.profileUpdateService(id, updateProfileDto);
   }
 

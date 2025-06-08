@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import mediaRoutesV1 from './routes/mediaRoutes';
-import { errorHandler } from './utils/errorHandler';
+import { errorHandler } from './utils/error.handler';
 
 dotenv.config(); // Load environment variables from .env file
 

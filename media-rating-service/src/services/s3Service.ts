@@ -1,230 +1,152 @@
+import { S3 } from 'aws-sdk';
+import { v4 as uuidv4 } from 'uuid';
+import { Logger } from '../utils/logger';
+import { ApiError } from '../utils/error.handler'; // Still relevant for internal errors
 import {
-  PutObjectCommand,
-  DeleteObjectCommand,
-  ListObjectsV2Command,
-  GetObjectCommand,
-  _Object,
-  ObjectCannedACL, // Import _Object for type hinting
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { s3Client, S3_BUCKET_NAME } from "../config/aws";
-import { IUploadedFile, IFileUrl } from "../interfaces/IMedia";
-import { ApiError } from "../utils/errorHandler";
-import { v4 as uuidv4 } from "uuid";
+    PRESIGNED_URL_EXPIRATION_SECONDS,
+    PRESIGNED_GET_URL_EXPIRATION_SECONDS,
+    S3_BUCKET_NAME,
+} from '../config/aws'; // Import config directly
 
-/**
- * S3Service class to handle all S3 related operations.
- */
-class S3Service {
-  /**
-   * Uploads a single file to S3 using multer-s3's output.
-   * @param file The file object provided by multer-s3.
-   * @param folder The target folder (prefix) in the S3 bucket.
-   * @returns A promise that resolves to the uploaded file's details.
-   */
-  public async uploadSingleFile(
-    file: Express.Multer.File,
-    folder: string
-  ): Promise<IUploadedFile> {
-    if (!file || !(file as any).location || !(file as any).key) {
-      throw new ApiError(
-        "File upload failed: Missing S3 location or key.",
-        500
-      );
+// Ensure AWS SDK is configured globally for a unified S3 client instance
+const s3 = new S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION,
+    signatureVersion: 'v4', // Crucial for presigned URLs
+});
+
+export class S3Service {
+    private readonly bucketName: string;
+
+    constructor() {
+        this.bucketName = S3_BUCKET_NAME!; // Already validated in aws.config
     }
 
-    const uploadedFile: IUploadedFile = {
-      url: (file as any).location,
-      key: (file as any).key,
-      bucket: S3_BUCKET_NAME!,
-      mimetype: file.mimetype,
-      size: file.size,
-    };
-    return uploadedFile;
-  }
+    /**
+     * Generates a presigned URL for a client to PUT (upload) an object directly to S3.
+     * This method decides the unique S3 key including the temporary prefix.
+     * @param originalFilename The original name of the file (e.g., 'avatar.png').
+     * @param filetype The MIME type of the file (e.g., 'image/png').
+     * @param permanentFolder The intended permanent folder (e.g., 'users/userId/avatars').
+     * @returns An object containing the presigned URL and the full S3 key for the temporary location.
+     */
+    async generatePresignedUrl(originalFilename: string, filetype: string, permanentFolder: string = 'misc'): Promise<{ url: string; key: string }> {
+        // Ensure folder path doesn't start or end with '/' if it's already structured
+        const sanitizedFolder = permanentFolder.replace(/^\/|\/$/g, '');
+        const fileExtension = originalFilename.split('.').pop();
+        const uniqueId = uuidv4();
+        
+        // The key for the temporary location. S3 Lifecycle Policy will target 'temp-uploads/'
+        const tempKey = `temp-uploads/${sanitizedFolder}/${uniqueId}-${originalFilename}`;
 
-  /**
-   * Uploads multiple files to S3 using multer-s3's output.
-   * @param files An array of file objects provided by multer-s3.
-   * @param folder The target folder (prefix) in the S3 bucket.
-   * @returns A promise that resolves to an array of uploaded file details.
-   */
-  public async uploadMultipleFiles(
-    files: Express.Multer.File[],
-    folder: string
-  ): Promise<IUploadedFile[]> {
-    if (!files || files.length === 0) {
-      throw new ApiError("No files provided for upload.", 400);
-    }
-
-    const uploadedFiles: IUploadedFile[] = files
-      .map((file) => {
-        if (!(file as any).location || !(file as any).key) {
-          // Log and skip malformed files, or throw an error if strict
-          console.warn(
-            `Skipping malformed file in multiple upload: ${file.originalname}`
-          );
-          return null;
-        }
-        return {
-          url: (file as any).location,
-          key: (file as any).key,
-          bucket: S3_BUCKET_NAME!,
-          mimetype: file.mimetype,
-          size: file.size,
-        };
-      })
-      .filter(Boolean) as IUploadedFile[]; // Filter out any nulls
-
-    if (uploadedFiles.length === 0) {
-      throw new ApiError("No valid files were uploaded.", 500);
-    }
-
-    return uploadedFiles;
-  }
-
-  /**
-   * Deletes a file from S3.
-   * @param key The S3 object key of the file to delete.
-   */
-  public async deleteFile(key: string): Promise<void> {
-    const command = new DeleteObjectCommand({
-      Bucket: S3_BUCKET_NAME,
-      Key: key,
-    });
-
-    try {
-      await s3Client.send(command);
-    } catch (error: any) {
-      console.error(`Error deleting file ${key}:`, error);
-      throw new ApiError(`Failed to delete file: ${error.message}`, 500);
-    }
-  }
-
-  /**
-   * Lists all files (or files within a specific folder) in the S3 bucket.
-   * Generates pre-signed URLs for each listed object.
-   * @param folder Optional. The folder (prefix) to list objects from.
-   * @returns A promise that resolves to an array of file URLs and keys.
-   */
-  public async listFilesInFolder(folder?: string): Promise<IFileUrl[]> {
-    const command = new ListObjectsV2Command({
-      Bucket: S3_BUCKET_NAME,
-      Prefix: folder ? `${folder}/` : undefined, // List objects within a specific folder
-    });
-
-    let isTruncated = true;
-    let allObjects: _Object[] = [];
-    let nextContinuationToken: string | undefined;
-
-    try {
-      while (isTruncated) {
-        const { Contents, IsTruncated, NextContinuationToken } =
-          await s3Client.send(command);
-        if (Contents) {
-          allObjects = allObjects.concat(Contents);
-        }
-        isTruncated = IsTruncated || false;
-        nextContinuationToken = NextContinuationToken;
-        command.input.ContinuationToken = nextContinuationToken;
-      }
-
-      const urlsWithKeys: IFileUrl[] = await Promise.all(
-        allObjects.map(async (obj) => {
-          if (obj.Key) {
-            const getObjectParams = {
-              Bucket: S3_BUCKET_NAME,
-              Key: obj.Key,
-            };
-            // Generate a pre-signed URL for download, valid for 1 hour
-            const url = await getSignedUrl(
-              s3Client,
-              new GetObjectCommand(getObjectParams),
-              { expiresIn: 3600 }
-            );
-            return { url, key: obj.Key };
-          }
-          return null;
-        })
-      ).then((results) => results.filter(Boolean) as IFileUrl[]); // Filter out nulls
-
-      return urlsWithKeys;
-    } catch (error: any) {
-      console.error(
-        `Error listing files in folder ${folder || "root"}:`,
-        error
-      );
-      throw new ApiError(`Failed to list files: ${error.message}`, 500);
-    }
-  }
-
-  /**
-   * Generates a pre-signed URL for downloading a private S3 object.
-   * @param key The S3 object key of the file to download.
-   * @returns A promise that resolves to the pre-signed download URL.
-   */
-  public async getSignedUrlForDownload(key: string): Promise<string> {
-    const getObjectParams = {
-      Bucket: S3_BUCKET_NAME,
-      Key: key,
-    };
-    try {
-      // URL valid for 1 hour
-      const url = await getSignedUrl(
-        s3Client,
-        new GetObjectCommand(getObjectParams),
-        { expiresIn: 3600 }
-      );
-      return url;
-    } catch (error: any) {
-      console.error(`Error generating download URL for key ${key}:`, error);
-      throw new ApiError(
-        `Failed to generate download URL: ${error.message}`,
-        500
-      );
-    }
-  }
-
-  /**
-   * Generates a pre-signed URL for direct client-side S3 upload.
-   * This allows clients to upload files directly to S3 without proxying through your server.
-   * @param filename The original filename.
-   * @param filetype The MIME type of the file (e.g., 'image/jpeg').
-   * @param folder The target folder (prefix) in the S3 bucket.
-   * @returns A promise that resolves to the pre-signed upload URL and the S3 key.
-   */
-<<<<<<< Updated upstream
-   public async generatePresignedUrlForUpload(filename: string, filetype: string, folder: string = 'misc'): Promise<{ url: string, key: string }> {
-        const uniqueFilename = `${folder}/${uuidv4()}-${filename}`;
-        const putObjectParams = {
-            Bucket: S3_BUCKET_NAME,
-            Key: uniqueFilename,
+        const params = {
+            Bucket: this.bucketName,
+            Key: tempKey,
+            Expires: PRESIGNED_URL_EXPIRATION_SECONDS, // Configured expiration
             ContentType: filetype,
-            ACL: ObjectCannedACL.public_read, // <--- REMOVE OR COMMENT OUT THIS LINE!
+            ACL: 'private', // Recommended: upload as private, then serve via presigned GET URL
         };
-=======
-  public async generatePresignedUrlForUpload(
-    filename: string,
-    filetype: string,
-    folder: string = 'misc',
-  ): Promise<{ url: string; key: string }> {
-    const uniqueFilename = `${folder}/${uuidv4()}-${filename}`;
-    const putObjectParams = {
-      Bucket: S3_BUCKET_NAME,
-      Key: uniqueFilename,
-      ContentType: filetype,
-      //ACL: ObjectCannedACL.public_read, // <--- REMOVE OR COMMENT OUT THIS LINE!
-    };
->>>>>>> Stashed changes
 
         try {
-            const url = await getSignedUrl(s3Client, new PutObjectCommand(putObjectParams), { expiresIn: 600 });
-            return { url, key: uniqueFilename };
+            const url = await s3.getSignedUrlPromise('putObject', params);
+            Logger.debug(`Generated presigned PUT URL for S3 key: ${tempKey}`, 'S3Service');
+            return { url: url, key: tempKey };
         } catch (error: any) {
-            console.error(`Error generating pre-signed upload URL for ${uniqueFilename}:`, error);
-            throw new ApiError(`Failed to generate upload URL: ${error.message}`, 500);
+            Logger.error(`Failed to generate presigned PUT URL for ${tempKey}: ${error.message}`, 'S3Service');
+            throw new ApiError(`Failed to generate presigned URL: ${error.message}`, 500);
+        }
+    }
+
+    /**
+     * Generates a presigned URL for a client to GET (download) an object from S3.
+     * @param key The full S3 key of the object.
+     * @returns The presigned GET URL.
+     */
+    async getPresignedGetUrl(key: string): Promise<string> {
+        const params = {
+            Bucket: this.bucketName,
+            Key: key,
+            Expires: PRESIGNED_GET_URL_EXPIRATION_SECONDS, // Configured expiration
+        };
+
+        try {
+            const url = await s3.getSignedUrlPromise('getObject', params);
+            Logger.debug(`Generated presigned GET URL for S3 key: ${key}`, 'S3Service');
+            return url;
+        } catch (error: any) {
+            Logger.error(`Failed to generate presigned GET URL for ${key}: ${error.message}`, 'S3Service');
+            throw new ApiError(`Failed to retrieve file URL: ${error.message}`, 500);
+        }
+    }
+
+    /**
+     * Moves an object from a source S3 key to a destination S3 key.
+     * Used to move files from temporary to permanent locations.
+     * @param sourceKey The current S3 key (e.g., in temp-uploads/).
+     * @param destinationKey The desired permanent S3 key.
+     */
+    async moveObject(sourceKey: string, destinationKey: string): Promise<void> {
+        Logger.info(`Attempting to move S3 object from ${sourceKey} to ${destinationKey}`, 'S3Service');
+        const copyParams = {
+            Bucket: this.bucketName,
+            CopySource: `${this.bucketName}/${sourceKey}`, // Source path including bucket name for CopySource
+            Key: destinationKey,
+            ACL: 'private', // Set desired ACL for the final object in its permanent location
+        };
+
+        try {
+            await s3.copyObject(copyParams).promise();
+            Logger.info(`Object copied from ${sourceKey} to ${destinationKey}`, 'S3Service');
+
+            const deleteParams = {
+                Bucket: this.bucketName,
+                Key: sourceKey,
+            };
+            await s3.deleteObject(deleteParams).promise();
+            Logger.info(`Original object deleted from ${sourceKey}`, 'S3Service');
+        } catch (error: any) {
+            Logger.error(`Error in S3 moveObject: ${error.message}`, 'S3Service');
+            throw new ApiError(`Failed to move object: ${error.message}`, 500);
+        }
+    }
+
+    /**
+     * Deletes a file from S3.
+     * @param key The full S3 key of the object to delete.
+     */
+    async deleteFile(key: string): Promise<void> {
+        const params = {
+            Bucket: this.bucketName,
+            Key: key,
+        };
+        try {
+            await s3.deleteObject(params).promise();
+            Logger.info(`File deleted successfully: ${key}`, 'S3Service');
+        } catch (error: any) {
+            Logger.error(`Error deleting file ${key}: ${error.message}`, 'S3Service');
+            throw new ApiError(`Failed to delete file: ${error.message}`, 500);
+        }
+    }
+
+    /**
+     * Lists files from S3 within a given prefix.
+     * @param prefix The S3 prefix (folder) to list objects from.
+     * @returns An array of S3 object keys.
+     */
+    async listFiles(prefix: string = ''): Promise<string[]> {
+        const params = {
+            Bucket: this.bucketName,
+            Prefix: prefix,
+        };
+        try {
+            const data = await s3.listObjectsV2(params).promise();
+            const keys = data.Contents?.map(obj => obj.Key || '').filter(key => key) || [];
+            Logger.debug(`Listed ${keys.length} files with prefix: ${prefix}`, 'S3Service');
+            return keys;
+        } catch (error: any) {
+            Logger.error(`Error listing files from S3 with prefix ${prefix}: ${error.message}`, 'S3Service');
+            throw new ApiError(`Failed to list files: ${error.message}`, 500);
         }
     }
 }
-
-export const s3Service = new S3Service();
