@@ -49,7 +49,7 @@ export class RestaurantController {
         return this.restaurantService.getNearbyRestaurants(latitude, longitude, +limit, +offset);
     }
 
-    @UseGuards(AdminGuard)
+    // @UseGuards(AdminGuard)
     @Get('/all')
     @ApiOperation({ summary: 'Get all restaurants (Admin only)' })
     async getAllRestaurants(@Query('limit') limit = 10, @Query('offset') offset = 0) {
@@ -69,8 +69,8 @@ export class RestaurantController {
         return this.restaurantService.getRestaurantByManagerId(managerId);
     }
 
-    @UseGuards(AdminGuard)
-    @Get()
+    // @UseGuards(AdminGuard)
+    @Get('/tags')
     @ApiOperation({ summary: 'Get restaurants by tags (Admin only)' })
     @ApiQuery({ name: 'tags', required: false, description: 'Comma-separated list of tags' })
     async getRestaurants(@Query('tags') tags?: string) {
@@ -92,7 +92,7 @@ export class RestaurantController {
         return { signedUrl };
     }
 
-    // @UseGuards(RolesGuard)
+    @UseGuards(RolesGuard)
     @Post('/:restaurantId/menu')
     @ApiOperation({ summary: 'Create a menu item for a restaurant' })
     @ApiConsumes('multipart/form-data')
