@@ -1,10 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-export type PaymentDocument = Payment & Document;
+export type WebhookDocument = Webhook & Document;
 
 @Schema({ timestamps: true })
-export class Payment {
+export class Webhook {
   @Prop({ required: true })
   orderId: string;
 
@@ -18,10 +18,17 @@ export class Payment {
   sessionId: string;
 
   @Prop({ default: 'pending' })
-  status: 'pending' | 'paid' | 'failed';
+  status: 'pending' | 'paid' | 'failed';z
 
   @Prop()
-  recieptUrl:string
+  chargeId:string;
+
+  @Prop()
+  paymentIntentId:string;
+
+  @Prop()
+  sessionStatus:string;
+
 }
 
-export const PaymentSchema = SchemaFactory.createForClass(Payment);
+export const webhookSchema = SchemaFactory.createForClass(Webhook);
