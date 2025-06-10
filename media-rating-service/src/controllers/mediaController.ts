@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { s3Service } from '../services/s3Service';
-import { asyncHandler, ApiError } from '../utils/errorHandler';
+import { asyncHandler, ApiError } from '../utils/error.handler';
 import { IDeleteImageBody, IGeneratePresignedUrlBody, IGetSingleFileQuery, IListFilesQuery } from '../interfaces/IMedia';
 
 /**

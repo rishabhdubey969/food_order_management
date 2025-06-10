@@ -5,17 +5,28 @@ import { JwtService } from '@nestjs/jwt';
 export class AdminGuard implements CanActivate {
   constructor(private jwtService: JwtService) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
-    const token = request.headers.authorization?.replace('Bearer ', '');
+
+    const token = request.headers.authorization?.split(' ')[1];
+
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
 
-    const payload = this.jwtService.verify(token);
-    if (payload.role !== 1) {
+    let payload;
+    try {
+      payload = await this.jwtService.verify(token);
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
+    if (payload.role !== 'admin') {
       throw new UnauthorizedException('Admin access required');
     }
+
+    // Attach the payload to the request for use in the controller
+    request.user = payload;
     return true;
   }
 }

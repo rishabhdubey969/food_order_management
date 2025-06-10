@@ -1,0 +1,17 @@
+{
+
+    "EXIST":"Payment does not exist",
+    "Order":"Order not Found",
+    "NOT_FOUND": "User not found",
+    "INVALID_CREDENTIALS": "WRONG USERNAME OR PASSWORD",
+    "ALREADY_EXIST": "User already exist",
+    "EMAIL_ERROR": "Error in sending otp mail",
+    "WRONG_OTP": "The entered OTP is not correct",
+    "OTP_REQUIRED": "OTP verification is required",
+    "PHONE_InUse":"Phone Number Already in use",
+    "LIMIT_EXHAUSTED":"You have exhausted daily limit for password reset",
+    "Leave_More_Than_3days":"You cannot apply leave for more than 3 days back",
+    "Date_Range":"Invalid Date Range",
+    "More_than_6days":"Cannot apply for more than 6 total leave days",
+    "Already_Applied":"Leave date already applied"
+}

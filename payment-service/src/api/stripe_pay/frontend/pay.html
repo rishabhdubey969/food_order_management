@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Save Card with SetupIntent</title>
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <h2>Save your card</h2>
+  <form id="setup-form">
+    <div id="card-element"></div>
+    <button type="submit">Save Card</button>
+  </form>
+
+  <p id="result"></p>
+
+  <script>
+    const stripe = Stripe("pk_test_51RKDqbQi6G6c1iYlfuH4Py1gIksU7nV7TAALybkv2R5ZTMi5GAgX5ehI4ZfYjBvavrx86vl1tPEoDOxwueZiZvIt00z2H7ILwB")
+    const elements = stripe.elements();
+    const cardElement = elements.create("card");
+    cardElement.mount("#card-element");
+
+    const customerId = "cus_SR7r0kQN6Vzmzr"; // Replace with real Stripe customer ID
+
+    document.getElementById("setup-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // 1. Get SetupIntent client_secret from backend
+      const setupIntentRes = await fetch("http://localhost:3000/create-setup-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId }),
+      });
+
+      const { client_secret } = await setupIntentRes.json();
+
+      // 2. Confirm the SetupIntent using Stripe.js
+      const { setupIntent, error } = await stripe.confirmCardSetup(client_secret, {
+        payment_method: {
+          card: cardElement,
+        },
+      });
+
+      if (error) {
+        document.getElementById("result").textContent = "❌ Error: " + error.message;
+      } else {
+        document.getElementById("result").textContent =
+          "✅ Card saved! Payment Method ID: " + setupIntent.payment_method;
+
+        // OPTIONAL: Send setupIntent.payment_method to your backend to attach it
+        // via /stripe/save-card (Step 3)
+      }
+    });
+  </script>
+</body>
+</html>

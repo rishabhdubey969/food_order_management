@@ -3,7 +3,7 @@ import multerS3 from 'multer-s3';
 import { s3Client, S3_BUCKET_NAME } from '../config/aws';
 import { v4 as uuidv4 } from 'uuid';
 import { Request } from 'express';
-import { ApiError } from '../utils/errorHandler';
+import { ApiError } from '../utils/error.handler';
 // import {
 //   ObjectCannedACL, // Import _Object for type hinting
 // } from "@aws-sdk/client-s3";

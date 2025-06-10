@@ -8,6 +8,11 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppService } from './app.service';
 import { SeederModule } from  './seed/seeder.module'
 import { AppController } from './app.controller';
+import { ManagerModule } from './api/manager/manager.module';
+import { JwtModule } from '@nestjs/jwt';
+import { OrderModule } from './api/order/order.module';
+import { RedisModule } from './redis/redis.module';
+
 
 @Module({
   imports: [  
@@ -16,9 +21,16 @@ import { AppController } from './app.controller';
       isGlobal: true, 
       load: [jwtConfig, userConfig] // Add userConfig here
     }),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: '10m' },
+    }),
     AuthModule,
     UserModule, 
-    SeederModule
+    SeederModule,
+    ManagerModule,
+    OrderModule,
+    RedisModule
   ],
   controllers: [AppController],
   providers: [AppService],

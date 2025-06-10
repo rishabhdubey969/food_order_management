@@ -1,0 +1,16 @@
+
+syntax = "proto3";
+
+service OrderService {
+  rpc GetOrder (OrderRequest) returns (OrderResponse);
+}
+
+message OrderRequest {
+  string orderId = 1;
+}
+
+message OrderResponse {
+  string orderId = 1;
+  double amount = 2;
+  string currency = 3;
+}

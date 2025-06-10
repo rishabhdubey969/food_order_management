@@ -1,4 +1,3 @@
-
 import {
   Body,
   Controller,
@@ -21,83 +20,50 @@ import {
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
-  @Post('add/:userId/:restaurantId')
+  @Post('add/:userId/:restaurantId/:addressId')
   @ApiOperation({ summary: 'Add item to cart' })
   async addToCart(
     @Param('userId') userId: string,
     @Param('restaurantId') restaurantId: string,
+    @Param('addressId') addressId: string,
     @Body() dto: AddToCartDto,
   ) {
-    return this.cartService.addToCartService(userId, restaurantId, dto);
+    return this.cartService.addToCartService(userId, restaurantId, dto, addressId);
   }
 
-  @Put('update/:userId/:restaurantId')
-  @ApiOperation({ summary: 'Update cart item' })
+  @Put('update/:userId')
+  @ApiOperation({ summary: 'Update item in cart' })
   async updateCart(
     @Param('userId') userId: string,
-    @Param('restaurantId') restaurantId: string,
     @Body() dto: UpdateCartDto,
   ) {
-    return this.cartService.updateCartService(userId, restaurantId, dto);
+    return this.cartService.updateCartService(userId, dto);
   }
 
-  @Delete('delete/:cartId')
-  @ApiOperation({ summary: 'Delete cart after order placement' })
-  async deleteCart(@Param('cartId') cartId: string) {
-    console.log('inside delete cart')
-    return this.cartService.deleteCartService(cartId);
+  @Delete('delete/:userId')
+  @ApiOperation({ summary: 'Delete active cart' })
+  async deleteCart(@Param('userId') userId: string) {
+    return this.cartService.deleteCartService(userId);
   }
 
-  @Delete('remove/:userId/:restaurantId')
-  @ApiOperation({ summary: 'User removes cart manually' })
-  async removeCart(
-    @Param('userId') userId: string,
-    @Param('restaurantId') restaurantId: string,
-  ) {
-    return this.cartService.removeCartService(userId, restaurantId);
+  @Get('get/:userId')
+  @ApiOperation({ summary: 'Get user’s active cart' })
+  async getCart(@Param('userId') userId: string) {
+    return this.cartService.getCartService(userId);
   }
 
-  @Get('getAllCarts/:userId')
-  @ApiOperation({ summary: 'Get all carts of a user' })
-  async viewAllCarts(@Param('userId') userId: string) {
-    return this.cartService.viewAllCartsService(userId);
-  }
-
-  @Get('getCart/:userId/:restaurantId')
-  @ApiOperation({ summary: 'Get specific cart for a restaurant' })
-  async specificCart(
-    @Param('userId') userId: string,
-    @Param('restaurantId') restaurantId: string,
-  ) {
-    return this.cartService.specificCartService(userId, restaurantId);
-  }
-
-  @Get('viewCoupons/:restaurantId')
-  @ApiOperation({ summary: 'View coupons for a restaurant' })
-  async viewCoupons(@Param('restaurantId') restaurantId: string) {
+  @Get('coupons/:restaurantId')
+  @ApiOperation({ summary: 'Get coupons for a restaurant' })
+  async getCoupons(@Param('restaurantId') restaurantId: string) {
     return this.cartService.viewCouponsService(restaurantId);
   }
 
-  @Post('applyCoupon/:cartId/:couponCode')
-  @ApiOperation({ summary: 'Apply coupon to cart' })
+  @Post('applyCoupon/:userId/:couponId')
+  @ApiOperation({ summary: 'Apply coupon to user’s cart' })
   async applyCoupon(
-    @Param('cartId') cartId: string,
-    @Param('couponCode') couponCode: string,
+    @Param('userId') userId: string,
+    @Param('couponId') couponId: string,
   ) {
-    return this.cartService.applyCouponService(cartId, couponCode);
-  }
-
-  @Post('checkoutAll/:userId')
-  @ApiOperation({ summary: 'Checkout all carts for a user' })
-  async checkoutAll(@Param('userId') userId: string) {
-    return this.cartService.checkoutAllCarts(userId);
-  }
-
-  @Get('test-apply-coupon')
-  async testApplyCoupon() {
-    const cartId = '6835858ca5f96aed15e018c9';
-    const couponCode = 'FOOD20';
-    return await this.cartService.applyCouponService(cartId, couponCode);
+    return this.cartService.applyCouponService(userId, couponId);
   }
 }
-

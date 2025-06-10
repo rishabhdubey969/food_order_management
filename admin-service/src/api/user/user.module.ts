@@ -1,14 +1,33 @@
-import { forwardRef, Inject, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { User, UserSchema } from './entities/user.entity';
+import { JwtModule } from '@nestjs/jwt';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
-import { Manager, ManagerSchema } from './entities/manager.entity';
-
+import { User, UserSchema } from './entities/user.entity';
+import { AuthModule } from '../auth/auth.module';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema },{ name: Manager.name, schema: ManagerSchema }]),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'yourSecretKey',
+      signOptions: { expiresIn: '24h' },
+    }),
+      ClientsModule.register([
+          {
+            name: 'NOTIFICATION_SERVICE',
+            transport: Transport.RMQ,
+            options: {
+              urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+              queue: 'notification_queue',
+              queueOptions: {
+                durable: false,
+              },
+            },
+          },
+        ]),
+    AuthModule, // Import AuthModule for session and JWT verification
   ],
   controllers: [UserController],
   providers: [UserService],

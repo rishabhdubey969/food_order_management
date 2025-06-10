@@ -4,10 +4,13 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { ManagerModule } from './manager/manager.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
    const app = await NestFactory.create(AppModule);
 
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT') || 3000; 
   const config = new DocumentBuilder()
     .setTitle('Manager & Restaurant API')
     .setDescription('API for Manager signup, login, and management')

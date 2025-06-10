@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package media;
+
+service MediaService {
+  rpc GeneratePresignedUrl (GeneratePresignedUrlRequest) returns (GeneratePresignedUrlResponse);
+  rpc MoveObject (MoveObjectRequest) returns (MoveObjectResponse);
+}
+
+message GeneratePresignedUrlRequest {
+  string filename = 1;
+  string filetype = 2;
+  string folder = 3; // The intended permanent folder (e.g., "users/avatars", "products/images")
+}
+
+message GeneratePresignedUrlResponse {
+  string url = 1;
+  string key = 2; // The full S3 key (including the temporary prefix)
+}
+
+message MoveObjectRequest {
+  string sourceKey = 1; // The current S3 key (e.g., in temp-uploads/)
+  string destinationKey = 2; // The desired permanent S3 key
+}
+
+message MoveObjectResponse {
+  bool success = 1;
+  string errorMessage = 2;
+}

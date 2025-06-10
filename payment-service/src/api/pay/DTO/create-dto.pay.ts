@@ -1,5 +1,3 @@
-// src/payments/dto/create-payment.dto.ts
-
 import { IsString, IsNumber } from 'class-validator';
 
 export class CreatePaymentDto {

@@ -52,10 +52,4 @@ export class CreateRestaurantDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
-
-  @ApiPropertyOptional({ description: 'Available coupons for the restaurant', type: [String], example: ['SUMMER20', 'WELCOME'] })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  copons?: string[];
 }
