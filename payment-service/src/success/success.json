@@ -1,0 +1,15 @@
+{
+    
+    
+    "LOGIN_SUCCESSFULL": "USER LOGGED IN SUCCESSFULLY",
+   
+    "SIGNUP SUCCESSFUL": "USER SIGNED UP SUCCESSFULLY",
+    "OTP_SEND": "OTP send successfully",
+    
+    "OTP_VERIFIED": "The entered OTP is correct",
+  
+    
+    "PASSWORD_UPDATED": "The Password is updated",
+    
+    "Leave_Applied":"Leave request is send successfully"
+}

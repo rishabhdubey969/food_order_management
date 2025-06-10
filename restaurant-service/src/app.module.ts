@@ -16,6 +16,13 @@ import { RestaurantModule } from './restaurant/restaurant.module';
         uri: configService.get<string>('DB_URL'),
       }),
     }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('MONGO_URI'),
+      }),
+      inject: [ConfigService],
+    }),
     ManagerModule, 
     RestaurantModule
   ],

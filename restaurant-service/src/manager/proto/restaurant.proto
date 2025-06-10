@@ -7,7 +7,7 @@ service RestaurantService {
 }
 
 message ItemAvailabilityRequest {
-  string cartId = 1;
+  string orderId = 1;
 }
 
 message ItemAvailabilityResponse {

@@ -1,5 +1,3 @@
-// src/payments/schemas/payment.schema.ts
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 

@@ -1,30 +1,29 @@
 import * as nodemailer from 'nodemailer';
 import * as dotenv from 'dotenv';
-import { renderEmailTemplate } from '../utils/template.util';
-
 dotenv.config();
 
-var transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: Number(process.env.MAIL_PORT),
-    auth: {
-        user: process.env.MAIL_USER_NAME,
-        pass: process.env.MAIL_PASSWORD
-    }
+const transporter = nodemailer.createTransport({
+  host: process.env.MAIL_HOST,
+  port: Number(process.env.MAIL_PORT),
+  auth: {
+    user: process.env.MAIL_USER_NAME,
+    pass: process.env.MAIL_PASSWORD,
+  },
 });
 
-export const sendMail = async (to: string, subject: string, name: string, template, otp: string|null) => {
-  console.log('Sending email to:', template, otp);
-  const info = await transporter.sendMail({
-    from: '"foodApp" <foodapp@yopmail.com>', // sender address
-    to, // recipient
-    html: renderEmailTemplate(template, {
-      name: to,
-      otp: otp,
-      year: new Date().getFullYear(),
-      subject: subject,
-    }),
-  });
+export const sendMail = async (to: string, subject: string, html: string) => {
+  try {
+    const info = await transporter.sendMail({
+      from: '"OTP" <priyansh1@appinventiv.com>', // sender address
+      to, // recipient
+      subject, // Subject line
+      html, // HTML body (replaced text with html to support admin email formats)
+    });
 
     console.log('Message sent: %s', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw error;
+  }
 };

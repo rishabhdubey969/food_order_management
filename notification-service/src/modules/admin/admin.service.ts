@@ -1,26 +1,19 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminDto } from './dto/update-admin.dto';
+import { Injectable, Logger } from '@nestjs/common';
+import { sendMail } from '../../service/mail.service';
 
 @Injectable()
 export class AdminService {
-  create(createAdminDto: CreateAdminDto) {
-    return 'This action adds a new admin';
-  }
+  private readonly logger = new Logger(AdminService.name);
 
-  findAll() {
-    return `This action returns all admin`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} admin`;
-  }
-
-  update(id: number, updateAdminDto: UpdateAdminDto) {
-    return `This action updates a #${id} admin`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} admin`;
+  async sendAdminEmail(data: { to: string; subject: string; html: string }) {
+    this.logger.log(`Sending admin email to ${data.to} with subject: ${data.subject}`);
+    try {
+      await sendMail(data.to, data.subject, data.html);
+      this.logger.log(`Admin email sent to ${data.to}`);
+      return { success: true, message: `Admin email sent to ${data.to}` };
+    } catch (error) {
+      this.logger.error(`Failed to send admin email to ${data.to}: ${error.message}`, error.stack);
+      throw new Error(`Failed to send admin email: ${error.message}`);
+    }
   }
 }

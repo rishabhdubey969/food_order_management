@@ -1,22 +1,65 @@
+// import { Module } from '@nestjs/common';
+// import { MongooseModule } from '@nestjs/mongoose';
+// import { JwtModule } from '@nestjs/jwt';
+// import { AuthService } from './auth.service';
+// import { AuthController } from './auth.controller';
+// import { Admin, AdminSchema } from './entities/admin.entity';
+// import { Session, SessionSchema } from './entities/session.entity';
+// import { ConfigModule } from '@nestjs/config';
+
+// @Module({
+//   imports: [
+//     MongooseModule.forFeature([
+//       { name: Admin.name, schema: AdminSchema },
+//       { name: Session.name, schema: SessionSchema },
+//     ]),ConfigModule.forRoot(),
+//     JwtModule.register({
+//       secret: process.env.JWT_SECRET || 'yourSecretKey',
+//       signOptions: { expiresIn: '24h' },
+//     }),
+//   ],
+//   controllers: [AuthController],
+//   providers: [AuthService],
+//   exports: [AuthService], // Export for shared JWT verification
+// })
+// export class AuthModule {}
+
+
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { User, UserSchema } from '../user/entities/user.entity';
-import { Manager, ManagerSchema } from '../user/entities/manager.entity';
+import { Admin, AdminSchema } from './entities/admin.entity';
+import { Session, SessionSchema } from './entities/session.entity';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema },{ name: Manager.name, schema: ManagerSchema },]
-      
-    ),
+    MongooseModule.forFeature([
+      { name: Admin.name, schema: AdminSchema },
+      { name: Session.name, schema: SessionSchema },
+    ]),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-secret-key',
-      signOptions: { expiresIn: '1d' },
+      secret: process.env.JWT_SECRET|| 'yourSecretKey',
+      signOptions: { expiresIn: '10m' },
     }),
+    ClientsModule.register([
+      {
+        name: 'NOTIFICATION_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+          queue: 'notification_queue',
+          queueOptions: {
+            durable: false,
+          },
+        },
+      },
+    ]),
   ],
   controllers: [AuthController],
   providers: [AuthService],
+   exports: [AuthService],
 })
 export class AuthModule {}

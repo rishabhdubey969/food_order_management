@@ -1,21 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ClientProxy } from '@nestjs/microservices';
-import { NotificationHelperService } from 'src/utils/helper';
+import { NotificationService } from 'src/utils/helper';
 
 @Injectable()
 export class UserService {
   constructor(
-    readonly notificationHelperService: NotificationHelperService,
+    readonly notificationHelperService: NotificationService,
   ) {}
 
-  async signupUser(data: any) {
-    return this.notificationHelperService.welcomeEmail(data, 'Welcome to FoodApp!', 'welcome-email');
-  }
-
-  async signupOtp(data: any) {
-    console.log('Sending signup OTP:', data);
-    return this.notificationHelperService.welcomeEmail(data, 'Signup OTP', 'signup-otp');
+  async signupUser(data: CreateUserDto) {
+    return this.notificationHelperService.welcomeEmail();
   }
 }

@@ -5,8 +5,10 @@ import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { DatabaseModule } from './Database/database.module';
 import { paymentService } from './payment.service';
-import { PayModule } from './api/pay/pay.module';
 
+import { StripePayModule } from './api/stripe_pay/stripe.pay.module';
+import { RefundStripeModule } from './api/refund/refund.stripe.module';
+import { StripeWebhookModule } from './api/webhook/stripe.webhook.module';
 
 @Module({
   imports: [
@@ -14,7 +16,11 @@ import { PayModule } from './api/pay/pay.module';
       isGlobal: true,
       envFilePath: '.env',
       load: [configuration],
-    }),DatabaseModule,PayModule
+    }),
+    DatabaseModule,
+    StripePayModule,
+    RefundStripeModule,
+    StripeWebhookModule,
   ],
   controllers: [PaymentController],
   providers: [paymentService],

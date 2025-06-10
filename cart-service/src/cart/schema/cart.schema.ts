@@ -54,6 +54,9 @@ export class Cart {
   @Prop({ default: null })
   couponCode: string;
 
+
+  couponId: string;
+
   @Prop({ default: false })
   deleted: boolean;
 }

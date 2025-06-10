@@ -6,29 +6,32 @@ export class User extends Document {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, select: false })
   password: string;
 
   @Prop({ required: true })
   username: string;
 
-  @Prop()
-  phone?: string;
-
-  @Prop({ default: 2 }) // 1: admin, 2: user, 3: manager
+  @Prop({ required: true, default: 2 }) // 2 for user role
   role: number;
 
-  @Prop({ default: true })
+  @Prop({ required: true, default: true })
   is_active: boolean;
 
-  @Prop({ default: false })
+  @Prop({ required: true, default: false })
   is_deleted: boolean;
 
-  @Prop({ type: String, default: null }) // Allow null explicitly
-  resetToken?: string | null;
+  @Prop()
+  otp?: string;
 
-  @Prop({ type: Date, default: null }) // Allow null explicitly
-  resetTokenExpires?: Date | null;
+  @Prop()
+  otpExpires?: Date;
+
+  @Prop()
+  resetToken?: string;
+
+  @Prop()
+  resetTokenExpires?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -92,13 +92,8 @@ export class AuthService {
 
   async ValidateTokenService(accessToken: string) {
     try {
-<<<<<<< HEAD
-      //console.log("hi new this token" +token);
-      const payload = this.jwtService.verify(token);
-=======
       const payloadAccessToken = this.tokenService.verifyToken(accessToken);
       const isValid = !!payloadAccessToken;
->>>>>>> 972e8b54b53694c8b56dd1067f48527c515aa865
 
       return {
         isValid,
