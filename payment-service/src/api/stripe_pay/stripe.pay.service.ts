@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { Model } from 'mongoose';
@@ -35,6 +35,9 @@ export class StripePayService {
 
   async createCheckoutSession(payload: CreatePaymentDto) {
     try {
+      if (!payload.orderId) {
+              throw new BadRequestException('orderId is required');
+            }
       const orderId = payload.orderId;
 
       const session = await this.stripe.checkout.sessions.create({
@@ -77,9 +80,14 @@ export class StripePayService {
       return { url: session.url };
     } catch (error) {
       Logger.error('Error creating checkout session:', error);
-      throw error;
+      if (error) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to create checkout session');
     }
-  }
+      
+    }
+  
 
   async updatePaymentStatus(sessionId: string, status: string) {
     const payment = await this.paymentModel.findOneAndUpdate(

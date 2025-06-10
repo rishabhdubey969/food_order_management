@@ -1,7 +1,8 @@
-import { Controller, Get, Headers, Param, Patch, Query, UnauthorizedException, UseGuards ,Request} from '@nestjs/common';
-import { ManagerService } from './manager.service';
+import { Controller, Get, Headers, Param, Patch, Query, UnauthorizedException, UseGuards ,Request, Body} from '@nestjs/common';
+import { DeleteManagerRequest, DeleteManagerResponse, GetAllManagersRequest, GetAllManagersResponse, GetSignUpRequest, GetSignUpResponse, ManagerService } from './manager.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { firstValueFrom } from 'rxjs';
 
 @Controller('manager')
 export class ManagerController {
@@ -64,5 +65,16 @@ export class ManagerController {
     }
     const adminId = req.user.sub;
     return this.managerService.unblockManagerAndRestaurant(managerId, restaurantId, adminId);
+  }
+
+
+  async signup(@Body() getSignUpRequest: GetSignUpRequest) : Promise<GetSignUpResponse>{
+    return await firstValueFrom(await this.managerService.signup(getSignUpRequest))
+  }
+   async deletemanager(@Param() deleteManagerRequest: DeleteManagerRequest) : Promise<DeleteManagerResponse>{
+    return await firstValueFrom(await this.managerService.deletemanager(deleteManagerRequest))
+  }
+ async getallmanager(@Headers() getAllManagersRequest: GetAllManagersRequest) : Promise<GetAllManagersResponse>{
+    return await firstValueFrom(await this.managerService.getallmanager(getAllManagersRequest))
   }
 }

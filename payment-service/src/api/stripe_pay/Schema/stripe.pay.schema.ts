@@ -19,6 +19,9 @@ export class Payment {
 
   @Prop({ default: 'pending' })
   status: 'pending' | 'paid' | 'failed';
+
+  @Prop()
+  recieptUrl:string
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(Payment);

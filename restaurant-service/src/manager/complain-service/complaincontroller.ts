@@ -38,8 +38,8 @@ export class ComplaintController {
       example1: {
         summary: 'Sample complaint',
         value: {
-          userId: '123e4567-e89b-12d3-a456-426614174000',
-          orderId: '789e0123-e45b-67d3-a456-426614174000',
+          userId: '682adb9df49146b3a410e478',
+          orderId: '683d8e4d15f9ab39583eef4f',
           description: 'The food was delivered late and was cold.',
         },
       },

@@ -6,14 +6,16 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Payment } from '../pay/Schema/pay.schema';
 import { PaymentDocument } from '../stripe_pay/Schema/stripe.pay.schema';
 import { Model } from 'mongoose';
+import { Webhook, WebhookDocument } from './Schema/webhook.schema';
 
 @Injectable()
 export class StripeWebhookService {
   private readonly logger = new Logger(StripeWebhookService.name);
 
   constructor(
-    @InjectModel(Payment.name)
-    private paymentModel: Model<PaymentDocument>,
+    @InjectModel(Webhook.name)
+    private webhookModel: Model<WebhookDocument>,
+    
     private readonly stripeConfig: StripeConfigService,
     private readonly paymentService: StripePayService,
   ) {}
@@ -50,6 +52,7 @@ async handleWebhookEvent(event: Stripe.Event) {
 
         case 'charge.succeeded':
           const succeededCharge = event.data.object;
+
           await this.handleChargeSucceeded(succeededCharge);
           break;
 
@@ -113,6 +116,7 @@ async handleWebhookEvent(event: Stripe.Event) {
   async handleChargeSucceeded(charge: Stripe.Charge) {
     try {
       const paymentIntentId = charge.payment_intent as string;
+      
       if (!paymentIntentId) {
         throw new Error('No payment intent found in charge');
       }
@@ -120,6 +124,7 @@ async handleWebhookEvent(event: Stripe.Event) {
       const paymentIntent = await this.stripeConfig
         .getStripeInstance()
         .paymentIntents.retrieve(paymentIntentId);
+        
       const orderId = paymentIntent.metadata?.orderId;
       if (!orderId) {
         throw new Error('No orderId found in payment intent metadata');
@@ -133,13 +138,13 @@ async handleWebhookEvent(event: Stripe.Event) {
           payment_intent: paymentIntentId,
           limit: 1,
         });
-
+        console.log(session)
       if (session.data.length === 0) {
         throw new Error(
           `No session found for payment intent ${paymentIntentId}`,
         );
       }
-
+      
       await this.updatePaymentStatus(session.data[0].id, 'completed');
     } catch (error) {
       Logger.error('Error handling charge succeeded:', error);

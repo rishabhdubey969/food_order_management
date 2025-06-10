@@ -8,6 +8,16 @@ export default () => {
 
         db: {
             uri: process.env.MONGO_URI
+        },
+
+        redis: {
+            port: process.env.REDIS_PORT,
+            host: process.env.REDIS_HOST
+        },
+
+        jwt: {
+            secret: process.env.JWT_SECRET,
+            expiresIn: process.env.JWT_EXPIRES_IN
         }
     })
 }

@@ -18,8 +18,8 @@ export class Manager {
   @Prop({ required: true })
   restaurantId: string;
 
-  @Prop({ default: 'pending', enum: ['pending', 'active', 'rejected'] })
-  isActive: string;
+  // @Prop({ default: 'pending', enum: ['pending', 'active', 'rejected'] })
+  // isActive: string;
 
   @Prop()
   accountNumber: string;
@@ -32,6 +32,12 @@ export class Manager {
 
   @Prop({ default: false })
   isActiveManager: boolean;
+
+   @Prop({ default: false })
+  isblocked: boolean;
+
+  @Prop({ default: false })
+  isdeleted: boolean;
 }
 export type ManagerDocument = Manager & Document;
 

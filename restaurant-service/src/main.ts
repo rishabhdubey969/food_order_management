@@ -6,14 +6,6 @@ import { ManagerModule } from './manager/manager.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 
-// import order from './manager/proto/'
-// import { logger } from './manager/constant/logger';
-
-// async function bootstrap() {
-//   const app = await NestFactory.create(ManagerModule, {
-//     logger: logger, // Attach Winston Logger
-//   });
-
 async function bootstrap() {
    const app = await NestFactory.create(AppModule);
 
@@ -34,8 +26,40 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
+  
+  const restaurantPort: number = Number(process.env.RESTAURANT_PORT||3000);
+  
+  const grpcMicroservice = app.connectMicroservice<MicroserviceOptions>({
+  //   transport: Transport.GRPC,
+  //   options: {
+  //     package: 'order', // name defined in your .proto file
+  //     protoPath: join(__dirname, './manager/grpc/proto/order.proto'), // path to your proto
+  //     url: '0.0.0.0:50051', // gRPC server address
+  //   },
+  // });
+  // app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.GRPC,
+    options: {
+      package: 'auth',
+      protoPath:  'src/manager/grpc/proto/auth.proto',
+    },
+  });
 
-  await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.KAFKA,
+    options: {
+
+      client:{
+        brokers:["localhost:29092"]
+      },
+
+      consumer:{
+        groupId: 'group-email'
+      }
+      
+    }});
+
+  await app.startAllMicroservices(); // start microservices
+  await app.listen(3000);
 }
 bootstrap();
