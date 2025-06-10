@@ -13,6 +13,5 @@ message OrderById {
 message PaymentStatus {
     string paymentID = 1;
     string paymentStatus = 2;
-    string paymentmessage = 3;
-    string paymentmode = 4;
+    
 }

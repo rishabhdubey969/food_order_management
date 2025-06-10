@@ -1,5 +1,3 @@
-// src/payments/payments.module.ts
-
 import { Module } from '@nestjs/common';
 
 import { MongooseModule } from '@nestjs/mongoose';
@@ -11,8 +9,8 @@ import { PayService } from './pay.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
     ConfigModule,
+    MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
   ],
   controllers: [PayController],
   providers: [PayService],

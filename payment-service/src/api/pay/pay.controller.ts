@@ -1,21 +1,25 @@
-// src/payments/payments.controller.ts
+
 
 import { Controller, Post, Body, Get } from '@nestjs/common';
 
 import { PayService } from './pay.service';
 import { CreatePaymentDto } from './DTO/create-dto.pay';
+import { GrpcMethod } from '@nestjs/microservices';
 
 @Controller('payments')
 export class PayController {
-  constructor(private readonly paymentsService: PayService) {}
+  constructor(private readonly payService: PayService) {}
 
   @Post()
   async create(@Body() createPaymentDto: CreatePaymentDto) {
-    return this.paymentsService.createPayment(createPaymentDto);
+    return this.payService.createPayment(createPaymentDto);
   }
-  
+  @GrpcMethod('PaymentService', 'GetPayStatus')
+  async getPayStatus(data: { orderId: string }) {
+    return this.payService.getPayStatus(data.orderId);
+  }
   @Get()
   async findAll() {
-    return this.paymentsService.findAll();
+    return this.payService.findAll();
   }
 }
