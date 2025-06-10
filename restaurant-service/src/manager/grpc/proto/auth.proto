@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package auth;
+
+service ManagerService {
+  rpc Signup (ManagerSignupRequest) returns (ManagerResponse);
+  rpc UpdateManager (UpdateManagerRequest) returns (ManagerResponse);
+  rpc DeleteManager (DeleteManagerRequest) returns (DeleteManagerResponse);
+  rpc GetAllManagers (GetAllManagersRequest) returns (GetAllManagersResponse);
+}
+
+// Request/Response Messages
+message ManagerSignupRequest {
+  string name = 1;
+  string email = 2;
+  string phone = 3;
+  string password = 4;
+  string restaurant_id = 5;
+  string account_number = 6;
+  string ifsc_code = 7;
+  string bank_name = 8;
+}
+
+message UpdateManagerRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string phone = 3;
+  optional string account_number = 4;
+  optional string ifsc_code = 5;
+  optional string bank_name = 6;
+  optional bool is_active = 7;
+}
+
+message DeleteManagerRequest {
+  string id = 1;
+}
+
+message GetAllManagersRequest {
+  string token = 1;
+}
+
+// Response Messages
+message ManagerResponse {
+  string message = 1;
+  ManagerData data = 2;
+}
+
+message ManagerData {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string restaurant_id = 5;
+  string account_number = 6;
+  string ifsc_code = 7;
+  string bank_name = 8;
+}
+
+message DeleteManagerResponse {
+  string message = 1;
+}
+
+message GetAllManagersResponse {
+  string message = 1;
+  repeated ManagerData managers = 2;
+}

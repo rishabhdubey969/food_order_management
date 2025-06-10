@@ -8,6 +8,7 @@ export const SUCCESS_MESSAGES = {
   EMAIL_SENT:'Email is sent suceessfully',
   COMPLAINT_STATUS_UPDATED:'Complain status is fetched',
   COMPLAINTS_FETCHED:'Complain are fetched successfully',
+  COMPLAINT_CREATED:'Complain created successfully',
 };
 export const ERROR_MESSAGES = {
   INVALID_CREDENTIALS: 'Invalid email or password',
@@ -20,8 +21,5 @@ export const ERROR_MESSAGES = {
     ADMIN_ONLY:'Only admin can access',
     ACCESS_DENIED:'Sorry, your access request has been denied',
     COMPLAINT_NOT_FOUND:'We could not find your complain',
-     
-  ORDER_NOT_FOUND: 'Associated order not found',
- 
-
+  ORDER_NOT_FOUND: 'Associated order not found', 
 };

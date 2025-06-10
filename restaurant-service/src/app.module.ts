@@ -3,7 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ManagerModule } from './manager/manager.module';
 import { RestaurantModule } from './restaurant/restaurant.module';
-// import { RestaurantModule } from './restaurant/restaurant.module';
+import { ManagerGateway } from './manager/gateway/manager.gateway';
+// import { KafkaModule } from './manager/kafka/kafka.module';
 
 @Module({
   imports: [
@@ -13,7 +14,6 @@ import { RestaurantModule } from './restaurant/restaurant.module';
     }),
     ManagerModule, 
     RestaurantModule
-    // RestaurantModule
   ],
   controllers: [],
   providers: [],

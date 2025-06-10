@@ -12,4 +12,5 @@ message  OrderById {
 
 message KitchenStatus {
    string kitchenStatus =1;
+   string reasonOfCancelletion=2;
 }
