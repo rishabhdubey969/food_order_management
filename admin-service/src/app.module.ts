@@ -12,6 +12,7 @@ import { ManagerModule } from './api/manager/manager.module';
 import { JwtModule } from '@nestjs/jwt';
 import { OrderModule } from './api/order/order.module';
 import { RedisModule } from './redis/redis.module';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 
 @Module({
@@ -25,6 +26,7 @@ import { RedisModule } from './redis/redis.module';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '10m' },
     }),
+   
     AuthModule,
     UserModule, 
     SeederModule,
