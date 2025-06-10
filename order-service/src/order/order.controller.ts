@@ -39,7 +39,7 @@ export class OrderController {
                 const orderCancelled=this.orderService.updateOrder(orderId,paymentData.paymentID,PaymentStatus.FAILED,PaymentMethod.UPI,OrderStatus.CANCELLED);
                 return orderCancelled;
               }
-              else if(paymentData.paymentStatus=="Success"){
+              else if(paymentData.paymentStatus=="completed"){
                 const orderConfirmed=this.orderService.updateOrder(orderId,paymentData.paymentID,PaymentStatus.COMPLETED,PaymentMethod.UPI,OrderStatus.CONFIRMED);
                 return orderConfirmed;
               }

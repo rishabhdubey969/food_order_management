@@ -35,7 +35,7 @@ async function bootstrap() {
       options: {
         package: 'payment',
         protoPath: join(__dirname, '../src/grpc/proto/payment.proto'),
-        url: '172.50.5.108:5000',
+        url: '0.0.0.0:5000',
       },
     });
   await microserviceApp.listen();

@@ -12,7 +12,7 @@ export class PaymentClient implements OnModuleInit {
     options: {
       package: PAYMENT_PACKAGE_NAME,
       protoPath: join(path.resolve(), 'src/grpc/proto/payment.proto'),
-      url: '172.50.5.108:5000',
+      url: '0.0.0.0:5000',
     },
   })
   private client: ClientGrpc;
