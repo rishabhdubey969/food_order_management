@@ -9,17 +9,12 @@ import { RestaurantModule } from './restaurant/restaurant.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('DB_URL'),
-      }),
-    }),
+    
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         uri: configService.get<string>('MONGO_URI'),
+        
       }),
       inject: [ConfigService],
     }),
@@ -29,4 +24,6 @@ import { RestaurantModule } from './restaurant/restaurant.module';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule {
+  
+}

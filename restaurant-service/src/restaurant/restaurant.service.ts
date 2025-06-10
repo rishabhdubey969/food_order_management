@@ -107,17 +107,35 @@ export class RestaurantService {
       }).exec();
     }
 
-    async searchRestaurantsByFood(query: string) {
-      const menuItems = await this.menuItemModel.find({
-        $or: [
-          { name: { $regex: query, $options: 'i' } },
-          { tags: { $regex: query, $options: 'i' } }
-        ]
-      });
-      
-      const restaurantIds = [...new Set(menuItems.map(item => item.restaurantId.toString()))];
-      
-      return this.restaurantModel.find({ _id: { $in: restaurantIds } });
+  async searchRestaurantsByFood(query: string, limit: number, offset: number) {
+  const results = await this.menuItemModel.aggregate([
+    {
+      $search: {
+        index: 'default', 
+        text: {
+          query: query,
+          path: ['name', 'tags'],
+          fuzzy: {} 
+        }
+      }
+    },
+    {
+      $group: {
+        _id: '$restaurantId'
+      }
+    },
+    {
+      $skip: offset
+    },
+    {
+      $limit: limit
     }
+  ]);
+
+  const restaurantIds = results.map(r => r._id);
+
+  return this.restaurantModel.find({ _id: { $in: restaurantIds } });
+}
+
  
 }
