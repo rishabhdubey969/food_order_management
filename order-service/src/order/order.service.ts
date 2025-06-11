@@ -3,6 +3,7 @@ import { InjectConnection, InjectModel, ParseObjectIdPipe } from '@nestjs/mongoo
 import mongoose, { Connection, Model, Mongoose, Types} from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { Address, Order, OrderStatus, PaymentMethod, PaymentStatus, ProductItem } from 'src/schema/order.schema';
+import { OrderDto } from 'src/dto/order.dto';
 @Injectable()
 export class OrderService {
     private readonly roleCollections = {
@@ -42,17 +43,19 @@ export class OrderService {
     
     async createOrder(cartId) {
         try {
+
           const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id: new ObjectId(cartId) });
-          if (!cartData) {
+          if (!cartData||cartData.deleted) {
             throw new NotFoundException('Cart not found');
           }
           if (!cartData.items || cartData.items.length === 0) {
             throw new BadRequestException('Cart is empty');
           }
       
-          
+          // modification of cart id in processing phase
+          cartData.deleted=true;
           const items = this.createItems(cartData.items);
-          
+           
         
           const restaurantData=await this.connection.collection(this.roleCollections.RESTAURANT).findOne({_id:new ObjectId(cartData.restaurantId)});
           // console.log(restaurantData);
@@ -99,7 +102,7 @@ export class OrderService {
             timestamp:epochSeconds,
           });
       
-      
+          cartData.save(); 
           return orderCreated._id;
       
         } catch (error) {
@@ -155,7 +158,7 @@ export class OrderService {
 
     }
 
-    async getOrder(orderId:string){
+    async getOrder(orderId:any){
       try{
           const order=await this.OrderSchema.findById(orderId);
           if (!order) {

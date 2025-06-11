@@ -1,0 +1,24 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsMongoId, IsIn } from 'class-validator';
+import { PaymentMethod } from '../schema/order.schema';
+
+export class PlaceOrderDto {
+  @ApiProperty({
+    description: 'Payment method for the order',
+    example: 'cashOnDelivery/online',
+    enum: Object.values(PaymentMethod),
+  })
+  @IsIn(Object.values(PaymentMethod), {
+    message: `modeOfPayment must be one of: ${Object.values(PaymentMethod).join(', ')}`
+  })
+  @IsNotEmpty()
+  modeOfPayment: string;
+
+  @ApiProperty({
+    description: 'ID of the order to process',
+    example: '507f1f77bcf86cd799439011',
+  })
+  @IsMongoId()
+  @IsNotEmpty()
+  orderId: string;
+}
