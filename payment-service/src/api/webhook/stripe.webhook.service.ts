@@ -214,7 +214,7 @@ async handleWebhookEvent(event: Stripe.Event) {
       Logger.log(`Payment successful for order ${orderId}`);
     } catch (error) {
       Logger.error('Error handling successful payment:', error);
-      throw error;
+      throw error
     }
   }
 
