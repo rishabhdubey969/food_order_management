@@ -1,4 +1,4 @@
-import { Message } from './../../../node_modules/@nestjs/microservices/external/kafka.interface.d';
+import { EmailService } from './../email/email.service';
 import { OtpService } from './../otp/otp.service';
 import { DeliveryPartnerService } from './../deliveryPartner/deliveryPartnerService';
 import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
@@ -6,10 +6,14 @@ import { TokenService } from '../token/token.service';
 import { RegisterPartnerDto } from './dtos/registerPartnerDto';
 import { LoginPartnerDto } from './dtos/loginPartnerDto';
 import { PartnerDocuments } from './interfaces/partnerDocuments';
-import { AccessRole, Role } from 'src/common/enums';
 import { ChangePasswordDto } from './dtos/changePasswordDto';
 import { ForgotPasswordDto } from './dtos/forgotPasswordDto';
-import { MongooseError } from 'mongoose';
+import { MongooseError, Types } from 'mongoose';
+
+import { RedisService } from '../redis/redisService';
+import { UpdatePasswordDto } from './dtos/updatePasswordDto';
+import { Role } from 'src/common/enums';
+
 
 @Injectable()
 export class AuthService {
@@ -17,7 +21,9 @@ export class AuthService {
     constructor(
         private readonly tokenService: TokenService,
         private readonly deliveryPartnerService: DeliveryPartnerService,
-        private readonly otpService: OtpService
+        private readonly otpService: OtpService,
+        private readonly redisService: RedisService,
+        private readonly emailService: EmailService
     ){}
 
 
@@ -56,25 +62,28 @@ export class AuthService {
 
         const {email, password} = credentials;
         
-        const existedUser = await this.deliveryPartnerService.findByEmail(email);
+        const existedPartner = await this.deliveryPartnerService.findByEmail(email);
 
-        if(!existedUser){
-            throw new NotFoundException("User Not Found!!");
+        if(!existedPartner){
+            throw new NotFoundException("Partner Not Found!!");
         }
 
-        const validPassword = await this.tokenService.compare(password, existedUser.password);
+        const validPassword = await this.tokenService.compare(password, existedPartner.password);
 
         if(!validPassword){
             throw new UnauthorizedException("Incorrect Password!!");
         }
 
+        existedPartner.isActive = true;
+        await existedPartner.save();
+
         const payload = {
-            userId: existedUser._id,
-            role: Role.DELIVERY_PARTNER,
-            accessRole: AccessRole.AUTH
+            partnerId: existedPartner._id,
+            role: Role.DELIVERY_PARTNER
         }
 
         const accessToken = await this.tokenService.sign(payload);
+        await this.redisService.setData(`login-${existedPartner._id}`, accessToken, 60 * 60 * 1000);
 
         return {
             messsage: "Login Successfull!!",
@@ -82,26 +91,36 @@ export class AuthService {
         }
     }
 
-    async changePassword(userId: string, changePassowrdData: ChangePasswordDto){
+    async logout(partnerId: Types.ObjectId){
+        await this.redisService.deleteData(`login-${partnerId}`);
+        const partner = await this.deliveryPartnerService.findById(partnerId);
+        if(partner){
+            partner.isActive = false;
+            await partner.save();
+        }
+    }
+
+    async changePassword(partnerId: Types.ObjectId, changePassowrdData: ChangePasswordDto){
 
         const { oldPassword, newPassword } = changePassowrdData;
-        const user = await this.deliveryPartnerService.findById(userId);
+        const partner = await this.deliveryPartnerService.findById(partnerId);
 
-        if(!user){
+        if(!partner){
             throw new NotFoundException("User Not Found!!");
         }
 
-        const password = user.password;
+        const currentPassword = partner.password;
 
-        const validPassword = await this.tokenService.compare(oldPassword, password);
+        const validPassword = await this.tokenService.compare(oldPassword, currentPassword);
 
         if(!validPassword){
             throw new UnauthorizedException("Incorrect Password!!");
         }
+        // 2 Step Verification can be Done
 
         const hashedPassword = await this.tokenService.hash(newPassword);
-        user.password = hashedPassword;
-        await user.save();
+        partner.password = hashedPassword;
+        await partner.save();
 
         return {
             message: "Password Changed Successfuly!!"
@@ -109,35 +128,50 @@ export class AuthService {
     }
 
 
-    async verifyOtp(userEmail: string, otp: string){
-        return this.otpService.verify(userEmail, otp);
+    async verifyOtp(partnerEmail: string, otp: string){
+        return this.otpService.verify(partnerEmail, otp);
     }
 
-    async sendOtp(email: string){
-        const otp = await this.otpService.generateOtp(email);
-        // await this.notificationService.sendEmail(email, otp);
+    async sendOtp(partnerEmail: string){
+        await this.emailService.sendEmail(partnerEmail);
     }
 
     async forgetPassword(forgotPasswordData: ForgotPasswordDto){
         
         const { email } = forgotPasswordData;
-        const existingUser = await this.deliveryPartnerService.findByEmail(email);
+        const existingPartner = await this.deliveryPartnerService.findByEmail(email);
 
-        if(!existingUser){
+        if(!existingPartner){
             throw new NotFoundException("User Not Found!!");
         }
 
-        // await this.sendOtp(email);
+        await this.emailService.sendEmail(email);
 
         const payload = {
-            userEmail : email,
-            accessRole: AccessRole.FORGET_PASSWORD
+            partnerEmail : email
         }
 
         const accessToken = await this.tokenService.sign(payload, '5m');
 
         return {
             accessToken
+        }
+    }
+
+    async updatePassword(partnerEmail: string, updatePasswordData: UpdatePasswordDto){
+        const partner =  await this.deliveryPartnerService.findByEmail(partnerEmail);
+        if(!partner){
+            throw new NotFoundException("Partner Not Found!!");
+        }
+
+        const { newPassword } = updatePasswordData;
+
+        const hashedPassword = await this.tokenService.hash(newPassword);
+        partner.password = hashedPassword;
+        await partner.save();
+
+        return {
+            message: "Password Resets Successfully !!!"
         }
     }
 }

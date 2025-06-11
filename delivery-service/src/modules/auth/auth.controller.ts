@@ -1,5 +1,5 @@
 
-import { Body, Controller, Patch, Post, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterPartnerDto } from './dtos/registerPartnerDto';
 import { LoginPartnerDto } from './dtos/loginPartnerDto';
@@ -9,6 +9,10 @@ import { UpdatePasswordDto } from './dtos/updatePasswordDto';
 import { ForgetPasswordGuard } from './guards/forgetPasswordGuard';
 import { AuthGuard } from './guards/authGuard';
 import { CurrentPartner } from 'src/common/decorators';
+import { Types } from 'mongoose';
+import { OtpVerifiedGuard } from './guards/otpVerifiedGuard';
+
+
 
 @Controller('authDeliveryPartner')
 export class AuthController {
@@ -24,18 +28,23 @@ export class AuthController {
       return await this.authService.login(credentials);
     }
 
+    @UseGuards(AuthGuard)
+    @Patch('logout')
+    async logout(@CurrentPartner() partnerId: Types.ObjectId){
+      await this.authService.logout(partnerId);
+    }
 
     @UseGuards(AuthGuard)
     @Patch('changePassword')
-    async changePassword(@CurrentPartner() user: any, @Body() changePasswordData: ChangePasswordDto){
-        return this.authService.changePassword(user.userId, changePasswordData);
+    async changePassword(@CurrentPartner() partnerId: Types.ObjectId, @Body() changePasswordData: ChangePasswordDto){
+        return this.authService.changePassword(partnerId, changePasswordData);
     }
+
 
     @Post('forgetPassword')
     async forgotPassword(@Body() forgotPasswordData: ForgotPasswordDto){
         return this.authService.forgetPassword(forgotPasswordData);
     }
-
 
     @UseGuards(ForgetPasswordGuard)
     @Post('/sendOtp')
@@ -45,13 +54,14 @@ export class AuthController {
 
     @UseGuards(ForgetPasswordGuard)
     @Post('/verifyOtp')
-    async verifyOtp(@CurrentPartner() userEmail: string, @Body() otp: string){
-      return this.authService.verifyOtp(userEmail, otp);
+    async verifyOtp(@CurrentPartner() partnerEmail: string, @Body('otp') otp: string){
+      return this.authService.verifyOtp(partnerEmail, otp);
     }
 
-    @Patch('updatePassword')
-    async updatePassword(@CurrentPartner() userId: string, @Body() updatePasswordData: UpdatePasswordDto){
-        return this.authService.updatePassword(userId, req.email, updatePasswordData);
+    @UseGuards(OtpVerifiedGuard)
+    @Patch('/updatePassword')
+    async updatePassword(@CurrentPartner() partnerEmail: string, @Body() updatePasswordData: UpdatePasswordDto){
+        return this.authService.updatePassword(partnerEmail, updatePasswordData);
     }
 }
 

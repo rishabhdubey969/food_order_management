@@ -1,23 +1,28 @@
 import { Message } from './../../../node_modules/@nestjs/microservices/external/kafka.interface.d';
 
 import { PaymentMethod, DeliveryStatus } from './enums/deliveryEnums';
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { DeliveryDocument } from './modles/deliveryModel';
+import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Delivery, DeliveryDocument } from './modles/deliveryModel';
 import { Connection, Model, MongooseError } from 'mongoose';
-import { InjectConnection } from '@nestjs/mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import { CompleteDelivery, DriverLocationResult, PaginatedDeliveries } from './interfaces/deliveryInterfaces';
 import { RedisService } from '../redis/redisService';
 import { TrackingGateway } from '../tracking/tracking.gateway';
+import { TrackingService } from '../tracking/tracking.service';
 
 @Injectable()
 export class DeliveryService {
 
     constructor(
+
+        @Inject(forwardRef(() => TrackingGateway))
         private readonly trackingGateway: TrackingGateway,
         private readonly redisService: RedisService,
+        @InjectModel(Delivery.name)
         private readonly DeliveryModel: Model<DeliveryDocument>,
-        @InjectConnection() private readonly connection: Connection
+        @InjectConnection() 
+        private readonly connection: Connection
     ){};
 
     async createDelivery(orderId: Types.ObjectId){
@@ -68,7 +73,7 @@ export class DeliveryService {
     }
 
 
-    async assignedPartner(partnerId: string, orderId: string){
+    async assignedPartner(partnerId: Types.ObjectId, orderId: Types.ObjectId){
         try{
             await this.DeliveryModel.findOneAndUpdate(
                 {  orderId: orderId },
@@ -80,7 +85,7 @@ export class DeliveryService {
     }
 
 
-    async checkAssignedPartner(partnerId: string){
+    async checkAssignedPartner(partnerId: Types.ObjectId){
         try{
             return await this.DeliveryModel.findById(partnerId).exec();
         }catch(err){
@@ -88,7 +93,7 @@ export class DeliveryService {
         }
     }
 
-    async getEarningsByPeriod(partnerId: string, period: string): Promise<number> {
+    async getEarningsByPeriod(partnerId: Types.ObjectId, period: string): Promise<number> {
         try {
             const now = new Date();
             let startDate: Date;
@@ -142,7 +147,7 @@ export class DeliveryService {
 
 
     async getPartnerDeliveries(
-    partnerId: string,
+    partnerId: Types.ObjectId,
     page: number = 1,
     limit: number = 10,
   ): Promise<PaginatedDeliveries> {

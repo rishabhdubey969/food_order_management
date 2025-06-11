@@ -11,20 +11,30 @@ export class OtpService {
         private readonly tokenService: TokenService
     ){}
 
-    async verify(email: string, otp: string){
+    async verify(partnerEmail: string, otp: string){
 
-        const otpDoc = await this.redisService.getData(`otp-${email}`)
+        const otpDoc = await this.redisService.getData(`otp-${partnerEmail}`)
 
-        if(!otpDoc)   
+        if(!otpDoc){
             throw new ForbiddenException("OTP Expired!!");
+        }
 
         const isValid = await this.tokenService.compare(otp, otpDoc.toString());
-
+        let isVerified: boolean = false;
         if(isValid){
-            await this.redisService.deleteData(`otp-${email}`);
-            return true;
+            await this.redisService.deleteData(`otp-${partnerEmail}`);
+            isVerified = true;
         }
-        return false;
+        
+        const payload = {
+            partnerEmail: partnerEmail,
+            isVerified: isVerified
+        }
+
+        const accessToken = await this.tokenService.sign(payload, '5m')
+        return {
+            accessToken
+        }
     }
 
 

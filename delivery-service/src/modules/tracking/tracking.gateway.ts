@@ -1,9 +1,9 @@
+import { ObjectId, Types } from 'mongoose';
 
-import { UseGuards } from '@nestjs/common';
+import { forwardRef, Inject, UseGuards } from '@nestjs/common';
 import { WebSocketGuard } from './guards/webSocketGuard';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { Role } from 'src/common/enums';
 import { LocationUpdate } from './interfaces/locationUpdateInterface';
 import { DeliveryPartnerService } from '../deliveryPartner/deliveryPartnerService';
 import { DeliveryPartnerStatus } from '../deliveryPartner/enums/partnerEnum';
@@ -11,6 +11,9 @@ import { RedisService } from '../redis/redisService';
 import { UpdatedSocket } from './interfaces/updatedSocketInterface';
 import { CompleteDelivery, DriverLocationResult } from '../delivery/interfaces/deliveryInterfaces';
 import { DeliveryService } from '../delivery/delivery.service';
+import { Role } from 'src/common/enums';
+import { MidModuleService } from '../mid-module/mid-module.service';
+
 
 
 
@@ -18,25 +21,22 @@ import { DeliveryService } from '../delivery/delivery.service';
 @WebSocketGateway({
   cors:{
     origin: 'localhost:5173'
-  }
+  },
+  port: 4003
 })
 export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect{
 
   @WebSocketServer() 
   server: Server
 
-  private deliveryPartners: Map<string, string>;
-  private customers: Map<string, string>;
-  private tracking: Map<string, string>;
+  private deliveryPartnersMap: Map<Types.ObjectId, Socket> = new Map();
+  private customersMap: Map<Types.ObjectId, Socket> = new Map();
+  private trackingMap: Map<Types.ObjectId, Socket> = new Map();
 
   constructor(
-    deliveryPartners = new Map(),
-    customers = new Map(),
-    tracking = new Map(),
-
-    private readonly deliverPartnerService: DeliveryPartnerService,
     private readonly redisService: RedisService,
-    private readonly deliveryService: DeliveryService
+    @Inject(forwardRef(() => MidModuleService))
+    private readonly midModuleService: MidModuleService
   ){}
 
   handleConnection(client: UpdatedSocket){
@@ -44,12 +44,12 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
 
       if(role === Role.DELIVERY_PARTNER){
         const { partnerId } = client.payload;
-        this.deliveryPartners.set(partnerId, client.id);
+        this.deliveryPartnersMap.set(partnerId, client);
       }
 
       else if(role === Role.USER){
         const { userId } = client.payload;
-        this.customers.set(userId, client.id);
+        this.customersMap.set(userId, client);
       }
   }
 
@@ -58,12 +58,12 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
 
       if(role === Role.DELIVERY_PARTNER){
         const { partnerId } = client.payload;
-        this.deliveryPartners.delete(partnerId);
+        this.deliveryPartnersMap.delete(partnerId);
       }
 
       else if(role === Role.USER){
         const { userId } = client.payload;
-        this.customers.delete(userId);
+        this.customersMap.delete(userId);
       }
   }
 
@@ -71,7 +71,7 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
   async handleAvailableLocationUpdate(@MessageBody() location: LocationUpdate, @ConnectedSocket() client: UpdatedSocket){
 
     const { partnerId } = client.payload;
-    const status = await this.deliverPartnerService.findStatus(partnerId);
+    const status = await this.midModuleService.findStatus(partnerId);
 
     if(status === DeliveryPartnerStatus.ONLINE){
       await this.redisService.addAvailableDriver(partnerId, location.longitude, location.latitude);
@@ -84,9 +84,9 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
   @SubscribeMessage('occupiedLocationUpdate')
   async handleAssignedLocationUpdate(@MessageBody() location: LocationUpdate, @ConnectedSocket() client: UpdatedSocket){
     const { partnerId } = client.payload;
-    const userSocketId = this.tracking.get(partnerId);
-    if(userSocketId){
-      await this.server.to(userSocketId).emit('trackingUpdate', location);
+    const userSocket = this.trackingMap.get(partnerId);
+    if(userSocket){
+      await this.server.to(userSocket.id).emit('trackingUpdate', location);
     }
   }
 
@@ -94,14 +94,17 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     deliveryPartnersList.forEach((partnerId) => {
       if(partnerId != null){
-        this.server.to(`${this.deliveryPartners.get(partnerId)}`).emit('newDelivery', currentDelivery)
+        const socket = this.deliveryPartnersMap.get(partnerId);
+        if (socket) {
+          this.server.to(socket.id).emit('newDelivery', currentDelivery);
+        }
       }
     });
   }
 
 
   @SubscribeMessage('deliveryResponseAccept')
-  async handleDeliveryResponse(@ConnectedSocket() client: UpdatedSocket, @MessageBody() data: {orderId: string, userId: string}){
+  async handleDeliveryResponse(@ConnectedSocket() client: UpdatedSocket, @MessageBody() data: {orderId: Types.ObjectId, userId: Types.ObjectId}){
 
     const { partnerId } = client.payload;
     const { orderId, userId } = data;
@@ -111,21 +114,21 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
     if(!assigned){
 
       // Seting in Redis for conflict Resolution
-      await this.redisService.setData(`deliveryResponse:${orderId}`, 'ACCEPT', 300);
+      await this.redisService.setData(`deliveryResponse:${orderId}`, 'ACCEPT', 5 * 60 * 1000);
 
       // Sending Acceptance Request
       this.server.to(client.id).emit('acknowledgement', {acknowledgement: true});
 
       // Updating Delivery Partner Status
-      await this.deliverPartnerService.updateStatus(partnerId, DeliveryPartnerStatus.OCCUPIED);
+      await this.midModuleService.updateStatus(partnerId, DeliveryPartnerStatus.OCCUPIED);
 
       // Updating Delivery Status 
-      await this.deliveryService.assignedPartner(partnerId, orderId);
+      await this.midModuleService.assignedPartner(partnerId, orderId);
 
       // Updating the Mapping 
-      const userSocketId = this.customers.get(userId);
-      if(userSocketId){
-        this.tracking.set(partnerId, userSocketId);
+      const userSocket = this.customersMap.get(userId);
+      if(userSocket){
+        this.trackingMap.set(partnerId, userSocket);
       }
 
     }else{

@@ -25,5 +25,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
   ],
   controllers: [KafkaController],
   providers: [KafkaService],
+  exports:[KafkaService]
 })
 export class KafkaModule {}

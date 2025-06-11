@@ -59,6 +59,8 @@
 import { Inject, Injectable} from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { Types } from 'mongoose';
+import { ObjectId } from 'mongodb';
 
 @Injectable()
 export class RedisService {
@@ -133,7 +135,7 @@ export class RedisService {
         latitude: number,
         radiusKm: number,
         count: number = 1,
-    ): Promise<[string | null]>  {
+    ): Promise<[Types.ObjectId | null]>  {
         try {
             const results = await this.redisClient.georadius(
                 'availableDrivers',
@@ -150,7 +152,7 @@ export class RedisService {
                 return [null];
             }
 
-            const ans: [string | null] = results.map((idDist) => {
+            const ans: [Types.ObjectId | null] = results.map((idDist) => {
                 return idDist[0];
             })
 

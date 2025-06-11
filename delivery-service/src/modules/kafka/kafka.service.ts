@@ -1,5 +1,6 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class KafkaService implements OnModuleInit{
@@ -18,7 +19,9 @@ export class KafkaService implements OnModuleInit{
     }
 
     async handleMessage(topicName: string, payload: any){
-        const acknowledgement = await this.kafkaClient.send(topicName, payload);
+        const acknowledgement =  await lastValueFrom(this.kafkaClient.send(topicName, payload));
         console.log(acknowledgement);
     }
 }
+
+

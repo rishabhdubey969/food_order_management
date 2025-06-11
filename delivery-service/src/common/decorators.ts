@@ -7,5 +7,5 @@ export const AccessRoleDecorator = (accessRole) => SetMetadata('accessRole', acc
 
 export const CurrentPartner = createParamDecorator((data: unknown, context: ExecutionContext) => {
     const request = context.switchToHttp().getRequest();
-    return request.user;
+    return request.sub;
 })

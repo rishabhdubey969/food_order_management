@@ -1,14 +1,15 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { DeliveryPartnerService } from './deliveryPartnerService';
 import { DeliveryPartnerController } from './deliveryPartnerController';
 import { MongooseModule } from '@nestjs/mongoose';
 import { DeliveryPartner, DeliveryPartnerSchema } from './models/deliveryPartnerModel';
 import { RedisModule } from '../redis/redisModule';
 import { DeliveryModule } from '../delivery/delivery.module';
+import { TrackingModule } from '../tracking/tracking.module';
 
 @Module({
   imports: [
-    DeliveryModule,
+    forwardRef(() => DeliveryModule),
     RedisModule,
     MongooseModule.forFeature([
       {name: DeliveryPartner.name, schema: DeliveryPartnerSchema}

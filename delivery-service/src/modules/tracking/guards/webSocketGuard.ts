@@ -1,7 +1,7 @@
 
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import { Role } from 'src/common/enums';
 import { TokenService } from 'src/modules/token/token.service';
+
 
 @Injectable()
 export class WebSocketGuard implements CanActivate {

@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query, ParseIntPipe, HttpException, HttpStatus } from '@nestjs/common';
+import { ObjectId, Types } from 'mongoose';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query, ParseIntPipe } from '@nestjs/common';
 import { DeliveryPartnerService } from './deliveryPartnerService';
 import { DeliveryPartner } from './models/deliveryPartnerModel';
-import { CurrentPartner } from 'src/common/decorators';
 import { DeliveryPartnerStatus } from './enums/partnerEnum';
+import { CurrentPartner } from 'src/common/decorators';
+
+
 
 
 @Controller('deliveryPartners')
@@ -13,7 +16,7 @@ export class DeliveryPartnerController {
   ){}
 
   @Get()
-  async getProfile(@CurrentPartner() userId: string){
+  async getProfile(@CurrentPartner() userId: Types.ObjectId){
     return this.deliveryPartnerService.getProfile(userId);
   }
 
@@ -23,31 +26,31 @@ export class DeliveryPartnerController {
   }
 
   @Get(':partnerId')
-  async findOne(@Param('partnerId') partnerId: string): Promise<DeliveryPartner | null> {
+  async findOne(@Param('partnerId') partnerId: Types.ObjectId): Promise<DeliveryPartner | null> {
     return await this.deliveryPartnerService.findById(partnerId);
   }
 
   @Put('/updateStatus')
   async updateStatus(
-    @CurrentPartner() partnerId: string,
+    @CurrentPartner() partnerId: Types.ObjectId,
     @Body('status') status: DeliveryPartnerStatus,
   ): Promise<DeliveryPartner | null> {
     return await this.deliveryPartnerService.updateStatus(partnerId, status);
   }
 
   @Delete(':partnerId')
-  async remove(@Param('partnerId') partnerId: string): Promise<void> {
+  async remove(@Param('partnerId') partnerId: Types.ObjectId): Promise<void> {
     await this.deliveryPartnerService.remove(partnerId);
   }
 
   @Get('earnings:period')
-  async getPartnerEarnings(@CurrentPartner() partnerId: string, @Param('period') period: string): Promise<number>{
+  async getPartnerEarnings(@CurrentPartner() partnerId: Types.ObjectId, @Param('period') period: string): Promise<number>{
     return await this.deliveryPartnerService.getPartnerEarnings(partnerId, period);
   }
 
   @Get('listDeliveries')
   async getPartnerDeliveries(
-    @CurrentPartner() partnerId: string,
+    @CurrentPartner() partnerId: Types.ObjectId,
     @Query('page', ParseIntPipe) page: number = 1,
     @Query('limit', ParseIntPipe) limit: number = 10){
 
