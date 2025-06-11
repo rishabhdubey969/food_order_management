@@ -7,13 +7,14 @@ import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { DatabaseModule } from './databaseConnection/database.module';
 // import { InvoiceModule } from './invoice/invoice.module';
+import { KafkaModule } from './kafka/kafka.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true,
     envFilePath:'.env', 
     load:[configuration]
-  }),DatabaseModule,OrderModule, ],
+  }),DatabaseModule,OrderModule, KafkaModule, ],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -4,10 +4,12 @@ import { OrderService } from './order.service';
 import { PaymentClient } from 'src/grpc/payment/payment.client';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Order, OrderSchema } from 'src/schema/order.schema';
+import { KafkaModule } from 'src/kafka/kafka.module';
+import { helperModule } from 'src/helper/helper.module';
 
 
 @Module({
-  imports:[MongooseModule.forFeature([{name:Order.name ,schema:OrderSchema}])],
+  imports:[MongooseModule.forFeature([{name:Order.name ,schema:OrderSchema}]), KafkaModule,helperModule],
   controllers: [OrderController],
   providers:[OrderService,PaymentClient],
   exports:[OrderService]
