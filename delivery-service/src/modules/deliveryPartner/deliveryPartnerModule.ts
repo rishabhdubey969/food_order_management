@@ -6,11 +6,13 @@ import { DeliveryPartner, DeliveryPartnerSchema } from './models/deliveryPartner
 import { RedisModule } from '../redis/redisModule';
 import { DeliveryModule } from '../delivery/delivery.module';
 import { TrackingModule } from '../tracking/tracking.module';
+import { TokenModule } from '../token/token.module';
 
 @Module({
   imports: [
     forwardRef(() => DeliveryModule),
     RedisModule,
+    TokenModule,
     MongooseModule.forFeature([
       {name: DeliveryPartner.name, schema: DeliveryPartnerSchema}
     ])
