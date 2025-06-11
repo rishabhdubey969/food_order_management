@@ -19,28 +19,17 @@ export class AuthGuard implements CanActivate {
     const accessToken = request.headers.authorization?.split(' ')[1];
 
     if(!accessToken){
-      throw new UnauthorizedException("Login Again!!");
+      throw new UnauthorizedException("No Access Token!!!");
     }
-
-    // const requiredRoles = this.reflector.getAllAndOverride<string[]>("roles", [context.getHandler(), context.getClass()])
-
-    // const requiredAccessRole = this.reflector.getAllAndOverride<string>("accessRole", [context.getHandler(), context.getClass()])
-
-    try{
       const payload = await this.tokenService.verify(accessToken);
 
       const { partnerId } = payload;
 
       const isAvailable = await this.redisService.isKeyExists(`login-${partnerId}`);
-      if(!isAvailable){
+      if(isAvailable === false){
         return false;
       }
-
       request['sub'] = partnerId;
-
-    }catch(err){
-      return false;
-    }
     return true;
   }
 }
