@@ -3,8 +3,6 @@ import { StripeConfigService } from '../../config/stripe.config';
 import { StripePayService } from '../stripe_pay/stripe.pay.service';
 import Stripe from 'stripe';
 import { InjectModel } from '@nestjs/mongoose';
-import { Payment } from '../pay/Schema/pay.schema';
-import { PaymentDocument } from '../stripe_pay/Schema/stripe.pay.schema';
 import { Model } from 'mongoose';
 import { Webhook, WebhookDocument } from './Schema/webhook.schema';
 

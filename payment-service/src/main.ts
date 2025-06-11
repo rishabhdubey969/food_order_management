@@ -40,11 +40,12 @@ async function bootstrap() {
       transport: Transport.GRPC,
       options: {
         package: 'payment',
-        protoPath: join(__dirname, '../src/grpc/proto/payment.proto'),
+        protoPath: 'src/grpc/proto/payment.proto',
         url: '0.0.0.0:5000',
       },
     });
   await microserviceApp.listen();
+  
   console.log('Product Service (gRPC) is listening on port 5000');
   console.log(`Application is running on: ${port}`);
 }

@@ -6,11 +6,26 @@ import { StripePayController } from './strip.pay.controller';
 import { StripePayService } from './stripe.pay.service';
 import { errorService } from 'src/error/error.service';
 import { StripeConfigService } from '../../config/stripe.config';
+// import { AuthModule } from '../../grpc/authentication/auth.module';
+import { WinstonModule } from 'nest-winston';
+import * as winston from 'winston';
 
 @Module({
   imports: [
     ConfigModule,
     MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
+    // AuthModule,
+    WinstonModule.forRoot({
+      transports: [
+        new winston.transports.Console({
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.ms(),
+            winston.format.json(),
+          ),
+        }),
+      ],
+    }),
   ],
   controllers: [StripePayController],
   providers: [StripePayService, errorService, StripeConfigService],

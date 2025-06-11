@@ -4,12 +4,14 @@ import {
   Body,
   Logger,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 
 import { StripePayService } from './stripe.pay.service';
 import { CreatePaymentDto } from './DTO/create.payment.dto';
 import { StripeConfigService } from '../../config/stripe.config';
 import { GrpcMethod } from '@nestjs/microservices';
+// import { AuthGuard } from 'src/guards/auth.guard';
 
 @Controller('payment')
 export class StripePayController {
@@ -25,6 +27,7 @@ export class StripePayController {
   
   }
 
+  // @UseGuards(AuthGuard)
   @Post('checkout')
   async createSession(@Body() payload: CreatePaymentDto) {
 
