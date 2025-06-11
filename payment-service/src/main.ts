@@ -4,6 +4,7 @@ import { json } from 'express';
 import { PaymentModule } from './payment.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(PaymentModule, {
@@ -33,6 +34,22 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type, Authorization', 
   });
 
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('API with NestJS')
+    .setDescription('API developed throughout the API with NestJS course')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT'
+      },
+      'JWT',
+    )
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api', app, document);
   const port = process.env.PORT || 3007;
   await app.listen(port);
   const microserviceApp =
