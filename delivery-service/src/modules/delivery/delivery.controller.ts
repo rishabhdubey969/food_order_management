@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
 import { DeliveryService } from './delivery.service';
 import { AuthGuard } from '../auth/guards/authGuard';
-import { CurrentPartner } from 'src/common/decorators';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { DeliveryStatus } from './enums/deliveryEnums';
 import { Types } from 'mongoose';
@@ -16,6 +15,7 @@ export class DeliveryController {
 
     @EventPattern('newOrder')
     async createDelivery(@Payload() orderId: Types.ObjectId){
+      console.log(`new Delivery Here!!!!`)
       await this.deliveryService.createDelivery(orderId);
     }
 
