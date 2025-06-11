@@ -26,6 +26,12 @@ async function bootstrap() {
       },
     }),
   );
+  app.enableCors({
+    origin: '*', 
+    methods: 'GET,POST,PUT,DELETE', 
+    credentials: true, 
+    allowedHeaders: 'Content-Type, Authorization', 
+  });
 
   const port = process.env.PORT || 3007;
   await app.listen(port);
