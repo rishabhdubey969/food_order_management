@@ -1,5 +1,6 @@
 import { IsEmail, IsNotEmpty, IsString, IsPhoneNumber, Length } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Prop } from '@nestjs/mongoose';
 
 export default class ManagerSignupDto {
   @ApiProperty({ example: 'John Doe' })
@@ -11,9 +12,8 @@ export default class ManagerSignupDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: '+1234567890' })
-  @IsPhoneNumber()
-  phone: string;
+  // @ApiProperty({ example: '+1234567890' })
+  // phone: number;
 
   @ApiProperty({ example: 'StrongPassword123' })
   @IsString()
@@ -41,4 +41,10 @@ export default class ManagerSignupDto {
   @IsString()
   @IsNotEmpty()
   bankName: string;
+
+//   @Prop({ type: Date })
+// deletedAt: Date;
 }
+
+
+

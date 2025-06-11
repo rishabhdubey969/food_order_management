@@ -4,6 +4,9 @@ import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class TokenService {
+  blacklistToken(token: string) {
+    throw new Error('Method not implemented.');
+  }
   constructor(private readonly jwtService: JwtService) {}
 
   async hash(data: any) {

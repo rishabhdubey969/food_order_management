@@ -23,12 +23,6 @@ export class ComplaintController {
   tokenService: any;
   constructor(private readonly complaintService: ComplaintService) {}
 
-
-//  @Post()
-//   @ApiOperation({ summary: 'Create a new complaint (User only)' })
-//   async create(@Body() dto: CreateComplaintDto, @Req() req: any) {
-//     return this.complaintService.createComplaint(dto, req.user.userId);
-//   }
   @Post()
   @ApiOperation({ summary: 'Create a new complaint (User only)' })
   @ApiBody({
