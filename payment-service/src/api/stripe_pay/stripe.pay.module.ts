@@ -9,6 +9,7 @@ import { StripeConfigService } from '../../config/stripe.config';
 // import { AuthModule } from '../../grpc/authentication/auth.module';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
+import { AuthClient } from 'src/grpc/authentication/auth.client';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import * as winston from 'winston';
     }),
   ],
   controllers: [StripePayController],
-  providers: [StripePayService, errorService, StripeConfigService],
+  providers: [StripePayService, errorService, StripeConfigService,AuthClient],
   exports: [StripePayService],
 })
 export class StripePayModule {}
