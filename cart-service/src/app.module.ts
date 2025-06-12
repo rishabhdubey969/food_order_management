@@ -1,5 +1,6 @@
+// app.module.ts
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CartModule } from './cart/cart.module';
 
@@ -8,11 +9,17 @@ import { CartModule } from './cart/cart.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MongooseModule.forRoot('mongodb+srv://FoodOrder:FoodAdmin123@cluster0.hcogxon.mongodb.net/food?retryWrites=true&w=majority&appName=Cluster0'),
-    // MongooseModule.forRoot('mongodb://localhost:27017/food'),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => {
+        const uri = configService.get<string>('MONGO_URI')!;
+        console.log('Mongo URI:', uri); 
+        return { uri };
+      },
+      inject: [ConfigService],
+    }),
+    
     CartModule,
   ],
-  providers: [],
-  exports: [],
 })
 export class AppModule {}
