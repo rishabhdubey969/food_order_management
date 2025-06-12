@@ -4,11 +4,11 @@ import { StripeWebhookService } from './stripe.webhook.service';
 import { StripeConfigModule } from '../../config/stripe.config.module';
 import { StripePayModule } from '../stripe_pay/stripe.pay.module';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Webhook, webhookSchema } from './Schema/webhook.schema';
+import { Webhook, WebhookSchema } from './Schema/webhook.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Webhook.name, schema: webhookSchema }]),
+    MongooseModule.forFeature([{ name: Webhook.name, schema: WebhookSchema }]),
     StripeConfigModule,
     StripePayModule,
   ],

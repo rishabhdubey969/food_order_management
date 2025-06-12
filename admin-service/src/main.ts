@@ -1,4 +1,4 @@
-// src/main.ts
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from '../src/api/config/global-exception.filter';
@@ -7,13 +7,13 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // Enable validation globally
+
     app.enableCors();
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Strip properties not defined in the DTO
-      forbidNonWhitelisted: true, // Throw error if unknown properties are present
-      transform: true, // Transform payloads to DTO instances
+      whitelist: true, 
+      forbidNonWhitelisted: true, 
+      transform: true, 
     }),
   );
   const config = new DocumentBuilder()
@@ -28,9 +28,9 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document); // Serve Swagger UI at /api
+  SwaggerModule.setup('api', app, document); 
   app.useGlobalFilters(new GlobalExceptionFilter());
-  // app.use("trust proxy" ,true)
+  
   await app.listen(3000);
 }
 bootstrap();

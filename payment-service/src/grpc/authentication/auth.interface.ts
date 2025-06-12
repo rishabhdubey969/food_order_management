@@ -21,7 +21,7 @@ export interface accessTokenResponse {
 export interface generateTokenResponse {
   accessToken: string;
   refreshToken: string;
-  userData: Record<string, any>; // Struct is deserialized to JS object
+  userData: Record<string, any>; 
 
 }
 

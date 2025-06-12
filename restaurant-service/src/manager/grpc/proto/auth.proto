@@ -1,12 +1,11 @@
 syntax = "proto3";
 
-package auth;
+package manager;
 
 service ManagerService {
   rpc Signup (ManagerSignupRequest) returns (ManagerResponse);
 }
 
-// Request/Response Messages
 message ManagerSignupRequest {
  string name = 1;
   string email = 2;

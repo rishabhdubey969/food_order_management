@@ -41,7 +41,7 @@ export class ManagerController {
   @ApiOperation({ summary: 'Signup as a Manager' })
   @ApiBody({ type: ManagerSignupDto })
   @ApiResponse({ status: 201, description: 'Manager signed up successfully' })
-  signup(@Body() managerSignupDto: ManagerSignupDto) {
+  Signup(@Body() managerSignupDto: ManagerSignupDto) {
     return this.managerService.Signup(managerSignupDto);
   }
   

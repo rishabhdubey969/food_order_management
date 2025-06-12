@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { DataBaseConst } from 'database/mongo.const';
 
-// Mongoose schema document interface
+
 export type AuthenticationDocument = Auth & Document;
 
 @Schema({ collection: DataBaseConst.ADMIN, timestamps: true })
@@ -37,5 +37,5 @@ export class Auth {
   deleted_at?: Date;
 }
 
-// Create the Mongoose schema
+
 export const AuthenticationSchema = SchemaFactory.createForClass(Auth);
