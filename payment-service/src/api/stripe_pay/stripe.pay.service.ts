@@ -1,12 +1,8 @@
 import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-
 import { Model } from 'mongoose';
-
 import Stripe from 'stripe';
-// import { ClientGrpc } from '@nestjs/microservices';
-import { Payment } from '../pay/Schema/pay.schema';
-import { PaymentDocument } from './Schema/stripe.pay.schema';
+import { Payment, PaymentDocument } from './Schema/stripe.pay.schema';
 import { ConfigService } from '@nestjs/config';
 import { errorService } from 'src/error/error.service';
 import { StripeConfigService } from '../../config/stripe.config';
@@ -15,13 +11,11 @@ import { CreatePaymentDto } from './DTO/create.payment.dto';
 @Injectable()
 export class StripePayService {
   private stripe: Stripe;
-  private orderService: any;
   private readonly logger = new Logger(StripePayService.name);
 
   constructor(
     @InjectModel(Payment.name)
     private paymentModel: Model<PaymentDocument>,
-    // @Inject('ORDER_PACKAGE') private client: ClientGrpc,
     private readonly configService: ConfigService,
     private errorService: errorService,
     private stripeConfig: StripeConfigService,
@@ -29,9 +23,6 @@ export class StripePayService {
     this.stripe = this.stripeConfig.getStripeInstance();
   }
 
-  // onModuleInit() {
-  //   this.orderService = this.client.getService('OrderService');
-  // }
 
   async createCheckoutSession(payload: CreatePaymentDto) {
     try {
@@ -64,7 +55,7 @@ export class StripePayService {
           metadata: {
             orderId: orderId,
           },
-        },
+        }
       });
 
       const payment = new this.paymentModel({

@@ -15,7 +15,6 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
   imports: [
     ConfigModule,
     MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
-    // AuthModule,
     WinstonModule.forRoot({
       transports: [
         new winston.transports.Console({
