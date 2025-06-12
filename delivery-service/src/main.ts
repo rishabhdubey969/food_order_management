@@ -50,6 +50,9 @@ async function bootstrap() {
       },
       consumer: {
         groupId: 'groupDelivery',
+        retry:{
+          retries: 3
+        }
       },
     },
   });
