@@ -42,6 +42,7 @@ export class AuthService {
       const otp = await this.tokenService.signupOtp(email);
       const mailData = { otp, email };
 
+      console.log(mailData);
       this.client.emit('signup_otp', mailData);
       return { message: 'OTP sent successfully' };
     } catch (error) {

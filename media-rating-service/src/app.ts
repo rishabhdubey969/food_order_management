@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
-import mediaRoutesV1 from './routes/mediaRoutes';
+import { connectToDatabase } from  '../src/database/db'
+//import mediaRoutesV1 from './routes/mediaRoutes';
 import ratingRoutes from './routes/ratingRoutes';
 // import { errorHandler } from './utils/error.handler';
 
@@ -15,7 +16,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API Versioning: Mount routes under /api/v1
-app.use('/api', mediaRoutesV1);
+// app.use('/api', mediaRoutesV1);
 app.use('/api', ratingRoutes);
 
 // Health check endpoint
@@ -31,8 +32,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Global error handling middleware (MUST be the last middleware)
 // app.use(errorHandler);
 
-// Start the server
-app.listen(port, () => {
-    console.log(`Media service listening on port ${port}`);
-    console.log(`Access API at http://localhost:${port}/api`);
-});
+// Start the server after connecting to the database
+connectToDatabase()
+  .then(() => {
+    console.log('Database connection is established');
+    app.listen(port, () => {
+      console.log(`Example app listening on port`, port);
+    });
+  })
+  .catch(console.error);
