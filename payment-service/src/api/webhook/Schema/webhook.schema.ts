@@ -17,8 +17,8 @@ export class Webhook {
   @Prop({ required: true })
   sessionId: string;
 
-  @Prop({ default: 'pending' })
-  status: 'pending' | 'paid' | 'failed';z
+  @Prop()
+  status: string;
 
   @Prop()
   chargeId:string;
@@ -26,8 +26,7 @@ export class Webhook {
   @Prop()
   paymentIntentId:string;
 
-  @Prop()
-  sessionStatus:string;
+  
 
 }
 

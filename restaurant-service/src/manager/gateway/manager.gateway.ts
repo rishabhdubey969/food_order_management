@@ -4,6 +4,7 @@ import { Logger, UseGuards } from '@nestjs/common';
 import { ManagerService } from 'src/manager/manager.service';
 import { WsManagerGuard } from '../guard/websocket.guard';
 import { KafkaService } from '../kafka/kafka.service';
+import { ObjectId, Types } from 'mongoose';
 
 @WebSocketGateway({
   namespace: '/manager',
@@ -16,7 +17,7 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
   [x: string]: any;
   @WebSocketServer() server: Server;
   private logger = new Logger('ManagerGateway');
-  private connectedManagers = new Map<string, Socket>();
+  private connectedManagers = new Map<Types.ObjectId, Socket>();
 
   constructor(private readonly kafkaService: KafkaService){}
 
@@ -39,26 +40,22 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
     }
   }
 
-  async handleNewOrder(managerId: string, order: any) {
+  async handleNewOrder(managerId: Types.ObjectId, cartData: any) {
     const managerSocket = this.connectedManagers.get(managerId);
     if (managerSocket) {
-      managerSocket.emit('newOrder', order);
-      return true;
+        managerSocket.emit('newOrder', cartData);
+
+         managerSocket?.on('orderResponse', (data) => {
+          return data;
+        })
     }
-    return false;
   }
 
-  @SubscribeMessage('orderResponse')
-  async handleOrderResponse(@ConnectedSocket() client: Socket, @MessageBody() data: any){
-    const {orderId, status} = data;
-    // async sendEmailByKafka(email: string){
-    //     await this.clientKafka.emit("topic-email", {email: email})
-    //     console.log(`Email Send By Kafka...`)
-    // }
-    
-    this.kafkaService.handleEvent('response', {orderid: String, acknowledgement: status});
-
-  }
+  // @SubscribeMessage('orderResponse')
+  // async handleOrderResponse(@ConnectedSocket() client: Socket, @MessageBody() data: any){
+  //   const {cartId, status} = data;
+  //   this.kafkaService.handleEvent('response', {cartId: String, acknowledgement: status});
+  // }
 
 
 }

@@ -38,7 +38,7 @@ import path, { join } from 'path';
         transport: Transport.GRPC,
         options: {
           package: 'manager', // This should match your proto package name
-          protoPath: join("/home/user/Documents/food_order_management/Manager/food_order_management/admin-service/src/proto/manager.proto"), // Path to your proto file
+          protoPath: join("src/proto/manager.proto"), // Path to your proto file
           url: 'restaurant-service:50001', // URL to your restaurant service
         },
       },

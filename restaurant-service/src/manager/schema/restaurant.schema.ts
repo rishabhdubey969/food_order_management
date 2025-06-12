@@ -13,7 +13,7 @@ export class Restaurant extends Document {
   address: string;
 
   @Prop({ required: true })
-  phone: string;
+  phone: number;
 
   @Prop({
     type: {

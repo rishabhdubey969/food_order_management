@@ -3,6 +3,8 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  InternalServerErrorException,
+  HttpException,
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection, Types, isValidObjectId } from 'mongoose';
@@ -21,22 +23,80 @@ export class ComplaintService {
   ) {}
 
   async createComplaint(dto: CreateComplaintDto, managerId: string) {
-    const complaint = {
-      ...dto,
-      managerId,
-      status: 'pending',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    try {
+      const complaint = {
+        ...dto,
+        managerId,
+        status: 'pending',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-    const result = await this.connection.collection('complaints').insertOne(complaint);
+      const result = await this.connection.collection('complaints').insertOne(complaint);
 
-    return {
-      message: SUCCESS_MESSAGES.COMPLAINT_CREATED,
-      data: result.insertedId,
-    };
+      return {
+        message: SUCCESS_MESSAGES.COMPLAINT_CREATED,
+        data: result.insertedId,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to create complaint');
+    }
   }
+// async createComplaint(dto: CreateComplaintDto, managerId: string) {
+//   try {
+//     // Validate IDs
+//     if (!isValidObjectId(dto.userId) ){
+//       throw new BadRequestException('Invalid user ID format');
+//     }
+//     if (!isValidObjectId(dto.orderId)) {
+//       throw new BadRequestException('Invalid order ID format');
+//     }
+//     // if (!isValidObjectId(managerId)) {
+//     //   throw new BadRequestException('Invalid manager ID format');
+//     // }
 
+//     // Verify user exists
+//     const userExists = await this.connection.collection('users').countDocuments({
+//       _id: new Types.ObjectId(dto.userId)
+//     });
+//     if (!userExists) {
+//       throw new NotFoundException('User not found');
+//     }
+
+//     // Verify order exists
+    // const orderExists = await this.connection.collection('orders').countDocuments({
+    //   _id: new Types.ObjectId(dto.orderId)
+    // });
+    // if (!orderExists) {
+    //   throw new NotFoundException('Order not found');
+    // }
+
+    // const complaint = {
+    //   userId: new Types.ObjectId(dto.userId),
+    //   orderId: new Types.ObjectId(dto.orderId),
+    //   managerId: new Types.ObjectId(managerId),
+    //   description: dto.description,
+    //   status: 'pending',
+    //   createdAt: new Date(),
+    //   updatedAt: new Date(),
+    // };
+
+//     const result = await this.connection.collection('complaints').insertOne(complaint);
+
+//     return {
+//       message: SUCCESS_MESSAGES.COMPLAINT_CREATED,
+//       data: {
+//         complaintId: result.insertedId,
+//         status: 'pending'
+//       },
+//     };
+//   } catch (error) {
+//     if (error instanceof HttpException) {
+//       throw error;
+//     }
+//     throw new InternalServerErrorException('Failed to create complaint');
+//   }
+// }
   async updateComplaintStatus(
     complaintId: string,
     dto: UpdateComplaintStatusDto,
@@ -46,126 +106,124 @@ export class ComplaintService {
       throw new BadRequestException('Invalid Complaint ID format');
     }
 
-    // Get the complaint document
-    const complaint = await this.connection
-      .collection('complaints')
-      .findOne({ _id: new Types.ObjectId(complaintId) });
-
-    if (!complaint) {
-      throw new NotFoundException(ERROR_MESSAGES.COMPLAINT_NOT_FOUND);
-    }
-
-    // Verify associated order exists
-    const order = await this.connection
-      .collection('orders')
-      .findOne({ _id: new Types.ObjectId(complaint.orderId) });
-
-    if (!order) {
-      throw new NotFoundException(ERROR_MESSAGES.ORDER_NOT_FOUND);
-    }
-
-    // Update complaint status
-    await this.connection.collection('complaints').updateOne(
-      { _id: new Types.ObjectId(complaintId) },
-      {
-        $set: {
-          status: dto.status,
-          updatedAt: new Date(),
-        },
-      },
-    );
-
-    // Email logic
-    let emailSent = false;
     try {
-      const user = await this.connection
-        .collection('users')
-        .findOne({ _id: new Types.ObjectId(complaint.userId) });
+      const complaint = await this.connection
+        .collection('complaints')
+        .findOne({ _id: new Types.ObjectId(complaintId) });
 
-      if (user?.email) {
-        const subject =
-          dto.status === 'resolved'
-            ? 'Your complaint has been resolved'
-            : 'Your complaint was rejected';
-
-        const message =
-          dto.status === 'resolved'
-            ? 'Hello, your complaint has been successfully resolved by our manager.'
-            : 'Hello, unfortunately your complaint has been rejected by the manager.';
-
-        await this.mailerService.sendMail({
-          to: user.email,
-          subject,
-          html: `<p>${message}</p>`,
-        });
-
-        emailSent = true;
+      if (!complaint) {
+        throw new NotFoundException(ERROR_MESSAGES.COMPLAINT_NOT_FOUND);
       }
-    } catch (error) {
-      console.error(ERROR_MESSAGES.EMAIL_SEND_FAILED, error);
-    }
 
-    return {
-      message: SUCCESS_MESSAGES.COMPLAINT_STATUS_UPDATED,
-      details: emailSent
-        ? SUCCESS_MESSAGES.EMAIL_SENT
-        : ERROR_MESSAGES.EMAIL_SEND_FAILED,
-      data: { _id: complaintId, status: dto.status },
-    };
+      const order = await this.connection
+        .collection('orders')
+        .findOne({ _id: new Types.ObjectId(complaint.orderId) });
+
+      if (!order) {
+        throw new NotFoundException(ERROR_MESSAGES.ORDER_NOT_FOUND);
+      }
+
+      await this.connection.collection('complaints').updateOne(
+        { _id: new Types.ObjectId(complaintId) },
+        {
+          $set: {
+            status: dto.status,
+            updatedAt: new Date(),
+          },
+        },
+      );
+
+      let emailSent = false;
+      try {
+        const user = await this.connection
+          .collection('users')
+          .findOne({ _id: new Types.ObjectId(complaint.userId) });
+
+        if (user?.email) {
+          const subject =
+            dto.status === 'resolved'
+              ? 'Your complaint has been resolved'
+              : 'Your complaint was rejected';
+
+          const message =
+            dto.status === 'resolved'
+              ? 'Hello, your complaint has been successfully resolved by our manager.'
+              : 'Hello, unfortunately your complaint has been rejected by the manager.';
+
+          await this.mailerService.sendMail({
+            to: user.email,
+            subject,
+            html: `<p>${message}</p>`,
+          });
+
+          emailSent = true;
+        }
+      } catch (error) {
+        console.error(ERROR_MESSAGES.EMAIL_SEND_FAILED, error);
+      }
+
+      return {
+        message: SUCCESS_MESSAGES.COMPLAINT_STATUS_UPDATED,
+        details: emailSent
+          ? SUCCESS_MESSAGES.EMAIL_SENT
+          : ERROR_MESSAGES.EMAIL_SEND_FAILED,
+        data: { _id: complaintId, status: dto.status },
+      };
+    } catch (error) {
+      throw error instanceof NotFoundException || error instanceof BadRequestException
+        ? error
+        : new InternalServerErrorException('Failed to update complaint status');
+    }
   }
 
-  // async getComplaintsForManager(managerId: string) {
-  //   const complaints = await this.connection
-  //     .collection('complaints')
-  //     .find({ managerId })
-  //     .project({ __v: 0 })
-  //     .toArray();
-
-  //   return {
-  //     message: SUCCESS_MESSAGES.COMPLAINTS_FETCHED,
-  //     data: complaints,
-  //   };
-  // }
   async getComplaintsForManager(managerId: string) {
-    // Validate managerId
     if (!Types.ObjectId.isValid(managerId)) {
       throw new BadRequestException('Invalid manager ID');
     }
 
-    // Query complaints for the specific manager
-    const complaints = await this.connection
-      .collection('complaints')
-      .find({ managerId: new Types.ObjectId(managerId) })
-      .project({ __v: 0 })
-      .toArray();
+    try {
+      const complaints = await this.connection
+        .collection('complaints')
+        .find({ managerId: new Types.ObjectId(managerId) })
+        .project({ __v: 0 })
+        .toArray();
 
-    // Check if complaints exist
-    if (!complaints.length) {
-      throw new NotFoundException('No complaints found for this manager');
+      if (!complaints.length) {
+        throw new NotFoundException('No complaints found for this manager');
+      }
+
+      return {
+        message: SUCCESS_MESSAGES.COMPLAINTS_FETCHED,
+        data: complaints,
+      };
+    } catch (error) {
+      throw error instanceof NotFoundException || error instanceof BadRequestException
+        ? error
+        : new InternalServerErrorException('Failed to fetch complaints for manager');
     }
-
-    return {
-      message: SUCCESS_MESSAGES.COMPLAINTS_FETCHED,
-      data: complaints,
-    };
   }
 
-
   async getAllComplaints(token: string) {
-    const user = await this.tokenService.verify(token);
-    if (user.role !== 'admin') {
-      throw new ForbiddenException(ERROR_MESSAGES.ADMIN_ONLY);
+    try {
+      const user = await this.tokenService.verify(token);
+      if (user.role !== 'admin') {
+        throw new ForbiddenException(ERROR_MESSAGES.ADMIN_ONLY);
+      }
+
+      const complaints = await this.connection
+        .collection('complaints')
+        .find()
+        .project({ __v: 0 })
+        .toArray();
+
+      return {
+        message: SUCCESS_MESSAGES.COMPLAINTS_FETCHED,
+        data: complaints,
+      };
+    } catch (error) {
+      throw error instanceof ForbiddenException
+        ? error
+        : new InternalServerErrorException('Failed to fetch all complaints');
     }
-
-    const complaints = await this.connection
-      .collection('complaints')
-      .find()
-      .project({ __v: 0 })
-      .toArray();
-
-    return {
-      message: SUCCESS_MESSAGES.COMPLAINTS_FETCHED,
-      data: complaints,
-    };
   }
 }

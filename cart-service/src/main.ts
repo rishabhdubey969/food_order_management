@@ -8,7 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
-  const cartPort = configService.get<number>('CART_PORT') || 3005;
+  const cartPort = configService.get<number>('CART_PORT') || 3002;
 
   const config = new DocumentBuilder()
     .setTitle('Cart API')

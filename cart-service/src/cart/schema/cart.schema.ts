@@ -57,8 +57,6 @@ export class Cart {
 
   couponId: string;
 
-  @Prop({ default: false })
-  deleted: boolean;
 }
 
 export const CartSchema = SchemaFactory.createForClass(Cart);

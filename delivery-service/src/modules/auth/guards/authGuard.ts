@@ -3,12 +3,14 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { Reflector } from '@nestjs/core';
 import { TokenService } from 'src/modules/token/token.service';
 import { AccessRole } from 'src/common/enums';
+import { RedisService } from 'src/modules/redis/redisService';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
 
   constructor(
-    private readonly tokenService: TokenService
+    private readonly tokenService: TokenService,
+    private readonly redisService: RedisService
   ){}
   async canActivate(
     context: ExecutionContext,
@@ -17,30 +19,17 @@ export class AuthGuard implements CanActivate {
     const accessToken = request.headers.authorization?.split(' ')[1];
 
     if(!accessToken){
-      throw new UnauthorizedException("Login Again!!");
+      throw new UnauthorizedException("No Access Token!!!");
     }
-
-    // const requiredRoles = this.reflector.getAllAndOverride<string[]>("roles", [context.getHandler(), context.getClass()])
-
-    // const requiredAccessRole = this.reflector.getAllAndOverride<string>("accessRole", [context.getHandler(), context.getClass()])
-
-    try{
       const payload = await this.tokenService.verify(accessToken);
-      const {userId, accessrole} = payload;
 
-      if(accessrole !== AccessRole.AUTH){
+      const { partnerId } = payload;
+
+      const isAvailable = await this.redisService.isKeyExists(`login-${partnerId}`);
+      if(isAvailable === false){
         return false;
       }
-
-      const user = {
-        userId: userId
-      }
-
-      request.user = user;
-
-    }catch(err){
-      return false;
-    }
+      request['sub'] = partnerId;
     return true;
   }
 }

@@ -20,7 +20,7 @@ export interface CompleteDelivery{
 }
 
 
-export type DriverLocationResult = [string | null];
+export type DriverLocationResult = [Types.ObjectId | null];
 
 
 export interface PaginatedDeliveries {

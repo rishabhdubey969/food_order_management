@@ -1,12 +1,13 @@
 import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import mediaRoutesV1 from './routes/mediaRoutes';
-import { errorHandler } from './utils/error.handler';
+import ratingRoutes from './routes/ratingRoutes';
+// import { errorHandler } from './utils/error.handler';
 
 dotenv.config(); // Load environment variables from .env file
 
 const app = express();
-const port = process.env.PORT || 9080;
+const port = Number(process.env.REST_API_PORT);
 
 // Middleware to parse JSON request bodies
 app.use(express.json());
@@ -15,6 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Versioning: Mount routes under /api/v1
 app.use('/api', mediaRoutesV1);
+app.use('/api', ratingRoutes);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -27,7 +29,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Global error handling middleware (MUST be the last middleware)
-app.use(errorHandler);
+// app.use(errorHandler);
 
 // Start the server
 app.listen(port, () => {

@@ -22,9 +22,8 @@ import {
 import ManagerLoginDto from 'src/manager/dto/managerLogindto';
 import ManagerSignupDto from 'src/manager/dto/managerSignuodto';
 import { ManagerService } from './manager.service';
-import { EventPattern, GrpcMethod, Payload } from '@nestjs/microservices';
+import { EventPattern, GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
 import { Roles } from 'src/manager/common/roles.decorator';
-// import { JwtAuthGuard } from 'src/manager/guard/jwt.auth.guard';
 import { AdminGuard } from 'src/manager/guard/admin.guard';
 import { JwtAuthGuard } from './guard/authguard';
 import { AuthGuard } from '@nestjs/passport';
@@ -33,7 +32,6 @@ import { Types } from 'mongoose';
 @ApiTags('Manager')
 @ApiBearerAuth('access-token')
 
-// @UseGuards(AuthGuard)
 @Controller('manager')
 export class ManagerController {
   constructor(private readonly managerService: ManagerService) {}
@@ -80,40 +78,13 @@ logout(@Headers('authorization') authHeader: string) {
   updateManager(@Param('id') id: string, @Body() updateData: Partial<ManagerSignupDto>) {
     return this.managerService.updateManager(id, updateData);
   }
-   @UseGuards(JwtAuthGuard)
-  @Delete('delete/:id')
-  @ApiOperation({ summary: 'Delete Manager by ID' })
-  @ApiParam({ name: 'id', required: true, description: 'Manager ID' })
-  @ApiResponse({ status: 200, description: 'Manager deleted successfully' })
-  deleteManager(@Param('id') id: string) {
-    return this.managerService.deleteManager(id);
-  }
-
-// @UseGuards(AdminGuard)
-//   @Get('all')
-//   @ApiOperation({ summary: 'Get all Managers (Admin only)' })
-//   @ApiResponse({ status: 200, description: 'Managers fetched successfully' })
-//   getAllManagers(@Headers('authorization') authHeader: string) {
-//     const token = authHeader?.split(' ')[1];
-//     return this.managerService.getAllManagers(token);
-//   }
-  
    @GrpcMethod('ManagerService', 'SignupManager')
   async signupManager(data: ManagerSignupDto) {
     return this.managerService.signup(data);
   }
-   @GrpcMethod('ManagerService', 'DeleteManager')
-  async deletetheManager(data: {id: string}) {
-    return this.managerService.deleteManager(data.id);
-  }
-
-  @GrpcMethod('ManagerService', 'GetAllManagers')
-  async getAlltheManagers(data: {token: string}) {
-    return this.managerService.getAllManagers(data.token);
-  }
   
-  @EventPattern('newOrder')
-  async handleNewOrder(@Payload() orderId: Types.ObjectId){
-    
+  @MessagePattern('isFoodAvailable')
+  async handleNewOrder(@Payload() cartId: Types.ObjectId){
+    return await this.managerService.handleNewOrder(cartId);
   }
 }

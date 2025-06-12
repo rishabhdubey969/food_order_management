@@ -3,8 +3,6 @@ import { StripeConfigService } from '../../config/stripe.config';
 import { StripePayService } from '../stripe_pay/stripe.pay.service';
 import Stripe from 'stripe';
 import { InjectModel } from '@nestjs/mongoose';
-import { Payment } from '../pay/Schema/pay.schema';
-import { PaymentDocument } from '../stripe_pay/Schema/stripe.pay.schema';
 import { Model } from 'mongoose';
 import { Webhook, WebhookDocument } from './Schema/webhook.schema';
 
@@ -26,7 +24,7 @@ async handleWebhookEvent(event: Stripe.Event) {
         case 'checkout.session.completed':
           const session = event.data.object;
           await this.handleSuccessfulPayment(session);
-          await this.updatePaymentStatus(session.id, 'completed');
+          
           break;
 
         case 'checkout.session.expired':
@@ -197,14 +195,26 @@ async handleWebhookEvent(event: Stripe.Event) {
   async handleSuccessfulPayment(session: Stripe.Checkout.Session) {
     try {
       const orderId = session.metadata?.orderId;
+      console.log("Hello",session)
       if (!orderId) {
         throw new Error('No orderId found in session metadata');
       }
+      const payment = new this.webhookModel({
+        orderId: orderId,
+        amount: session.amount_total,
+        currency: 'usd',
+        sessionId: session.id,
+        status: session.status,
+       
+        paymentIntentId:session.payment_intent
+      });
 
+      await payment.save();
+      await this.updatePaymentStatus(session.id, 'completed');
       Logger.log(`Payment successful for order ${orderId}`);
     } catch (error) {
       Logger.error('Error handling successful payment:', error);
-      throw error;
+      throw error
     }
   }
 
