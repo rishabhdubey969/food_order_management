@@ -102,7 +102,7 @@
 import { Body, Controller, Put, UseGuards } from '@nestjs/common';
 import { DeliveryService } from './delivery.service';
 import { AuthGuard } from '../auth/guards/authGuard';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { DeliveryStatus } from './enums/deliveryEnums';
 import { Types } from 'mongoose';
 import { 
@@ -216,26 +216,17 @@ export class DeliveryController {
       }
     }
   })
-  async handleOrderPickup(@Body('orderId') orderId: Types.ObjectId) {
+  async handleOrderPickup(@Payload('orderId') orderId: Types.ObjectId) {
     this.logger.log(`Handling order pickup for order: ${orderId}`);
-    
-    await this.deliveryService.updateDeliveryStatus(orderId, DeliveryStatus.PICKED_UP);
-    this.logger.log(`Order status updated to PICKED_UP for order: ${orderId}`);
+  
+      await this.deliveryService.updateDeliveryStatus(orderId, DeliveryStatus.PICKED_UP);
+      this.logger.log(`Order status updated to PICKED_UP for order: ${orderId}`);
 
-    setTimeout(async () => {
-      try {
-        await this.deliveryService.updateDeliveryStatus(orderId, DeliveryStatus.IN_TRANSIT);
-        this.logger.log(`Order status updated to IN_TRANSIT for order: ${orderId}`);
-      } catch (err) {
-        this.logger.error(`Error updating status to IN_TRANSIT for order: ${orderId}`, err);
-      }
-    }, 10 * 1000);
-
-    return { 
-      success: true, 
-      message: 'Order status updated to PICKED_UP',
-      nextUpdate: 'IN_TRANSIT status will be updated in 10 seconds'
-    };
+      setTimeout(async () => {
+          await this.deliveryService.updateDeliveryStatus(orderId, DeliveryStatus.IN_TRANSIT);
+          this.logger.log(`Order status updated to IN_TRANSIT for order: ${orderId}`);
+        
+      }, 10 * 1000);
   }
 
   @UseGuards(AuthGuard)
