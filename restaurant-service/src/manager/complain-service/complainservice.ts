@@ -177,17 +177,14 @@ export class ComplaintService {
   }
 
   async getComplaintsForManager(managerId: string) {
-    if (!Types.ObjectId.isValid(managerId)) {
-      throw new BadRequestException('Invalid manager ID');
-    }
-
+   console.log(managerId);
     try {
       const complaints = await this.connection
         .collection('complaints')
         .find({ managerId: new Types.ObjectId(managerId) })
         .project({ __v: 0 })
         .toArray();
-
+      console.log(managerId);
       if (!complaints.length) {
         throw new NotFoundException('No complaints found for this manager');
       }

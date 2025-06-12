@@ -15,8 +15,8 @@ async function bootstrap() {
   // Add validation pipe
   app.useGlobalPipes(new ValidationPipe({
     transform: true,
-    whitelist: true,       // Remove non-whitelisted properties
-    forbidNonWhitelisted: true, // Throw errors for non-whitelisted properties
+    whitelist: true,      
+    forbidNonWhitelisted: true, 
     transformOptions: {
       enableImplicitConversion: true,
     },

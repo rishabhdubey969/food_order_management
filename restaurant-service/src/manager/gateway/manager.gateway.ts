@@ -40,22 +40,42 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
     }
   }
 
-  async handleNewOrder(managerId: Types.ObjectId, cartData: any) {
+  // async handleNewOrder(managerId: Types.ObjectId, cartData: any) {
+  //   const managerSocket = this.connectedManagers.get(managerId);
+  //   if (managerSocket) {
+  //       managerSocket.emit('newOrder', cartData);
+
+  //        managerSocket?.on('orderResponse', (data) => {
+  //         return data;
+  //       })
+  //   }
+  // }
+  async handleIsFoodAvailable(managerId: Types.ObjectId, cartData: any): Promise<boolean> {
     const managerSocket = this.connectedManagers.get(managerId);
-    if (managerSocket) {
+    if (!managerSocket) {
+        throw new Error('Manager not connected');
+    }
+
+    return new Promise((resolve, reject) => {
+        // Timeout for no response
+        const timeoutId = setTimeout(() => {
+            reject(new Error('Manager response timeout'));
+        }, 30000); // 30 seconds timeout
+
+        // Send the order to manager's frontend
         managerSocket.emit('newOrder', cartData);
 
-         managerSocket?.on('orderResponse', (data) => {
-          return data;
-        })
-    }
-  }
+        // Temporary listener for response
+        const responseHandler = (data: { approved: boolean }) => {
+            clearTimeout(timeoutId);
+            managerSocket.off('orderResponse', responseHandler); // Cleanup
+            resolve(data.approved);
+        };
 
-  // @SubscribeMessage('orderResponse')
-  // async handleOrderResponse(@ConnectedSocket() client: Socket, @MessageBody() data: any){
-  //   const {cartId, status} = data;
-  //   this.kafkaService.handleEvent('response', {cartId: String, acknowledgement: status});
-  // }
+        managerSocket.on('orderResponse', responseHandler);
+    });
+}
 
+ 
 
 }

@@ -84,7 +84,12 @@ logout(@Headers('authorization') authHeader: string) {
   }
   
   @MessagePattern('isFoodAvailable')
-  async handleNewOrder(@Payload() cartId: Types.ObjectId){
-    return await this.managerService.handleNewOrder(cartId);
+  async handleIsFoodAvailable(@Payload() cartId: Types.ObjectId){ 
+    return await this.managerService.handleIsFoodAvailable(cartId);
+  }
+
+  @Post('orderHandOver')
+  async handleOrderhandover(@Body('orderId') orderId: Types.ObjectId){
+    await this.managerService.handleOrderHandover(orderId);
   }
 }
