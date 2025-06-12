@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { addRating, getRestaurantReviews, getAverageRating } from '../controllers/ratingController';
+import RatingController from '../controllers/ratingController';
 const router = Router();
 
 // api/ratings
-router.post('/ratings', addRating);
-router.get('/ratings/:restaurantId', getRestaurantReviews);
-router.get('/ratings/:restaurantId/average', getAverageRating);
+router.post('/ratings', RatingController.addRating);
+router.get('/ratings/:restaurantId', RatingController.getRestaurantReviews);
+router.get('/ratings/:restaurantId/average', RatingController.getAverageRating);
 
-export default router;
+export default router;      

@@ -1,0 +1,82 @@
+version: '3.8'
+
+auth-service:
+    build:
+      context: ./auth-service # Assuming auth-service Dockerfile is in ./auth-service
+    env_file:
+      - .env
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/auth-db # Assuming auth-service connects to 'auth-db' on the shared mongo
+      - REDIS_HOST=redis
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      # This is the CRUCIAL part for gRPC communication from auth to user
+      - USER_SERVICE_URL=user-service:5001 # Use the service name and internal gRPC port of user-service
+    command: npm run start:dev
+    ports:
+      - "9003:9000" # Expose auth-service's primary port on host 9001 (to avoid conflict with user-service's 9000)
+      - "5002:5002" # Expose auth-service's gRPC port on host 5002 (if it has a gRPC server)
+    volumes:
+      - ./auth-service:/app # Map your auth-service code
+      - /app/node_modules   # Use named volume or ensure node_modules are built into image
+    networks:
+      - app_shared_network
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+      - sonarqube
+      # - user-service # Add this if auth-service heavily depends on user-service being ready before starting
+
+    mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017" # Expose on host 27017 for local development/testing
+    networks:
+      - app_shared_network
+
+    redis:
+    image: redis:7
+    ports:
+      - "6379:6379" # Expose on host 6379
+    networks:
+      - app_shared_network
+
+    rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # RabbitMQ AMQP protocol
+      - "15672:15672" # RabbitMQ management UI
+    networks:
+      - app_shared_network
+
+    sonarqube:
+    image: sonarqube:latest
+    container_name: sonarqube_main # A common name for the single instance
+    ports:
+      - "9001:9000" # SonarQube UI accessible on localhost:9001
+    environment:
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=sonar
+      - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonar
+    depends_on:
+      - db
+    networks:
+      - app_shared_network
+
+    db: # PostgreSQL for SonarQube
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonar
+    volumes:
+      - sonarqube_db_data:/var/lib/postgresql/data
+    networks:
+      - app_shared_network
+
+networks:
+  app_shared_network:
+    driver: bridge # Docker Compose will create this internal bridge network
+
+volumes:
+  sonarqube_db_data:
