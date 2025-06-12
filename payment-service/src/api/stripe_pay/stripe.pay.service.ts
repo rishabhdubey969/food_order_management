@@ -42,7 +42,7 @@ export class StripePayService {
         throw new BadRequestException("order does not exist")
       }
       const total_amount = orderData?.total;
-      console.log(total_amount);
+      
       const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
@@ -72,7 +72,7 @@ export class StripePayService {
 
       const payment = new this.paymentModel({
         orderId: orderId,
-        amount: 2000,
+        amount: total_amount,
         currency: 'usd',
         sessionId: session.id,
         status: 'pending',
