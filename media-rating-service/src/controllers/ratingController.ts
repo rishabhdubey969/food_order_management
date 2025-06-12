@@ -19,7 +19,8 @@ import  { CONSTANTS } from '../constant/ratingConstant';
 
   async getRestaurantReviews(req: Request, res: Response): Promise<void> {
     try {
-        responseHandler.successHandle(res, {data_check: 'Rating added successfully!'});
+       const result = await ratingService.getRestaurantReviewsService(req.params.restaurantId);
+        responseHandler.successHandle(res, {result, message: 'Rating fetch successfully!'});
     } catch (error) {
          responseHandler.errorHandle(res, error)
     }
@@ -28,7 +29,8 @@ import  { CONSTANTS } from '../constant/ratingConstant';
 
     async getAverageRating(req: Request, res: Response): Promise<void> {
    try {
-        responseHandler.successHandle(res, {data_check: 'Rating added successfully!'});
+        const result = await ratingService.getAverageRatingService(req.params.restaurantId);
+        responseHandler.successHandle(res, {result, message: 'Average rating fetch successfully!'});
     } catch (error) {
          responseHandler.errorHandle(res, error)
     }
