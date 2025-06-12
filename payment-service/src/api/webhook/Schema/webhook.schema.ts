@@ -1,33 +1,64 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
+import { StringifyOptions } from 'querystring';
 
 export type WebhookDocument = Webhook & Document;
 
-@Schema({ timestamps: true })
+
+
+@Schema({
+  timestamps: true,
+})
 export class Webhook {
-  @Prop({ required: true })
-  orderId: string;
+  @Prop({
+    required: true,
+    index: true,
+  })
+  stripeEventId: string;
 
-  @Prop({ required: true })
-  amount: number;
+  @Prop({
+    required: true,
+    index: true,
+  })
+  eventType: string;
 
-  @Prop({ required: true })
-  currency: string;
+  @Prop({
+    type: Object, 
+    required: true,
+  })
+  payload: Record<string, any>; // Use Record<string, any> or any for flexible JSON
 
-  @Prop({ required: true })
-  sessionId: string;
+  @Prop({
+    required: true,
+    index: true,
+  })
+  createdAtStripe: Date; 
+
+  @Prop({
+    default: Date.now,
+    index: true,
+  })
+  receivedAt: Date;
+
+  @Prop({
+    type: String,
+    
+    index: true,
+  })
+  processingStatus: String;
 
   @Prop()
-  status: string;
+  errorMessage?: string; 
+
+
+  @Prop({required:true})
+  orderId:string;
 
   @Prop()
-  chargeId:string;
-
-  @Prop()
-  paymentIntentId:string;
-
+  amount:string
   
-
 }
 
-export const webhookSchema = SchemaFactory.createForClass(Webhook);
+export const WebhookSchema = SchemaFactory.createForClass(Webhook);
+
+WebhookSchema.index({ stripeEventId: 1 }, { unique: true });

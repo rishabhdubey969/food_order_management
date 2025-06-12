@@ -34,7 +34,7 @@ import { Auth } from 'constants/auth.constant';
         throw new HttpException(Auth.AUTH_HEADER_MISSING, HttpStatus.FORBIDDEN);
       }
   
-      const parts = authorizationHeader.split(' ');
+       const parts = authorizationHeader.split(' ');
   
       if (parts.length !== 2 || parts[0] !== 'Bearer') {
         throw new UnauthorizedException(Auth.TOKEN_REQUIRED);
@@ -42,14 +42,14 @@ import { Auth } from 'constants/auth.constant';
   
       const token = parts[1];
   
-      try {
+   try {
         const user = await this.authClient.ValidateTokenAuthService(token);
-  console.log(user);
         if (!user.isValid) {
           throw new UnauthorizedException(user?.message || 'Invalid token');
         }
   
         request.user = user;
+        console.log(user)
         return true;
       } catch (error) {
         this.logger.info(`Authentication header have some issues: ${error}`);

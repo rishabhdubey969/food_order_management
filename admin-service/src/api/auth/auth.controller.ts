@@ -5,49 +5,39 @@ import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/ reset-password.dto';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiProperty, ApiResponse } from '@nestjs/swagger';
 
 @Controller('auth/admin')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // @Post('login')
-  // async login(@Body() loginDto: LoginDto, @Req() req: Request) {
-  //   try {
-  //     const deviceId = req.headers['x-device-id']?.toString().split(',')[0]?.trim();
-  //      if (!deviceId) {
-  //       throw new HttpException('Device ID is required', HttpStatus.BAD_REQUEST);
-  //     }
-  //     return await this.authService.login(loginDto, deviceId);
-  //   } catch (error) {
-  //     throw new HttpException(
-  //       error.message || 'Login failed',
-  //       error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-  //     );
-  //   }
-  // }
-
   @Post('login')
   @ApiOperation({ summary: 'Login an admin user' })
-  @ApiBody({ type: LoginDto }) // Document the request body
-  @ApiResponse({ status: 200, description: 'Successfully logged in', type: Object }) // Define success response
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully logged in',
+    type: Object,
+  })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async login(@Body() loginDto: LoginDto) {
     try {
       return await this.authService.login(loginDto);
     } catch (error) {
-      throw new HttpException(
-        error.message || 'Login failed',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(error.message || 'Login failed', error.status || HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   @Post('verify-otp')
   @ApiOperation({ summary: 'Verify OTP for admin login' })
+  @ApiProperty()
   @ApiBody({ type: VerifyOtpDto })
-  @ApiResponse({ status: 200, description: 'OTP verified successfully', type: Object })
+  @ApiResponse({
+    status: 200,
+    description: 'OTP verified successfully',
+    type: Object,
+  })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
@@ -62,7 +52,11 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @ApiResponse({ status: 200, description: 'Token refreshed successfully', type: Object })
+  @ApiResponse({
+    status: 200,
+    description: 'Token refreshed successfully',
+    type: Object,
+  })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async refresh(@Body('refreshToken') refreshToken: string) {
@@ -76,42 +70,46 @@ export class AuthController {
     }
   }
 
-
   @Post('logout')
-@ApiBearerAuth() // Indicates this endpoint requires a Bearer token
-@ApiOperation({ summary: 'Logout an admin user' })
-@ApiBody({
-  schema: {
-    type: 'object',
-    properties: {
-      userId: {
-        type: 'string',
-        description: 'The ID of the user to logout',
-        example: '12345',
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout an admin user' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        userId: {
+          type: 'string',
+          description: 'The ID of the user to logout',
+          example: '12345',
+        },
       },
+      required: ['userId'],
     },
-    required: ['userId'],
-  },
-})
-@ApiResponse({ status: 200, description: 'Successfully logged out', type: Object })
-@ApiResponse({ status: 400, description: 'Bad Request' })
-@ApiResponse({ status: 401, description: 'Unauthorized' })
-@ApiResponse({ status: 500, description: 'Internal Server Error' })
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully logged out',
+    type: Object,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async logout(@Body('userId') userId: string) {
     try {
       return await this.authService.logout(userId);
     } catch (error) {
-      throw new HttpException(
-        error.message || 'Logout failed',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(error.message || 'Logout failed', error.status || HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   @Post('forgot-password')
   @ApiOperation({ summary: 'Request a password reset for an admin' })
   @ApiBody({ type: ForgotPasswordDto })
-  @ApiResponse({ status: 200, description: 'Password reset request successful', type: Object })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset request successful',
+    type: Object,
+  })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
@@ -128,7 +126,11 @@ export class AuthController {
   @Post('reset-password')
   @ApiOperation({ summary: 'Reset admin password using a token' })
   @ApiBody({ type: ResetPasswordDto })
-  @ApiResponse({ status: 200, description: 'Password reset successful', type: Object })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successful',
+    type: Object,
+  })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {

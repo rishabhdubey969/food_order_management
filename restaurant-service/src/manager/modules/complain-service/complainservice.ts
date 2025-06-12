@@ -8,10 +8,10 @@ import {
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection, Types, isValidObjectId } from 'mongoose';
-import { UpdateComplaintStatusDto } from 'src/manager/dto/update.complainStatusdto';
+import { UpdateComplaintStatusDto } from 'src/manager/modules/auth/dto/update.complainStatusdto';
 import { TokenService } from '../token/token.service';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from 'src/manager/constants/errorand success';
-import { CreateComplaintDto } from '../dto/create-complaint.dto';
+import { CreateComplaintDto } from '../auth/dto/create-complaint.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
@@ -177,17 +177,14 @@ export class ComplaintService {
   }
 
   async getComplaintsForManager(managerId: string) {
-    if (!Types.ObjectId.isValid(managerId)) {
-      throw new BadRequestException('Invalid manager ID');
-    }
-
+   console.log(managerId);
     try {
       const complaints = await this.connection
         .collection('complaints')
         .find({ managerId: new Types.ObjectId(managerId) })
         .project({ __v: 0 })
         .toArray();
-
+      console.log(managerId);
       if (!complaints.length) {
         throw new NotFoundException('No complaints found for this manager');
       }

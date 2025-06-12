@@ -15,8 +15,8 @@ export class Manager {
   @Prop({ required: true })
   password: string;
 
-  @Prop({ required: true })
-  restaurantId: string;
+  // @Prop({ required: true })
+  // restaurantId: string;
 
   // @Prop({ default: 'pending', enum: ['pending', 'active', 'rejected'] })
   // isActive: string;

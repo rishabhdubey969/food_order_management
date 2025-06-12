@@ -106,7 +106,7 @@ import { DeliveryPartner, DeliveryPartnerDocument } from './models/deliveryPartn
 import { DeliveryPartnerStatus } from './enums/partnerEnum';
 import { DeliveryService } from '../delivery/delivery.service';
 import { RegisterPartnerDto } from '../auth/dtos/registerPartnerDto';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+
 
 
 @Injectable()

@@ -6,13 +6,14 @@ import { RestaurantSchema } from './schema/restaurant.schema';
 import { MenuItemSchema } from './schema/menuItem.schema';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CouponSchema } from './schema/copon.schema';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [MongooseModule.forFeature([
     { name: 'Restaurant', schema: RestaurantSchema },
     { name: 'MenuItem', schema: MenuItemSchema },
     { name: 'Coupon', schema: CouponSchema },
-  ]),
+  ]), RedisModule,
   // ClientsModule.register([
   //   {
   //     name: 'MEDIA_SERVICE',

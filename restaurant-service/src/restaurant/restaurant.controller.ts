@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { RestaurantService } from './restaurant.service';
 import { CreateRestaurantDto } from './dto/restaurant.dto';
 import { CreateMenuItemDto } from './dto/createMenuItem.dto';
@@ -12,11 +12,13 @@ import {
 import { JwtAuthGuard } from './guards/jwtAuth.guard';
 import {  CouponDto } from './dto/coupon.dto';
 import { UpdateCoponDto } from './dto/updateCoupon.dto';
+import { UserGuard } from './guards/user.guard';
 
 interface MediaService {
     getSignedUrl(fileName: string, fileType: string, folderName: string): Promise<string>;
 }
 
+// @UseGuards(JwtAuthGuard)
 @ApiTags('Restaurants')
 @ApiBearerAuth()
 // @UseGuards(JwtAuthGuard)
@@ -34,6 +36,7 @@ export class RestaurantController {
         return this.restaurantService.createRestaurant(createRestaurantDto, managerId);
     }
 
+    @UseGuards(UserGuard)
     @Get('/nearby')
     @ApiOperation({ summary: 'Get nearby restaurants' })
     @ApiQuery({ name: 'latitude', required: true })
@@ -45,8 +48,10 @@ export class RestaurantController {
         @Query('longitude') longitude: number,
         @Query('limit') limit = 10,
         @Query('offset') offset = 0,
+        @Req() req: any,
     ) {
-        return this.restaurantService.getNearbyRestaurants(latitude, longitude, +limit, +offset);
+        const user  = req.user;
+        return this.restaurantService.getNearbyRestaurants(latitude, longitude, +limit, +offset, user);
     }
 
     // @UseGuards(AdminGuard)

@@ -5,11 +5,9 @@ package manager;
 service ManagerService {
   rpc Signup (ManagerSignupRequest) returns (ManagerResponse);
   
-  rpc DeleteManager (DeleteManagerRequest) returns (DeleteManagerResponse);
-  rpc GetAllManagers (GetAllManagersRequest) returns (GetAllManagersResponse);
+  
 }
 
-// Request/Response Messages
 message ManagerSignupRequest {
   string name = 1;
   string email = 2;
@@ -22,15 +20,9 @@ message ManagerSignupRequest {
 }
 
 
-message DeleteManagerRequest {
-  string id = 1;
-}
 
-message GetAllManagersRequest {
-  string token = 1;
-}
 
-// Response Messages
+
 message ManagerResponse {
   string message = 1;
   ManagerData data = 2;
@@ -47,11 +39,5 @@ message ManagerData {
   string bank_name = 8;
 }
 
-message DeleteManagerResponse {
-  string message = 1;
-}
 
-message GetAllManagersResponse {
-  string message = 1;
-  repeated ManagerData managers = 2;
-}
+

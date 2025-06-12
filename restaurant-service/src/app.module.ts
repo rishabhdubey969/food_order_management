@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ManagerModule } from './manager/manager.module';
 import { RestaurantModule } from './restaurant/restaurant.module';
-import { ManagerGateway } from './manager/gateway/manager.gateway';
+import { ManagerGateway } from './manager/modules/gateway/manager.gateway';
 import { KafkaModule } from './manager/kafka/kafka.module';
 
 @Module({
@@ -11,7 +11,6 @@ import { KafkaModule } from './manager/kafka/kafka.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -21,7 +20,7 @@ import { KafkaModule } from './manager/kafka/kafka.module';
       inject: [ConfigService],
     }),
     ManagerModule, 
-    RestaurantModule
+    RestaurantModule,
   ],
   controllers: [],
   providers: [],
