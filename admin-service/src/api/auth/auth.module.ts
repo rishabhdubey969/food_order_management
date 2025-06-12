@@ -1,30 +1,3 @@
-// import { Module } from '@nestjs/common';
-// import { MongooseModule } from '@nestjs/mongoose';
-// import { JwtModule } from '@nestjs/jwt';
-// import { AuthService } from './auth.service';
-// import { AuthController } from './auth.controller';
-// import { Admin, AdminSchema } from './entities/admin.entity';
-// import { Session, SessionSchema } from './entities/session.entity';
-// import { ConfigModule } from '@nestjs/config';
-
-// @Module({
-//   imports: [
-//     MongooseModule.forFeature([
-//       { name: Admin.name, schema: AdminSchema },
-//       { name: Session.name, schema: SessionSchema },
-//     ]),ConfigModule.forRoot(),
-//     JwtModule.register({
-//       secret: process.env.JWT_SECRET || 'yourSecretKey',
-//       signOptions: { expiresIn: '24h' },
-//     }),
-//   ],
-//   controllers: [AuthController],
-//   providers: [AuthService],
-//   exports: [AuthService], // Export for shared JWT verification
-// })
-// export class AuthModule {}
-
-
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
@@ -41,8 +14,8 @@ import { Session, SessionSchema } from './entities/session.entity';
       { name: Session.name, schema: SessionSchema },
     ]),
     JwtModule.register({
-      secret: process.env.JWT_SECRET|| 'yourSecretKey',
-      signOptions: { expiresIn: '10m' },
+      secret: process.env.JWT_SECRET || 'yourSecretKey',
+      signOptions: { expiresIn: '1h' },
     }),
     ClientsModule.register([
       {
@@ -60,6 +33,6 @@ import { Session, SessionSchema } from './entities/session.entity';
   ],
   controllers: [AuthController],
   providers: [AuthService],
-   exports: [AuthService],
+  exports: [AuthService],
 })
 export class AuthModule {}

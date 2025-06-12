@@ -3,13 +3,13 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
-import { User, UserSchema } from './entities/user.entity';
+
 import { AuthModule } from '../auth/auth.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+   
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'yourSecretKey',
       signOptions: { expiresIn: '24h' },
@@ -27,7 +27,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
             },
           },
         ]),
-    AuthModule, // Import AuthModule for session and JWT verification
+    AuthModule,
   ],
   controllers: [UserController],
   providers: [UserService],

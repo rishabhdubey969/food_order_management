@@ -1,15 +1,14 @@
 syntax = "proto3";
 
-package auth;
+package manager;
 
 service ManagerService {
-  rpc Signup (ManagerSignupRequest) returns (ManagerResponse);
-  rpc UpdateManager (UpdateManagerRequest) returns (ManagerResponse);
-  rpc DeleteManager (DeleteManagerRequest) returns (DeleteManagerResponse);
-  rpc GetAllManagers (GetAllManagersRequest) returns (GetAllManagersResponse);
+  rpc  Signup(ManagerSignupRequest) returns (ManagerResponse);
+  
+  
+ 
 }
 
-// Request/Response Messages
 message ManagerSignupRequest {
  string name = 1;
   string email = 2;
@@ -21,25 +20,10 @@ message ManagerSignupRequest {
   string bankName = 8;
 }
 
-message UpdateManagerRequest {
-  string id = 1;
-  optional string name = 2;
-  optional string phone = 3;
-  optional string accountNumber = 4;
-  optional string ifsCode = 5;
-  optional string bankname = 6;
-  optional bool isActive = 7;
-}
 
-message DeleteManagerRequest {
-  string id = 1;
-}
 
-message GetAllManagersRequest {
-  string token = 1;
-}
 
-// Response Messages
+
 message ManagerResponse {
   string message = 1;
   ManagerData data = 2;
@@ -56,11 +40,5 @@ message ManagerData {
   string bankname = 8;
 }
 
-message DeleteManagerResponse {
-  string message = 1;
-}
 
-message GetAllManagersResponse {
-  string message = 1;
-  repeated ManagerData managers = 2;
-}
+
