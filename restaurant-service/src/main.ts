@@ -16,7 +16,7 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT') || 3000; 
+  const port = configService.get<number>('PORT') || 3005; 
   const config = new DocumentBuilder()
     .setTitle('Manager & Restaurant API')
     .setDescription('API for Manager signup, login, and management')
@@ -34,7 +34,7 @@ async function bootstrap() {
   //   options: {
   //     package: 'order', // name defined in your .proto file
   //     protoPath: join(__dirname, './manager/grpc/proto/order.proto'), // path to your proto
-  //     url: '0.0.0.0:50051', // gRPC server address
+  //     url: '0.0.0.0:60051', // gRPC server address
   //   },
   // });
   // app.connectMicroservice<MicroserviceOptions>({

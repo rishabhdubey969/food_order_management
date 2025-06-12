@@ -39,6 +39,15 @@ export class Restaurant extends Document {
 
   @Prop({ default: [] })
   tags: string[];
+
+  @Prop({ default: false})
+  isBlocked: boolean;
+
+  @Prop({ default: false})
+  isDeleted: boolean;
+  
+  @Prop({ default: null })
+  DeletedAt: Date;
 }
 
 export const RestaurantSchema = SchemaFactory.createForClass(Restaurant);
