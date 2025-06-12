@@ -188,7 +188,7 @@
 
 
 import { PaymentMethod, DeliveryStatus } from './enums/deliveryEnums';
-import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Delivery, DeliveryDocument } from './modles/deliveryModel';
 import { Connection, Model, MongooseError } from 'mongoose';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
@@ -198,6 +198,7 @@ import { RedisService } from '../redis/redisService';
 import { TrackingGateway } from '../tracking/tracking.gateway';
 import { Logger } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { isInstance } from 'class-validator';
 
 @Injectable()
 export class DeliveryService {
@@ -242,7 +243,11 @@ export class DeliveryService {
         paymentMethod: currentOrder.PaymentMethod === 'cashOnDelivery' ? PaymentMethod.CASH_ON_DELIVERY : PaymentMethod.PAID,
       };
 
+      
       await this.DeliveryModel.create(currentDelivery);
+      this.logger.log(`Delivery Created Successfully!!`)
+     
+      
       await this.assignDeliveryPartner(currentDelivery);
       this.logger.log(`Delivery created successfully for order: ${orderId}`);
     } catch (err) {
@@ -268,11 +273,15 @@ export class DeliveryService {
   async assignedPartner(partnerId: Types.ObjectId, orderId: Types.ObjectId) {
     this.logger.log(`Assigning partner ${partnerId} to order: ${orderId}`);
     try {
-      await this.DeliveryModel.findOneAndUpdate(
+      const delivery = await this.DeliveryModel.findOneAndUpdate(
         { orderId: orderId },
         { partnerId: partnerId, status: DeliveryStatus.ASSIGNED },
         { new: true }
       );
+      if(!delivery){
+        this.logger.log(`Unable to find Delivery with orderId ${orderId}`)
+        throw new NotFoundException(`Delivery Document not found with orderId : ${orderId}`)
+      }
       this.logger.log(`Partner ${partnerId} assigned successfully to order: ${orderId}`);
     } catch (err) {
       this.logger.error(`Error assigning partner ${partnerId} to order: ${orderId}`, err);
@@ -378,9 +387,16 @@ export class DeliveryService {
   async updateDeliveryStatus(orderId: Types.ObjectId, status: DeliveryStatus) {
     this.logger.log(`Updating delivery status for order: ${orderId} to ${status}`);
     try {
-      await this.DeliveryModel.findOneAndUpdate({ orderId: orderId }, { status: status }, { new: true });
+      const delivery = await this.DeliveryModel.findOneAndUpdate({ orderId: orderId }, { status: status }, { new: true });
+      if(!delivery){
+        this.logger.log(`Unable to find Delivery with orderId ${orderId}`)
+        throw new NotFoundException(`Delivery Document not found with orderId : ${orderId}`)
+      }
       this.logger.log(`Delivery status updated to ${status} for order: ${orderId}`);
     } catch (err) {
+      if (err instanceof NotFoundException) {
+        throw err;
+      }
       this.logger.error(`Error updating delivery status for order: ${orderId}`, err);
       throw new MongooseError(err.Message);
     }

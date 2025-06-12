@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Param,
-  Delete,
-  ValidationPipe,
-  UsePipes,
-  Req,
-} from '@nestjs/common';
+import { Controller, Post, Body, Param, Delete, ValidationPipe, UsePipes, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
@@ -40,18 +31,25 @@ export class AuthController {
     return this.authService.signUpService(createAuthDto, req);
   }
 
+  /**
+   * Endpoint to initiate forgot password process.
+   * @param dto - DTO containing the user's email.
+   * @returns Response from the forgot password service.
+   */
   @Post('forgot-password')
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }
 
+  /**
+   * Endpoint to reset the user's password using a token.
+   * @param token - Password reset token from the URL.
+   * @param resetPasswordDto - DTO containing new password details.
+   * @returns Response from the reset password service.
+   */
   @Post('reset-password/:token')
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  async resetPassword(
-    @Param('token') token: string,
-    @Body() resetPasswordDto: ResetPasswordDto,
-  ) {
+  async resetPassword(@Param('token') token: string, @Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(token, resetPasswordDto);
   }
-
 }

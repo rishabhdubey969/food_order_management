@@ -10,6 +10,9 @@
     "skipLibCheck": true,
     "resolveJsonModule": true // Useful if you ever import JSON files
   },
-  "include": ["src/**/*.ts"],
+   "include": [
+    "src/**/*.ts",     // Include all files under 'src'
+    "src/constant/**/*.ts" // Also include files under the 'constant' folder
+  ],
   "exclude": ["node_modules"]
 }

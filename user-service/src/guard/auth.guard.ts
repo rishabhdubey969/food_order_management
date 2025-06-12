@@ -31,12 +31,14 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const authorizationHeader = request.headers.authorization;
 
+    // Check if the Authorization header is present
     if (!authorizationHeader) {
       throw new HttpException(Auth.AUTH_HEADER_MISSING, HttpStatus.FORBIDDEN);
     }
 
     const parts = authorizationHeader.split(' ');
 
+    // Validate the format of the Authorization header (should be "Bearer <token>")
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
       throw new UnauthorizedException(Auth.TOKEN_REQUIRED);
     }
@@ -44,15 +46,17 @@ export class AuthGuard implements CanActivate {
     const token = parts[1];
 
     try {
+      // Validate the token using the AuthClient service
       const user = await this.authClient.ValidateTokenAuthService(token);
-console.log(user);
       if (!user.isValid) {
+        // If token is invalid, throw UnauthorizedException
         throw new UnauthorizedException(user?.message || 'Invalid token');
       }
-
+      // Attach user info to the request object for downstream use
       request.user = user;
       return true;
     } catch (error) {
+      // Log the error and throw UnauthorizedException for any issues during validation
       this.logger.info(`Authentication header have some issues: ${error}`);
       throw new UnauthorizedException('Invalid token');
     }

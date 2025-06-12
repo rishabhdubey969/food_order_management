@@ -1,57 +1,83 @@
-version: '3.8'
-
 services:
-  app:
+  user-service:
     build:
-      context: .  # Path to Dockerfile
+      context: ./user-service  # Path to user-service Dockerfile
     env_file:
       - .env
     environment:
-      - MONGO_URL=${MONGO_CONNECTION}
+      - MONGO_URL=mongodb://mongo:27017/user-db
       - REDIS_HOST=redis
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      # If user-service needs to call auth-service:
+      # - AUTH_GRPC_TARGET=auth-service:5002 # Assuming auth-service's gRPC is on internal port 5002
     command: npm run start:dev
     ports:
-      - "${PORT}:9000"    # Map host PORT to container 9000 (adjust if needed)
-      - "5000:5000"       # gRPC port
+      - "9000:9000" # Exposes user-service's primary app port (9000 internal to container) to host's port 9000
+      - "5001:5001" # Exposes user-service's gRPC port (5001 internal to container) to host's port 5001
     volumes:
-      - .:/app
-      - /app/node_modules
+      - ./user-service:/app # Mounts your user-service code
+      - /app/node_modules   # Prevents host node_modules from overriding container's
     networks:
-      - app_network
+      - app_shared_network
     depends_on:
       - mongo
       - redis
       - rabbitmq
       - sonarqube
 
+  auth-service:
+    build:
+      context: ./auth-service # Path to auth-service Dockerfile
+    env_file:
+      - .env
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/auth-db
+      - REDIS_HOST=redis
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - USER_SERVICE_URL=user-service:5001 # Auth service connects to user-service using its service name and internal gRPC port
+    command: npm run start:dev
+    ports:
+      - "9001:9000" # Exposes auth-service's primary app port (9000 internal) to host's port 9001 (to avoid conflict with user-service)
+      - "5002:5002" # Exposes auth-service's gRPC port (5002 internal) to host's port 5002
+    volumes:
+      - ./auth-service:/app # Mounts your auth-service code
+      - /app/node_modules   # Prevents host node_modules from overriding container's
+    networks:
+      - app_shared_network
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+      - sonarqube
+      # - user-service # Uncomment if auth-service requires user-service to be fully up before it starts
+
   mongo:
     image: mongo:6
     ports:
-      - "${MONGO_CONNECTION}:27017"
+      - "27017:27017" # Exposed to host on standard MongoDB port
     networks:
-      - app_network
+      - app_shared_network
 
   redis:
     image: redis:7
     ports:
-      - "6371:6379"
+      - "6379:6379" # Exposed to host on standard Redis port
     networks:
-      - app_network
+      - app_shared_network
 
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - "5673:5672"    # RabbitMQ AMQP protocol
-      - "15673:15672"  # RabbitMQ management UI
+      - "5672:5672"   # RabbitMQ AMQP protocol
+      - "15672:15672" # RabbitMQ management UI
     networks:
-      - app_network
+      - app_shared_network
 
   sonarqube:
     image: sonarqube:latest
-    container_name: sonarqube
+    container_name: sonarqube_main # Renamed for clarity as it's a single instance now
     ports:
-      - "9001:9000"    # SonarQube UI accessible on localhost:9001
+      - "9002:9000" # SonarQube UI accessible on localhost:9002 (avoiding 9001 from auth-service)
     environment:
       - SONAR_JDBC_USERNAME=sonar
       - SONAR_JDBC_PASSWORD=sonar
@@ -59,9 +85,9 @@ services:
     depends_on:
       - db
     networks:
-      - app_network
+      - app_shared_network
 
-  db:
+  db: # PostgreSQL for SonarQube
     image: postgres:13
     environment:
       - POSTGRES_USER=sonar
@@ -70,11 +96,13 @@ services:
     volumes:
       - sonarqube_db_data:/var/lib/postgresql/data
     networks:
-      - app_network
+      - app_shared_network
 
+# --- Define the network at the root level ---
 networks:
-  app_network:
-    driver: bridge
+  app_shared_network:
+    driver: bridge # This tells Docker Compose to create an internal bridge network
 
+# --- Define the volumes at the root level ---
 volumes:
   sonarqube_db_data:

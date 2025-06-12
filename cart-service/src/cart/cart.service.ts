@@ -3,15 +3,16 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Inject,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Cart, CartDocument } from './schema/cart.schema';
-import { AddToCartDto } from './dto/addCart.dto';
-import { UpdateCartDto } from './dto/updateCart.dto';
 import { Address, AddressDocument } from './schema/address.schema';
 import { Coupon, CouponDocument } from './schema/coupon.schema';
 import { Restaurant } from './schema/restaurant.schema';
+import Redis from 'ioredis';
+import { MenuItem } from './schema/menu-item.schema';
 
 @Injectable()
 export class CartService {
@@ -19,7 +20,9 @@ export class CartService {
     @InjectModel(Cart.name) private readonly cartModel: Model<CartDocument>,
     @InjectModel('Coupons') private readonly couponModel: Model<CouponDocument>,
     @InjectModel(Address.name) private readonly addressModel: Model<AddressDocument>,
-    @InjectModel('Restaurant') private readonly restaurantModel: Model<Restaurant>
+    @InjectModel('Restaurant') private readonly restaurantModel: Model<Restaurant>,
+    @InjectModel("MenuItem") private readonly menuItemModel: Model<MenuItem>,
+    @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
   ) {}
 
   private toRad(value: number): number {
@@ -40,172 +43,243 @@ export class CartService {
   }
 
   private calculateDeliveryCharges(distance: number): number {
-    return Math.ceil(distance) * 5; // ₹5 per km
+    return Math.ceil(distance) * 5;
   }
 
-  async addToCartService(userId: string, restaurantId: string, dto: AddToCartDto, addressId: string) {
-    const existingCart = await this.cartModel.findOne({ userId, deleted: false });
-    if (existingCart && existingCart.restaurantId.toString() !== restaurantId) {
-      throw new ConflictException('You already have a cart for another restaurant. Please clear it first.');
+  async removeItemService(cartId: string, itemId: string) {
+    const cart = await this.cartModel.findById(cartId);
+    if (!cart) {
+      throw new NotFoundException('Cart not found');
     }
-
+  
+    const itemIndex = cart.items.findIndex(item => item.itemId.toString() === itemId);
+    if (itemIndex === -1) {
+      throw new NotFoundException('Item not found in cart');
+    }
+  
+    const taxPercent = 5;
+  
+    const item = cart.items[itemIndex];
+    item.quantity -= 1;
+  
+    if (item.quantity <= 0) {
+      cart.items.splice(itemIndex, 1);
+    } else {
+      item.tax = (item.price * item.quantity * taxPercent) / 100;
+    }
+  
+    if (cart.items.length === 0) {
+      await this.cartModel.deleteOne({ _id: cart._id });
+      return { message: 'Cart deleted because no items left' };
+    }
+  
+    const itemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const tax = (itemTotal * taxPercent) / 100;
+    const total = Math.round(itemTotal + cart.deliveryCharges + cart.platformFee + tax - (cart.discount || 0));
+  
+    Object.assign(cart, {
+      itemTotal,
+      subtotal: itemTotal,
+      tax,
+      total,
+    });
+  
+    await cart.save();
+  
+    return {
+      message: 'Item quantity updated',
+      updatedCart: cart,
+    };
+  }
+  
+  
+  async addToCartService(userId: string, itemId: string) {
+    // Fetch item details (assume you're fetching from menu/food item service or DB)
+    const item = await this.menuItemModel.findById(itemId); // Replace with your actual model
+    if (!item) throw new NotFoundException('Item not found');
+  
+    const restaurantId = item.restaurantId; // Assuming item has restaurantId
     const restaurant = await this.restaurantModel.findById(restaurantId);
     if (!restaurant) throw new NotFoundException('Restaurant not found');
-
-    const address = await this.addressModel.findOne({ _id: addressId, user_id: userId });
-    if (!address) throw new NotFoundException('User address not found');
-
-    const userLat = Number(address.latitude);
-    const userLon = Number(address.longitude);
-    const restLat = Number(restaurant.location.coordinates[1]); // Latitude
-    const restLon = Number(restaurant.location.coordinates[0]); // Longitude
-
-    if ([userLat, userLon, restLat, restLon].some(isNaN)) {
+  
+    let cart = await this.cartModel.findOne({ userId });
+  
+    // Check for existing cart from another restaurant
+    if (cart && cart.restaurantId.toString() !== restaurantId.toString()) {
+      throw new ConflictException(
+        'You already have a cart for another restaurant. Please clear it first.'
+      );
+    }
+  
+    // Get user coordinates from Redis
+    const redisKey = `address:${userId}:coordinates`;
+    const redisValue = await this.redisClient.get(redisKey);
+    const { latitude: userLat = 12.9715, longitude: userLon = 77.5946 } = redisValue
+      ? JSON.parse(redisValue)
+      : {};
+  
+    const restLat = Number(restaurant.location.coordinates[1]);
+    const restLon = Number(restaurant.location.coordinates[0]);
+  
+    if ([userLat, userLon, restLat, restLon].some(coord => isNaN(coord))) {
       throw new BadRequestException('Invalid location coordinates');
     }
-
+  
     const distance = this.calculateDistance(userLat, userLon, restLat, restLon);
     const deliveryCharges = this.calculateDeliveryCharges(distance);
     const platformFee = 9;
     const taxPercent = 5;
-
-    const itemTotal = dto.price * dto.quantity;
-    const tax = (itemTotal * taxPercent) / 100;
-    const subtotal = itemTotal;
-    const total = subtotal + tax + deliveryCharges + platformFee;
-
+  
     const newItem = {
-      itemId: dto.itemId,
-      name: dto.itemName,
-      quantity: dto.quantity,
-      price: dto.price,
-      tax,
+      itemId: item._id as string,
+      name: item.name,
+      quantity: 1,
+      price: item.price,
+      tax: (item.price * 1 * taxPercent) / 100,
     };
-
-    let cart = existingCart;
+  
     if (!cart) {
+      // Create new cart
+      const itemTotal = item.price;
+      const tax = (itemTotal * taxPercent) / 100;
+      const total = Math.round(itemTotal + tax + deliveryCharges + platformFee);
+  
       cart = new this.cartModel({
         userId,
         restaurantId,
         items: [newItem],
         itemTotal,
-        subtotal,
+        subtotal: itemTotal,
         tax,
-        platformFee,
         deliveryCharges,
+        platformFee,
         total,
         distanceInKm: parseFloat(distance.toFixed(2)),
         discount: 0,
         couponCode: null,
         couponId: null,
-        deleted: false,
       });
     } else {
-      const itemIndex = cart.items.findIndex(item => item.itemId === dto.itemId);
-      if (itemIndex >= 0) {
-        cart.items[itemIndex].quantity += dto.quantity;
-        cart.items[itemIndex].tax += tax;
+      // Update existing cart
+      const existingItemIndex = cart.items.findIndex(i => i.itemId === itemId);
+      if (existingItemIndex !== -1) {
+        cart.items[existingItemIndex].quantity += 1;
+        cart.items[existingItemIndex].tax =
+          (cart.items[existingItemIndex].price * cart.items[existingItemIndex].quantity * taxPercent) / 100;
       } else {
         cart.items.push(newItem);
       }
-
-      const updatedItemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const updatedTax = (updatedItemTotal * taxPercent) / 100;
-      const updatedTotal = updatedItemTotal + updatedTax + deliveryCharges + platformFee;
-
+  
+      // Recalculate totals
+      const itemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const tax = (itemTotal * taxPercent) / 100;
+      const subtotal = itemTotal;
+      const total = Math.round(subtotal + tax + deliveryCharges + platformFee - (cart.discount || 0));
+  
       Object.assign(cart, {
-        itemTotal: updatedItemTotal,
-        subtotal: updatedItemTotal,
-        tax: updatedTax,
+        itemTotal,
+        subtotal,
+        tax,
+        total,
         deliveryCharges,
         platformFee,
-        total: updatedTotal - (cart.discount || 0),
         distanceInKm: parseFloat(distance.toFixed(2)),
       });
     }
-
-    return await cart.save();
-  }
-
-  async updateCartService(userId: string, dto: UpdateCartDto) {
-    const cart = await this.cartModel.findOne({ userId, deleted: false });
-    if (!cart) throw new NotFoundException('Cart not found');
-
-    const taxPercent = 5;
-    const itemIndex = cart.items.findIndex(item => item.itemId === dto.itemId);
-    if (itemIndex === -1) throw new NotFoundException('Item not found in cart');
-
-    cart.items[itemIndex] = {
-      itemId: dto.itemId,
-      name: dto.itemName,
-      price: dto.price,
-      quantity: dto.quantity,
-      tax: (dto.price * dto.quantity * taxPercent) / 100,
+  
+    await cart.save();
+    return {
+      message: 'Item added to cart',
+      cart,
     };
-
-    const itemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const tax = (itemTotal * taxPercent) / 100;
-    const subtotal = itemTotal;
-    const total = subtotal + cart.deliveryCharges + cart.platformFee + tax - (cart.discount || 0);
-
-    Object.assign(cart, { itemTotal, subtotal, tax, total });
-    return await cart.save();
   }
+  
+  
 
   async deleteCartService(userId: string) {
-    const cart = await this.cartModel.findOne({ userId, deleted: false });
+    const cart = await this.cartModel.findOne({ userId });
     if (!cart) throw new NotFoundException('Cart not found');
-    cart.deleted = true;
-    return await cart.save();
+    await this.cartModel.deleteOne({ _id: cart._id });
+    return { message: 'Cart deleted successfully' };
   }
 
   async getCartService(userId: string) {
-    const cart = await this.cartModel.findOne({ userId, deleted: false });
+    const cart = await this.cartModel.findOne({ userId });
     if (!cart) throw new NotFoundException('No active cart found');
     return cart;
   }
 
   async viewCouponsService(restaurantId: string) {
-    return this.couponModel.find({
-      $or: [
-        { restaurantId: new Types.ObjectId(restaurantId) },
-        { restaurantId: null },
-      ],
-      isActive: true,
-      expiryDate: { $gt: new Date() },
-    });
+    return this.couponModel.find({restaurantId:restaurantId})
   }
 
+  // async applyCouponService(userId: string, couponId: string) {
+  //   const cart = await this.cartModel.findOne({ userId });
+  //   if (!cart) throw new NotFoundException('Cart not found');
+
+  //   const coupon = await this.couponModel.findById(couponId);
+  //   if (!coupon) throw new NotFoundException('Coupon not found');
+
+  //   const now = new Date();
+  //   if (!coupon.isActive || coupon.expiryDate < now) {
+  //     throw new BadRequestException('Coupon is expired or inactive');
+  //   }
+
+  //   if (cart.total < coupon.minOrderAmount) {
+  //     throw new BadRequestException(`Minimum order amount should be ₹${coupon.minOrderAmount}`);
+  //   }
+
+  //   const percentageDiscount = (cart.total * coupon.discountPercent) / 100;
+  //   const discount = Math.min(percentageDiscount, coupon.maxDiscount);
+
+  //   cart.total = Math.round(cart.total - discount);
+  //   cart.couponCode = coupon.code;
+  //   cart.couponId = coupon._id as string;
+  //   cart.discount = discount;
+
+  //   await cart.save();
+
+  //   return {
+  //     message: 'Coupon applied successfully',
+  //     newTotal: cart.total,
+  //     discountApplied: discount,
+  //     couponCode: coupon.code,
+  //   };
+  // }
   async applyCouponService(userId: string, couponId: string) {
-    const cart = await this.cartModel.findOne({ userId, deleted: false });
-    if (!cart) {
-      throw new NotFoundException('Cart not found');
-    }
-
+    const cart = await this.cartModel.findOne({ userId });
+    if (!cart) throw new NotFoundException('Cart not found');
+  
     const coupon = await this.couponModel.findById(couponId);
-    if (!coupon) {
-      throw new NotFoundException('Coupon not found');
+    if (!coupon) throw new NotFoundException('Coupon not found');
+  
+    // ❗ Ensure the coupon belongs to the same restaurant or is global
+    if (
+      coupon.restaurantId &&
+      coupon.restaurantId.toString() !== cart.restaurantId.toString()
+    ) {
+      throw new BadRequestException('This coupon is not valid for this restaurant');
     }
-
+  
     const now = new Date();
     if (!coupon.isActive || coupon.expiryDate < now) {
       throw new BadRequestException('Coupon is expired or inactive');
     }
-
+  
     if (cart.total < coupon.minOrderAmount) {
       throw new BadRequestException(`Minimum order amount should be ₹${coupon.minOrderAmount}`);
     }
-
+  
     const percentageDiscount = (cart.total * coupon.discountPercent) / 100;
     const discount = Math.min(percentageDiscount, coupon.maxDiscount);
-
-    cart.total = cart.total - discount;
+  
+    cart.total = Math.round(cart.total - discount);
     cart.couponCode = coupon.code;
     cart.couponId = coupon._id as string;
     cart.discount = discount;
-
+  
     await cart.save();
-
+  
     return {
       message: 'Coupon applied successfully',
       newTotal: cart.total,
@@ -213,4 +287,7 @@ export class CartService {
       couponCode: coupon.code,
     };
   }
+  
+
+
 }
