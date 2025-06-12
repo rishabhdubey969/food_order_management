@@ -6,12 +6,13 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Order, OrderSchema } from 'src/schema/order.schema';
 import { KafkaModule } from 'src/kafka/kafka.module';
 import { helperModule } from 'src/helper/helper.module';
+import { AuthClient } from 'src/grpc/authentication/auth.client';
 
 
 @Module({
   imports:[MongooseModule.forFeature([{name:Order.name ,schema:OrderSchema}]), KafkaModule,helperModule],
   controllers: [OrderController],
-  providers:[OrderService,PaymentClient],
+  providers:[OrderService,PaymentClient,AuthClient],
   exports:[OrderService]
 })
 export class OrderModule {}

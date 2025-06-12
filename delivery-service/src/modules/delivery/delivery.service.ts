@@ -213,9 +213,7 @@ export class DeliveryService {
     private readonly connection: Connection,
   ) {}
 
-  @ApiOperation({ summary: 'Create a new delivery for an order' })
-  @ApiResponse({ status: 201, description: 'Delivery created successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid order ID' })
+
   async createDelivery(orderId: Types.ObjectId) {
     this.logger.log(`Creating delivery for order: ${orderId}`);
     try {
@@ -244,7 +242,7 @@ export class DeliveryService {
         paymentMethod: currentOrder.PaymentMethod === 'cashOnDelivery' ? PaymentMethod.CASH_ON_DELIVERY : PaymentMethod.PAID,
       };
 
-      const deliveryData = await this.DeliveryModel.create(currentDelivery);
+      await this.DeliveryModel.create(currentDelivery);
       await this.assignDeliveryPartner(currentDelivery);
       this.logger.log(`Delivery created successfully for order: ${orderId}`);
     } catch (err) {
@@ -253,8 +251,6 @@ export class DeliveryService {
     }
   }
 
-  @ApiOperation({ summary: 'Assign a delivery partner to a delivery' })
-  @ApiResponse({ status: 200, description: 'Delivery partner assigned successfully' })
   async assignDeliveryPartner(currentDelivery: CompleteDelivery) {
     this.logger.log(`Assigning delivery partner for order: ${currentDelivery.orderId}`);
     try {
@@ -268,9 +264,7 @@ export class DeliveryService {
     }
   }
 
-  @ApiOperation({ summary: 'Assign a specific partner to a delivery' })
-  @ApiResponse({ status: 200, description: 'Partner assigned to delivery' })
-  @ApiResponse({ status: 400, description: 'Error updating partner' })
+
   async assignedPartner(partnerId: Types.ObjectId, orderId: Types.ObjectId) {
     this.logger.log(`Assigning partner ${partnerId} to order: ${orderId}`);
     try {
@@ -278,7 +272,7 @@ export class DeliveryService {
         { orderId: orderId },
         { partnerId: partnerId, status: DeliveryStatus.ASSIGNED },
         { new: true }
-      ).exec();
+      );
       this.logger.log(`Partner ${partnerId} assigned successfully to order: ${orderId}`);
     } catch (err) {
       this.logger.error(`Error assigning partner ${partnerId} to order: ${orderId}`, err);
@@ -286,13 +280,11 @@ export class DeliveryService {
     }
   }
 
-  @ApiOperation({ summary: 'Check if a partner is assigned to a delivery' })
-  @ApiResponse({ status: 200, description: 'Delivery details returned' })
-  @ApiResponse({ status: 400, description: 'Error fetching delivery' })
+ 
   async checkAssignedPartner(partnerId: Types.ObjectId) {
     this.logger.log(`Checking assigned delivery for partner: ${partnerId}`);
     try {
-      const delivery = await this.DeliveryModel.findById(partnerId).exec();
+      const delivery = await this.DeliveryModel.findById(partnerId);
       this.logger.log(`Fetched delivery for partner: ${partnerId}`);
       return delivery;
     } catch (err) {
@@ -301,10 +293,7 @@ export class DeliveryService {
     }
   }
 
-  @ApiOperation({ summary: 'Get earnings for a partner by period' })
-  @ApiBearerAuth('JWT-auth')
-  @ApiResponse({ status: 200, description: 'Earnings calculated successfully', type: Number })
-  @ApiResponse({ status: 400, description: 'Invalid period specified' })
+
   async getEarningsByPeriod(partnerId: Types.ObjectId, period: string): Promise<number> {
     this.logger.log(`Calculating earnings for partner ${partnerId} for period: ${period}`);
     try {
@@ -356,10 +345,7 @@ export class DeliveryService {
     }
   }
 
-  @ApiOperation({ summary: 'Get paginated deliveries for a partner' })
-  @ApiBearerAuth('JWT-auth')
-  @ApiResponse({ status: 200, description: 'Paginated deliveries returned' })
-  @ApiResponse({ status: 400, description: 'Error fetching deliveries' })
+
   async getPartnerDeliveries(partnerId: Types.ObjectId, page: number = 1, limit: number = 10): Promise<PaginatedDeliveries> {
     this.logger.log(`Fetching paginated deliveries for partner: ${partnerId}, page: ${page}, limit: ${limit}`);
     try {
@@ -388,13 +374,11 @@ export class DeliveryService {
     }
   }
 
-  @ApiOperation({ summary: 'Update delivery status' })
-  @ApiResponse({ status: 200, description: 'Delivery status updated successfully' })
-  @ApiResponse({ status: 400, description: 'Error updating status' })
+
   async updateDeliveryStatus(orderId: Types.ObjectId, status: DeliveryStatus) {
     this.logger.log(`Updating delivery status for order: ${orderId} to ${status}`);
     try {
-      await this.DeliveryModel.findOneAndUpdate({ orderId: orderId }, { status: status }, { new: true }).exec();
+      await this.DeliveryModel.findOneAndUpdate({ orderId: orderId }, { status: status }, { new: true });
       this.logger.log(`Delivery status updated to ${status} for order: ${orderId}`);
     } catch (err) {
       this.logger.error(`Error updating delivery status for order: ${orderId}`, err);

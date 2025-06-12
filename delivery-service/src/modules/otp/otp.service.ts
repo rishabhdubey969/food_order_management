@@ -123,31 +123,18 @@ export class OtpService {
         let otpStr: string;
         let hashOtp: string;
 
-        try {
+       
             const otp = Math.floor(100000 + Math.random() * 900000); // Ensures a 6-digit OTP
             otpStr = otp.toString();
             this.logger.debug(`Generated raw OTP for ${email}: ${otpStr}`);
-        } catch (error) {
-            this.logger.error(`Error generating random OTP for email: ${email}: ${error.message}`, error.stack);
-            throw new InternalServerErrorException('Failed to generate OTP.');
-        }
-
-        try {
+        
             hashOtp = await this.tokenService.hash(otpStr);
             this.logger.debug(`Hashed OTP for ${email}`);
-        } catch (hashError) {
-            this.logger.error(`Error hashing OTP for email: ${email}: ${hashError.message}`, hashError.stack);
-            throw new InternalServerErrorException('Failed to hash OTP.');
-        }
+       
 
-        try {
             await this.redisService.setData(`otp-${email}`, hashOtp, 5 * 60 * 1000); // 5 minutes expiry
             this.logger.log(`OTP for email: ${email} successfully stored in Redis.`);
-        } catch (redisError) {
-            this.logger.error(`Error storing OTP in Redis for email: ${email}: ${redisError.message}`, redisError.stack);
-            throw new InternalServerErrorException('Failed to store OTP.');
-        }
-
+        
         return otpStr;
     }
 }

@@ -75,8 +75,6 @@ export class EmailService {
       this.logger.log('Nodemailer transporter initialized successfully.');
     } catch (error) {
       this.logger.error(`Failed to initialize Nodemailer transporter: ${error.message}`, error.stack);
-      // Depending on your application's startup strategy, you might want to throw
-      // a more specific exception or handle this gracefully.
       throw new InternalServerErrorException('Failed to initialize email service.');
     }
   }
@@ -85,17 +83,12 @@ export class EmailService {
     this.logger.log(`Attempting to send OTP email to: ${email}`);
     let otp: string;
 
-    try {
       otp = await this.otpService.generateOtp(email);
       this.logger.debug(`Generated OTP for ${email}: ${otp}`);
-    } catch (error) {
-      this.logger.error(`Failed to generate OTP for email: ${email}: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Failed to generate OTP.');
-    }
 
     try {
       await this.transporter.sendMail({
-        from: 'Foodify', // Make sure this is a valid sender for your email service provider
+        from: 'Foodify',
         to: email,
         subject: "OTP Verification",
         text: "Your Foodify OTP to Verify: " + otp

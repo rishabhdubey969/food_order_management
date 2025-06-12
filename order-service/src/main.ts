@@ -2,9 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors({
+    origin: '*', 
+    methods: 'GET,POST,PUT,DELETE', 
+    credentials: true, 
+    allowedHeaders: 'Content-Type, Authorization', 
+  });
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,
     options: {

@@ -12,7 +12,7 @@ async function bootstrap() {
   logger.log('Nest application created');
 
   // Configure Swagger with JWT authentication
-  try {
+ 
     const config = new DocumentBuilder()
       .setTitle('Delivery Service API')
       .setDescription('API documentation for the Delivery Service')
@@ -30,9 +30,7 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);
     logger.log('Swagger documentation configured at /api with JWT authentication');
-  } catch (err) {
-    throw new MongooseError(err.Message);
-  }
+  
 
   // Set global validation pipes
   app.useGlobalPipes(
@@ -57,22 +55,19 @@ async function bootstrap() {
   });
 
   // Start microservices with error handling
-  try {
+ 
     await app.startAllMicroservices();
     logger.log('Microservice started');
-  } catch (err) {
-    logger.error('Error starting microservice:', err);
-    throw new MongooseError(err.Message);
-  }
+  
 
+  
   // Start the application
+  app.enableCors();
   const port = process.env.DELIVERY_APP_PORT ?? 3003;
-  try {
+  
     await app.listen(port);
     logger.log(`Application is running on port ${port}`);
-  } catch (err) {
-    throw new MongooseError(err.Message);
-  }
+ 
 }
 
 bootstrap();
