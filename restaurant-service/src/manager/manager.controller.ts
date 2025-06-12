@@ -19,33 +19,33 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
-import ManagerLoginDto from 'src/manager/dto/managerLogindto';
-import ManagerSignupDto from 'src/manager/dto/managerSignuodto';
+import ManagerLoginDto from 'src/manager/modules/auth/dto/managerLogindto';
+import ManagerSignupDto from 'src/manager/modules/auth/dto/managerSignuodto';
 import { ManagerService } from './manager.service';
-import { EventPattern, GrpcMethod, Payload } from '@nestjs/microservices';
+import { EventPattern, GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
 import { Roles } from 'src/manager/common/roles.decorator';
-// import { JwtAuthGuard } from 'src/manager/guard/jwt.auth.guard';
-import { AdminGuard } from 'src/manager/guard/admin.guard';
-import { JwtAuthGuard } from './guard/authguard';
+import { AdminGuard } from 'src/manager/modules/auth/guards/admin.guard';
+import { JwtAuthGuard } from './modules/auth/guards/authguard';
 import { AuthGuard } from '@nestjs/passport';
 import { Types } from 'mongoose';
 
 @ApiTags('Manager')
 @ApiBearerAuth('access-token')
 
-// @UseGuards(AuthGuard)
 @Controller('manager')
 export class ManagerController {
   constructor(private readonly managerService: ManagerService) {}
 
+  
   @Post('signup')
   @ApiOperation({ summary: 'Signup as a Manager' })
   @ApiBody({ type: ManagerSignupDto })
   @ApiResponse({ status: 201, description: 'Manager signed up successfully' })
-  signup(@Body() managerSignupDto: ManagerSignupDto) {
-    return this.managerService.signup(managerSignupDto);
+  Signup(@Body() managerSignupDto: ManagerSignupDto) {
+    return this.managerService.Signup(managerSignupDto);
   }
-
+  
+ 
   @Post('login')
   @ApiOperation({ summary: 'Login as a Manager' })
   @ApiBody({ type: ManagerLoginDto })
@@ -53,7 +53,7 @@ export class ManagerController {
   login(@Body() managerLoginDto: ManagerLoginDto) {
     return this.managerService.login(managerLoginDto);
   }
-
+@UseGuards(JwtAuthGuard)
  @Post('logout')
 @UseGuards(JwtAuthGuard)
 @ApiOperation({ summary: 'Logout Manager (JWT verified)' })
@@ -64,13 +64,15 @@ logout(@Headers('authorization') authHeader: string) {
 }
 
    @UseGuards(JwtAuthGuard)
-     @Get()
+     @Get("/:id")
   @ApiOperation({ summary: 'Get Manager by ID' })
   @ApiQuery({ name: 'id', required: true, description: 'Manager ID' })
   @ApiResponse({ status: 200, description: 'Manager details fetched successfully' })
-  getManagerById(@Query('id') id: string) {
+  getManagerById(@Param('id') id: string) {
+    console.log(id);
     return this.managerService.getManagerById(id);
   }
+  
   @UseGuards(JwtAuthGuard)
   @Put('update/:id')
   @ApiOperation({ summary: 'Update Manager Details' })
@@ -80,40 +82,18 @@ logout(@Headers('authorization') authHeader: string) {
   updateManager(@Param('id') id: string, @Body() updateData: Partial<ManagerSignupDto>) {
     return this.managerService.updateManager(id, updateData);
   }
-   @UseGuards(JwtAuthGuard)
-  @Delete('delete/:id')
-  @ApiOperation({ summary: 'Delete Manager by ID' })
-  @ApiParam({ name: 'id', required: true, description: 'Manager ID' })
-  @ApiResponse({ status: 200, description: 'Manager deleted successfully' })
-  deleteManager(@Param('id') id: string) {
-    return this.managerService.deleteManager(id);
-  }
-
-// @UseGuards(AdminGuard)
-//   @Get('all')
-//   @ApiOperation({ summary: 'Get all Managers (Admin only)' })
-//   @ApiResponse({ status: 200, description: 'Managers fetched successfully' })
-//   getAllManagers(@Headers('authorization') authHeader: string) {
-//     const token = authHeader?.split(' ')[1];
-//     return this.managerService.getAllManagers(token);
-//   }
-  
    @GrpcMethod('ManagerService', 'SignupManager')
   async signupManager(data: ManagerSignupDto) {
-    return this.managerService.signup(data);
-  }
-   @GrpcMethod('ManagerService', 'DeleteManager')
-  async deletetheManager(data: {id: string}) {
-    return this.managerService.deleteManager(data.id);
-  }
-
-  @GrpcMethod('ManagerService', 'GetAllManagers')
-  async getAlltheManagers(data: {token: string}) {
-    return this.managerService.getAllManagers(data.token);
+    return this.managerService.Signup(data);
   }
   
-  @EventPattern('newOrder')
-  async handleNewOrder(@Payload() orderId: Types.ObjectId){
-    
+  @MessagePattern('isFoodAvailable')
+  async handleIsFoodAvailable(@Payload() cartId: Types.ObjectId){ 
+    return await this.managerService.handleIsFoodAvailable(cartId);
+  }
+
+  @Post('orderHandOver')
+  async handleOrderhandover(@Body('orderId') orderId: Types.ObjectId){
+    await this.managerService.handleOrderHandover(orderId);
   }
 }

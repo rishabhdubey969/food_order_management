@@ -1,4 +1,4 @@
-// src/config/error-handler.ts
+
 import {
   BadRequestException,
   InternalServerErrorException,
@@ -20,7 +20,6 @@ export class ErrorHandler {
       throw new UnauthorizedException(error.message || customMessage || 'Unauthorized');
     }
 
-    // Map specific error messages
     if (error.message === 'Invalid credentials') {
       throw new UnauthorizedException('Invalid credentials');
     }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { KafkaService } from './kafka.service';
 import { KafkaController } from './kafka.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { Partitioners } from 'kafkajs';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           },
           
           producer: {
-            allowAutoTopicCreation: true
+            createPartitioner: Partitioners.LegacyPartitioner
           }
           
         }
@@ -25,5 +26,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
   ],
   controllers: [KafkaController],
   providers: [KafkaService],
+  exports:[KafkaService]
 })
 export class KafkaModule {}

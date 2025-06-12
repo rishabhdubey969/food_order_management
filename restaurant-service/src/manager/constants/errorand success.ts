@@ -9,6 +9,9 @@ export const SUCCESS_MESSAGES = {
   COMPLAINT_STATUS_UPDATED:'Complain status is fetched',
   COMPLAINTS_FETCHED:'Complain are fetched successfully',
   COMPLAINT_CREATED:'Complain created successfully',
+  ORDER_CREATED:'Order created successfully',
+  MANAGER_FOUND:'Manager found',
+  LOGOUT_SUCCESS:'Manager has been logged out successfully',
 };
 export const ERROR_MESSAGES = {
   INVALID_CREDENTIALS: 'Invalid email or password',
@@ -22,4 +25,6 @@ export const ERROR_MESSAGES = {
     ACCESS_DENIED:'Sorry, your access request has been denied',
     COMPLAINT_NOT_FOUND:'We could not find your complain',
   ORDER_NOT_FOUND: 'Associated order not found', 
+  CART_NOT_FOUND:'Cart not found.',
+  INVALID_TOKEN:'Token is invalid',
 };

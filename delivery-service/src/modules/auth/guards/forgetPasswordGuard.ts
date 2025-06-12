@@ -21,17 +21,9 @@ export class ForgetPasswordGuard implements CanActivate {
 
     try{
       const payload = await this.tokenService.verify(accessToken);
-      const { userEmail, access } = payload;
+      const { partnerEmail } = payload;
 
-      if(access !== AccessRole.FORGET_PASSWORD){
-        return false;
-      }
-      
-      const user = {
-        userEmail: userEmail
-      }
-
-      request.user = user;
+      request['sub'] = partnerEmail;
       
     }catch(err){
       throw new UnauthorizedException('Login Again!!')

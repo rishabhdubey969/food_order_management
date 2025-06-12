@@ -13,6 +13,6 @@ export class KafkaService implements OnModuleInit{
     }
 
     async handleEvent(topicName: string, payload: any){
-        await this.kafkaClient.emit(topicName, payload);
+     this.kafkaClient.emit(topicName, payload);
     }
 }

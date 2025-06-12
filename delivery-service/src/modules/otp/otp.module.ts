@@ -11,5 +11,6 @@ import { RedisModule } from '../redis/redisModule';
   ],
   controllers: [OtpController],
   providers: [OtpService],
+  exports: [OtpService]
 })
 export class OtpModule {}

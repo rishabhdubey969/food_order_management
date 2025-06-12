@@ -47,7 +47,7 @@ export class StripeWebhookController {
         );
 
       await this.webhookService.handleWebhookEvent(event);
-      ``
+      
     } catch (err) {
       this.logger.error('Webhook error:', err);
 
@@ -60,4 +60,4 @@ export class StripeWebhookController {
   }
 }
 
-//Stripe cli => stripe listen --forward-to localhost:3000/webhook/stripe
+//Stripe cli => stripe listen --forward-to localhost:3007/webhook/stripe

@@ -7,18 +7,19 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    CacheModule.registerAsync({
-      imports: [ConfigModule],
-      inject:[ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-      store: await redisStore({
-      port: configService.get<string>('redis.port'),
-      host: configService.get<string>('redis.host')
-      })
-    })
-  })
+    ConfigModule
+  //   CacheModule.registerAsync({
+  //     imports: [ConfigModule],
+  //     inject:[ConfigService],
+  //     useFactory: async (configService: ConfigService) => ({
+  //     store: await redisStore({
+  //     port: configService.get<string>('redis.port'),
+  //     host: configService.get<string>('redis.host')
+  //     })
+  //   })
+  // })
   ],
   providers:[RedisService],
-  exports:[RedisService, CacheModule]
+  exports:[RedisService]
 })
 export class RedisModule {}
