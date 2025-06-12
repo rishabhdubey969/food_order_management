@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { TokenService } from '../token/token.service'; // adjust path as needed
+import { TokenService } from '../../token/token.service'; 
 
 @Injectable()
 export class JwtAuthGuard  implements CanActivate {
@@ -20,6 +20,7 @@ export class JwtAuthGuard  implements CanActivate {
     }
 
     const token = authHeader.replace('Bearer ', '');
+    console.log('token: ',token);
     const user = await this.tokenService.verify(token);
     request['user'] = user; 
     return true;

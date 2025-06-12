@@ -31,34 +31,33 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || 3005; 
-  const config = new DocumentBuilder()
-    .setTitle('Manager & Restaurant API')
-    .setDescription('API for Manager signup, login, and management')
+ 
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('API with NestJS')
+    .setDescription('API developed throughout the API with NestJS course')
     .setVersion('1.0')
-    .addTag('Manager')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT'
+      },
+      'JWT',
+    )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
   
   const restaurantPort: number = Number(process.env.RESTAURANT_PORT||3005);
   
   const grpcMicroservice = app.connectMicroservice<MicroserviceOptions>({
-  //   transport: Transport.GRPC,
-  //   options: {
-  //     package: 'order', // name defined in your .proto file
-  //     protoPath: join(__dirname, './manager/grpc/proto/order.proto'), // path to your proto
-  //     url: '0.0.0.0:50051', // gRPC server address
-  //   },
-  // });
-  // app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
       package: 'auth',
       protoPath:  'src/manager/grpc/proto/auth.proto',
     },
   });
-
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,
     options: {
@@ -74,6 +73,6 @@ async function bootstrap() {
     }});
 
   await app.startAllMicroservices(); 
-  await app.listen(3005);
+  await app.listen(port);
 }
 bootstrap();

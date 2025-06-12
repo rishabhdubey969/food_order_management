@@ -5,12 +5,12 @@ import { ManagerController } from './manager.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Manager, ManagerSchema } from './schema/manager.schema';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TokenModule } from '../manager/token/token.module';
-import { ComplaintModule } from './complain-service/complainmodule';
+import { TokenModule } from './modules/token/token.module';
+import { ComplaintModule } from './modules/complain-service/complainmodule';
 import { MailModule } from 'src/manager/mail/mail.module';
 import { join } from 'path';
 import { Connection } from 'mongoose';
-import { ManagerGateway } from './gateway/manager.gateway';
+import { ManagerGateway } from './modules/gateway/manager.gateway';
 import { KafkaModule } from './kafka/kafka.module';
 
 @Module({

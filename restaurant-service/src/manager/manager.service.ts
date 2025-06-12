@@ -13,13 +13,13 @@ import {
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Collection, Connection, Model, Types ,isValidObjectId} from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import ManagerLoginDto from 'src/manager/dto/managerLogindto';
-import ManagerSignupDto from 'src/manager/dto/managerSignuodto';
+import ManagerLoginDto from 'src/manager/modules/auth/dto/managerLogindto';
+import ManagerSignupDto from 'src/manager/modules/auth/dto/managerSignuodto';
 import { Manager, ManagerDocument } from './schema/manager.schema';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from 'src/manager/constants/errorand success';
-import { TokenService } from 'src/manager/token/token.service';
+import { TokenService } from 'src/manager/modules/token/token.service';
 import { ClientGrpc } from '@nestjs/microservices';
-import { ManagerGateway } from 'src/manager/gateway/manager.gateway';
+import { ManagerGateway } from 'src/manager/modules/gateway/manager.gateway';
 import { Order, OrderDocument } from './schema/order.schema';
 import { async } from 'rxjs';
 import { ObjectId } from 'mongodb';
@@ -40,7 +40,7 @@ export class ManagerService  {
     private readonly kafkaService: KafkaService
   ) {}
 
-  async signup(managerSignupDto: ManagerSignupDto) {
+  async Signup(managerSignupDto: ManagerSignupDto) {
   try {
     const { email, password } = managerSignupDto;
     
@@ -218,49 +218,6 @@ export class ManagerService  {
     throw new InternalServerErrorException('Failed to process new order');
   }
 }
-  //   const order = {
-  //     ...orderData,
-  //     status: 'pending_approval',
-  //     createdAt: new Date(),
-  //   };
-
-  //   const result = await this.orderCollection.insertOne(order);
-  //   const savedOrder = await this.orderCollection.findOne({ _id: result.insertedId });
-
-  //   if (!savedOrder) {
-  //     throw new Error('Failed to save order');
-  //   }
-
-  //   if (savedOrder.managerId) {
-  //     const notified = await this.managerGateway.notifyManagerNewOrder(
-  //       savedOrder.managerId.toString(),
-  //       savedOrder
-  //     );
-
-  //     if (!notified) {
-  //       this.logger.log(Manager ${savedOrder.managerId} offline, order saved for later);
-  //     }
-  //   }
-
-  //   return savedOrder;
-  // async handleNewOrder(cartId: string) {
-  //   try {
-  //     const cartDetails = await this.cartService.getCartById(cartId);
-  //     if (!cartDetails) {
-  //       throw new NotFoundException(ERROR_MESSAGES.CART_NOT_FOUND);
-  //     }
-
-  //     const order = await this.orderService.createOrder(cartDetails);
-
-  //     return {
-  //       message: SUCCESS_MESSAGES.ORDER_CREATED,
-  //       data: order,
-  //     };
-  //   } catch (error) {
-  //     this.logger.error(`Error handling new order for cart ${cartId}`, error.stack);
-  //     throw new InternalServerErrorException('Failed to process new order');
-  //   }
-  // }
 
   async processOrderDecision(orderId: string, decision: 'accept' | 'reject') {
     try {

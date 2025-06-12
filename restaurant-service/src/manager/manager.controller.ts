@@ -19,13 +19,13 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
-import ManagerLoginDto from 'src/manager/dto/managerLogindto';
-import ManagerSignupDto from 'src/manager/dto/managerSignuodto';
+import ManagerLoginDto from 'src/manager/modules/auth/dto/managerLogindto';
+import ManagerSignupDto from 'src/manager/modules/auth/dto/managerSignuodto';
 import { ManagerService } from './manager.service';
 import { EventPattern, GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
 import { Roles } from 'src/manager/common/roles.decorator';
-import { AdminGuard } from 'src/manager/guard/admin.guard';
-import { JwtAuthGuard } from './guard/authguard';
+import { AdminGuard } from 'src/manager/modules/auth/guards/admin.guard';
+import { JwtAuthGuard } from './modules/auth/guards/authguard';
 import { AuthGuard } from '@nestjs/passport';
 import { Types } from 'mongoose';
 
@@ -36,14 +36,16 @@ import { Types } from 'mongoose';
 export class ManagerController {
   constructor(private readonly managerService: ManagerService) {}
 
+  
   @Post('signup')
   @ApiOperation({ summary: 'Signup as a Manager' })
   @ApiBody({ type: ManagerSignupDto })
   @ApiResponse({ status: 201, description: 'Manager signed up successfully' })
   signup(@Body() managerSignupDto: ManagerSignupDto) {
-    return this.managerService.signup(managerSignupDto);
+    return this.managerService.Signup(managerSignupDto);
   }
-
+  
+ 
   @Post('login')
   @ApiOperation({ summary: 'Login as a Manager' })
   @ApiBody({ type: ManagerLoginDto })
@@ -51,7 +53,7 @@ export class ManagerController {
   login(@Body() managerLoginDto: ManagerLoginDto) {
     return this.managerService.login(managerLoginDto);
   }
-
+@UseGuards(JwtAuthGuard)
  @Post('logout')
 @UseGuards(JwtAuthGuard)
 @ApiOperation({ summary: 'Logout Manager (JWT verified)' })
@@ -62,13 +64,15 @@ logout(@Headers('authorization') authHeader: string) {
 }
 
    @UseGuards(JwtAuthGuard)
-     @Get()
+     @Get("/:id")
   @ApiOperation({ summary: 'Get Manager by ID' })
   @ApiQuery({ name: 'id', required: true, description: 'Manager ID' })
   @ApiResponse({ status: 200, description: 'Manager details fetched successfully' })
-  getManagerById(@Query('id') id: string) {
+  getManagerById(@Param('id') id: string) {
+    console.log(id);
     return this.managerService.getManagerById(id);
   }
+  
   @UseGuards(JwtAuthGuard)
   @Put('update/:id')
   @ApiOperation({ summary: 'Update Manager Details' })
@@ -80,7 +84,7 @@ logout(@Headers('authorization') authHeader: string) {
   }
    @GrpcMethod('ManagerService', 'SignupManager')
   async signupManager(data: ManagerSignupDto) {
-    return this.managerService.signup(data);
+    return this.managerService.Signup(data);
   }
   
   @MessagePattern('isFoodAvailable')

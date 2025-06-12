@@ -9,11 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ComplaintService } from './complainservice';
-import { UpdateComplaintStatusDto } from 'src/manager/dto/update.complainStatusdto';
+import { UpdateComplaintStatusDto } from 'src/manager/modules/auth/dto/update.complainStatusdto';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { Request } from 'express';
-import {  JwtAuthGuard } from '../guard/authguard'; 
-import { CreateComplaintDto } from '../dto/create-complaint.dto';
+import {  JwtAuthGuard } from '../auth/guards/authguard'; 
+import { CreateComplaintDto } from '../auth/dto/create-complaint.dto';
 
 @ApiBearerAuth('access-token')
 @ApiTags('Complaints')
@@ -43,7 +43,7 @@ export class ComplaintController {
     return this.complaintService.createComplaint(dto, req.user.userId);
   }
 
-  @Patch(':id/status')
+  @Patch('status/:id')
   @ApiOperation({ summary: 'Update complaint status (Manager only)' })
   @ApiParam({ name: 'id', description: 'Complaint ID' })
   @ApiBody({ type: UpdateComplaintStatusDto })

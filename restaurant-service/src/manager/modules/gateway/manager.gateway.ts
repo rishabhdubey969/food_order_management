@@ -2,9 +2,10 @@ import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDiscon
 import { Server, Socket } from 'socket.io';
 import { Logger, UseGuards } from '@nestjs/common';
 import { ManagerService } from 'src/manager/manager.service';
-import { WsManagerGuard } from '../guard/websocket.guard';
-import { KafkaService } from '../kafka/kafka.service';
+
+
 import { ObjectId, Types } from 'mongoose';
+import { KafkaService } from 'src/manager/kafka/kafka.service';
 
 @WebSocketGateway({
   namespace: '/manager',
