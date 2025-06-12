@@ -44,12 +44,12 @@ import { Auth } from 'constants/auth.constant';
   
    try {
         const user = await this.authClient.ValidateTokenAuthService(token);
-  console.log(user, "user");
         if (!user.isValid) {
           throw new UnauthorizedException(user?.message || 'Invalid token');
         }
   
         request.user = user;
+        console.log(user)
         return true;
       } catch (error) {
         this.logger.info(`Authentication header have some issues: ${error}`);

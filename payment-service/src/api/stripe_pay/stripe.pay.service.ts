@@ -1,24 +1,31 @@
 import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { Connection, Model } from 'mongoose';
 import Stripe from 'stripe';
 import { Payment, PaymentDocument } from './Schema/stripe.pay.schema';
 import { ConfigService } from '@nestjs/config';
 import { errorService } from 'src/error/error.service';
 import { StripeConfigService } from '../../config/stripe.config';
 import { CreatePaymentDto } from './DTO/create.payment.dto';
+import { ObjectId } from 'mongodb';
 
 @Injectable()
 export class StripePayService {
   private stripe: Stripe;
   private readonly logger = new Logger(StripePayService.name);
-
+  private readonly roleCollections = {
+    USER: 'address',
+    CART: 'carts',
+    RESTAURANT:'restaurants',
+    ORDER:'orders'
+};
   constructor(
     @InjectModel(Payment.name)
     private paymentModel: Model<PaymentDocument>,
     private readonly configService: ConfigService,
     private errorService: errorService,
     private stripeConfig: StripeConfigService,
+    @InjectConnection() private readonly connection: Connection
   ) {
     this.stripe = this.stripeConfig.getStripeInstance();
   }
@@ -30,7 +37,12 @@ export class StripePayService {
               throw new BadRequestException('orderId is required');
             }
       const orderId = payload.orderId;
-
+      const orderData = await this.connection.collection('orders').findOne({ _id: new ObjectId(orderId) });
+      if(!orderData){
+        throw new BadRequestException("order does not exist")
+      }
+      const total_amount = orderData?.total;
+      console.log(total_amount);
       const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
@@ -40,7 +52,7 @@ export class StripePayService {
               product_data: {
                 name: 'Order Payment',
               },
-              unit_amount: 2000,
+              unit_amount: total_amount,
             },
             quantity: 1,
           },
