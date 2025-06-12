@@ -23,7 +23,7 @@ export class ComplaintController {
   tokenService: any;
   constructor(private readonly complaintService: ComplaintService) {}
 
-  @Post()
+  @Post('/:managerId')
   @ApiOperation({ summary: 'Create a new complaint (User only)' })
   @ApiBody({
     description: 'Details of the complaint to be created',
@@ -39,8 +39,8 @@ export class ComplaintController {
       },
     },
   })
-  async create(@Body() dto: CreateComplaintDto, @Req() req: any) {
-    return this.complaintService.createComplaint(dto, req.user.userId);
+  async create(@Body() dto: CreateComplaintDto, @Req() req: any, @Param('managerId') managerId : string) {
+    return this.complaintService.createComplaint(dto, req.user.userId, managerId);
   }
 
   @Patch('status/:id')
@@ -56,17 +56,18 @@ export class ComplaintController {
     return this.complaintService.updateComplaintStatus(id, dto, user.userId);
   }
 
-  @Get('manager')
+  @Get('manager/:managerId')
   @ApiOperation({ summary: 'Get all complaints for this manager (Manager only)' })
-  async getManagerComplaints(@Req() req: Request) {
-    const user = req['user'];
-    return this.complaintService.getComplaintsForManager(user.userId);
+  async getManagerComplaints(@Param('managerId') managerId: string) {
+    // const user = req['user'];
+    return this.complaintService.getComplaintsForManager(managerId);
   }
 
   @Get('admin')
   @ApiOperation({ summary: 'Get all complaints with manager and restaurant info (Admin only)' })
   async getAllComplaints(@Req() req: Request) {
     const user = req['user'];
+    console.log("Controller", user);
     return this.complaintService.getAllComplaints(user);
   }
 }

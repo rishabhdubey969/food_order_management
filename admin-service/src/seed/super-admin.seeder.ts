@@ -11,19 +11,18 @@ export class SeederService {
   ) {}
 
   async seedSuperAdmin() {
-
-    const superAdmin = await this.adminModel.findOne({ email:process.env.email! });
+    const superAdmin = await this.adminModel.findOne({ email: 'priyanshi@appinventiv.com' });
 
     if (superAdmin) {
       console.log('Super Admin already exists');
       return;
     }
-    let superpassword= process.env.password!;
-    const hashedPassword = await bcrypt.hash(superpassword, 10);
+
+    const hashedPassword = await bcrypt.hash('SuperAdminPassword', 10);
 
     const newSuperAdmin = new this.adminModel({
-      email: process.env.email!,
-      phone: process.env.phone!,
+      email: 'priyanshi@appinventiv.com',
+      phone: '3840383490',
       password: hashedPassword,
       role: 0,
       name: 'Super',

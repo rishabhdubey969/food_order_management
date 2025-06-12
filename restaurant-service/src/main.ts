@@ -54,9 +54,8 @@ async function bootstrap() {
   const grpcMicroservice = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
-      package: 'manager',
+      package: 'auth',
       protoPath:  'src/manager/grpc/proto/auth.proto',
-      url:'0.0.0.0:5001',
     },
   });
   app.connectMicroservice<MicroserviceOptions>({

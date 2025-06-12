@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
-export class Admin extends Document {
+export class User extends Document {
   @Prop({ required: true, unique: true })
   email: string;
 
@@ -10,28 +10,19 @@ export class Admin extends Document {
   password: string;
 
   @Prop({ required: true })
-  name: string;
+  username: string;
 
-  @Prop({ required: true, default: 0 })
-  phone: number;
-
-  @Prop({ required: true, default: 1 }) // 1 for admin role
+  @Prop({ required: true, default: 2 }) // 2 for user role
   role: number;
 
   @Prop({ required: true, default: true })
   is_active: boolean;
 
   @Prop({ required: true, default: false })
-  is_verified: boolean;
-
-  @Prop({ required: true, default: false })
   is_deleted: boolean;
 
   @Prop()
   otp?: string;
-
-  @Prop()
-  deviceId: string;
 
   @Prop()
   otpExpires?: Date;
@@ -43,4 +34,4 @@ export class Admin extends Document {
   resetTokenExpires?: Date;
 }
 
-export const AdminSchema = SchemaFactory.createForClass(Admin);
+export const UserSchema = SchemaFactory.createForClass(User);

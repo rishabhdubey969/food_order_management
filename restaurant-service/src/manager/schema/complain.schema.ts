@@ -14,8 +14,9 @@ export class Complaint {
   @Prop({ required: true })
   orderId: string;
 
-  // @Prop({ required: true })
-  // restaurantId: string;
+  @Prop({ required: true })
+  managerId: string;
+
 
   @Prop({ enum: ['pending', 'resolved', 'rejected'], default: 'pending' })
   status: 'pending' | 'resolved' | 'rejected';
