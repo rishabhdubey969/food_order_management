@@ -9,7 +9,6 @@ import { UpdateRestaurantDto } from './dto/updateRestaurant.dto';
 import { Coupon } from './schema/copon.schema';
 import { CouponDto } from './dto/coupon.dto';
 import { UpdateCoponDto } from './dto/updateCoupon.dto';
-import Redis from 'ioredis';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from './redis/redis.service';
 
@@ -119,16 +118,14 @@ export class RestaurantService {
     }).exec();
   }
 
-  async searchRestaurantsByFood(query: string, limit: number, offset: number) {
+  async searchRestaurantsByFood(query: string) {
     const results = await this.menuItemModel.aggregate([
       {
-        $search: {
-          index: 'default',
-          text: {
-            query: query,
-            path: ['name', 'tags'],
-            fuzzy: {}
-          }
+        $match: {
+          $or: [
+            { name: { $regex: query, $options: 'i' } }, 
+            { tags: { $regex: query, $options: 'i' } }
+          ]
         }
       },
       {
@@ -136,18 +133,17 @@ export class RestaurantService {
           _id: '$restaurantId'
         }
       },
-      {
-        $skip: offset
-      },
-      {
-        $limit: limit
-      }
     ]);
 
+<<<<<<< HEAD
     const restaurantIds = results.map(r => r._id);
 
     return this.restaurantModel.find({ _id: { $in: restaurantIds } }).exec();
+=======
+    console.log(results);
+    return results;
+>>>>>>> 5fda7bdae5204e6c663a25215ac82dc7f78701cc
   }
-
+  
 
 }

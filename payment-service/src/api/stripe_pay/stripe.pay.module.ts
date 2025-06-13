@@ -11,6 +11,7 @@ import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
 
+
 @Module({
   imports: [
     ConfigModule,
@@ -28,7 +29,7 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
     }),
   ],
   controllers: [StripePayController],
-  providers: [StripePayService, errorService, StripeConfigService,AuthClient],
+  providers: [StripePayService, errorService, StripeConfigService, AuthClient],
   exports: [StripePayService],
 })
 export class StripePayModule {}

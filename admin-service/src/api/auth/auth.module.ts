@@ -33,9 +33,11 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { Admin, AdminSchema } from './entities/admin.entity';
 import { Session, SessionSchema } from './entities/session.entity';
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [
+    EmailModule,
     MongooseModule.forFeature([
       { name: Admin.name, schema: AdminSchema },
       { name: Session.name, schema: SessionSchema },

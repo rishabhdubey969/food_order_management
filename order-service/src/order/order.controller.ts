@@ -2,10 +2,10 @@ import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/co
 import { OrderService } from './order.service';
 import { PaymentClient } from 'src/grpc/payment/payment.client';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
-import {ObjectId} from 'mongoose';
+import {ObjectId} from 'mongodb';
 import { OrderStatus, PaymentMethod, PaymentStatus } from 'src/schema/order.schema';
 import { KafkaService } from 'src/kafka/kafka.service';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { jwtGuard } from 'src/guards/jwt-guard';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PrePlaceOrderDto } from 'src/dto/prePlaceOrder.dto';
@@ -15,7 +15,7 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
 
 @ApiBearerAuth()
 @ApiTags('Order')
-// @UseGuards(jwtGuard)
+@UseGuards(jwtGuard)
 @Controller('order')
 export class OrderController {
 
@@ -30,8 +30,6 @@ export class OrderController {
       @ApiOperation({ summary: 'Get service status' })
       @ApiResponse({ status: 200, description: 'Service is running' })
      async getHello(){
-        // const token=await this.authClient.getSignUpAccess("12345678","123456","qwertyu");
-        // console.log(token);
         return this.orderService.getHello();
       }
      
@@ -47,7 +45,8 @@ export class OrderController {
       @ApiResponse({ status: 400, description: 'Bad Request' })
       @ApiResponse({ status: 401, description: 'Unauthorized' })
       async prePlaceOrder(@Body('cartId',ParseObjectIdPipe) cartId: ObjectId){
-            return await this.orderService.createOrder(cartId);   
+          console.log(cartId);
+          return await this.orderService.createOrder(cartId);   
       }   
 
 
@@ -67,17 +66,18 @@ export class OrderController {
       async placeOrder(@Body('modeOfPayment') modeOfPayment:string,@Body('orderId',ParseObjectIdPipe) orderId: ObjectId){
         
         if(modeOfPayment=="cashOnDelivery"){
+            this.handleCart({orderId:orderId});
             this.handleDelivery({orderId: orderId});
             return await this.orderService.updateOrder(orderId,"NILL",PaymentStatus.PENDING,PaymentMethod.CASH_ON_DELIVERY,OrderStatus.PREPARING);
         }
         else if(modeOfPayment=="online"){
               const paymentData= await this.paymentClient.getPayStatus(orderId.toString());
-              
               if(paymentData.paymentStatus=="Failed"){
                 const orderCancelled=this.orderService.updateOrder(orderId,paymentData.paymentID,PaymentStatus.FAILED,PaymentMethod.UPI,OrderStatus.CANCELLED);
                 return orderCancelled;
               }
               else if(paymentData.paymentStatus=="completed"){
+                this.handleCart({orderId:orderId});
                 this.handleDelivery({orderId: orderId});
                 const orderConfirmed=this.orderService.updateOrder(orderId,paymentData.paymentID,PaymentStatus.COMPLETED,PaymentMethod.UPI,OrderStatus.CONFIRMED);
                 return orderConfirmed;
@@ -155,19 +155,26 @@ export class OrderController {
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     @ApiResponse({ status: 404, description: 'Order not found' })
       async generateInvoice(@Param('orderId') orderId:string){
-        return await this.orderService.getInvoice(orderId);
+        const pdfBuffer = await this.orderService.generateInvoice(orderId, { debug: true });
+        return pdfBuffer
       }
 
 
-      @EventPattern('partnerAssigned')
-      async handlePartnerAssigned(@Payload() data: any){
+      @MessagePattern('deliveryPartnerResponse')
+      async handlePartnerAssigned(@Payload() data: {message: string}){
+
+        const { message } = data;
+
         console.log('kafka notification recieved ');
-         console.log(data);
+         console.log(message);
       }
 
-      async handleDelivery(payload: {orderId: ObjectId})
+      async handleDelivery(payload: {orderId:ObjectId})
       {
         await this.kafkaService.handleEvent('newOrder', payload);
       }
-      
+      async handleCart(payload:{orderId:ObjectId}){
+        const userId=await this.orderService.getUserId(payload.orderId);
+        await this.kafkaService.handleEvent('orderCreated',userId);
+      }
 }

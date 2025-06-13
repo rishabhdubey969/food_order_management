@@ -133,6 +133,9 @@ export class DeliveryPartnerService {
       this.logger.log(`Successfully retrieved profile for partner ID: ${partnerId}`);
       return profile;
     } catch (err) {
+      if(err instanceof NotFoundException){
+        throw err;
+      }
       this.logger.error(`Error retrieving profile for partner ID: ${partnerId}`, err.stack);
       throw new MongooseError(`Failed to retrieve profile: ${err.message}`);
     }
@@ -196,6 +199,9 @@ export class DeliveryPartnerService {
       }
       return partner;
     } catch (err) {
+      if(err instanceof NotFoundException){
+        throw err;
+      }
       this.logger.error(`Error finding delivery partner by ID: ${partnerId}`, err.stack);
       throw new MongooseError(`Failed to find delivery partner by ID: ${err.message}`);
     }
@@ -207,11 +213,15 @@ export class DeliveryPartnerService {
       const partner = await this.deliveryPartnerModel.findOne({ email });
       if (!partner) {
         this.logger.warn(`Delivery partner with email: ${email} not found.`);
+        throw new NotFoundException('Delivery Partner Not found!!!')
       } else {
         this.logger.log(`Successfully found delivery partner by email: ${email}`);
       }
       return partner;
     } catch (err) {
+      if(err instanceof NotFoundException){
+        throw err;
+      }
       this.logger.error(`Error finding delivery partner by email: ${email}`, err.stack);
       throw new MongooseError(`Failed to find delivery partner by email: ${err.message}`);
     }
@@ -282,6 +292,9 @@ export class DeliveryPartnerService {
       }
       this.logger.log(`Successfully removed delivery partner with ID: ${partnerId}`);
     } catch (err) {
+      if(err instanceof NotFoundException){
+        throw err;
+      }
       this.logger.error(`Error removing delivery partner with ID: ${partnerId}`, err.stack);
       throw new MongooseError(`Failed to remove delivery partner: ${err.message}`);
     }

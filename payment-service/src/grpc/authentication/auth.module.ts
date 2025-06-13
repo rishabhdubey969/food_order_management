@@ -5,4 +5,4 @@ import { AuthClient } from './auth.client';
   providers: [AuthClient],
   exports: [AuthClient],
 })
-export class AuthModule {} 
+export class AuthModule {}

@@ -14,7 +14,7 @@ export class VerifyOtpDto {
 
   @ApiProperty({
     description: 'The one-time password (OTP) sent to the user',
-    example: '123456',
+    example: '12345',
   })
   @IsString()
   @IsNotEmpty()

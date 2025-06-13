@@ -335,7 +335,7 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
       return;
     }
 
-    try {
+    
       deliveryPartnersList.forEach((partnerId) => {
         if (partnerId) { // Check if partnerId is not null
           const socket = this.deliveryPartnersMap.get(partnerId);
@@ -348,10 +348,7 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
         }
       });
       this.logger.log(`Finished broadcasting delivery request for order ${currentDelivery?.orderId}.`);
-    } catch (error) {
-      this.logger.error(`Error broadcasting request for order ${currentDelivery?.orderId}: ${error.message}`, error.stack);
-      // In a broadcast scenario, you might not re-throw but rather log and continue.
-    }
+    
   }
 
   // Handle a delivery response (accept/reject) from a delivery partner

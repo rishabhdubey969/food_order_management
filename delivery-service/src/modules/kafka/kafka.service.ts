@@ -62,25 +62,18 @@ export class KafkaService implements OnModuleInit {
 
 
   async handleEvent(topicName: string, payload: any): Promise<void> {
-    this.logger.log(`Attempting to emit event to topic: "${topicName}" with payload: ${JSON.stringify(payload)}`);
-    try {
-      await this.kafkaClient.emit(topicName, payload).toPromise();
+      this.logger.log(`Attempting to emit event to topic: "${topicName}" with payload: ${JSON.stringify(payload)}`);
+      let data  = await lastValueFrom(this.kafkaClient.emit(topicName, payload));
+      console.log(data);
       this.logger.log(`Successfully emitted event to topic: "${topicName}"`);
-    } catch (error) {
-      this.logger.error(`Failed to emit event to topic "${topicName}": ${error.message}`, error.stack);
-      throw new InternalServerErrorException(`Failed to send event to Kafka topic "${topicName}".`);
-    }
+    
   }
 
   async handleMessage(topicName: string, payload: any): Promise<any> {
     this.logger.log(`Attempting to send message to topic: "${topicName}" with payload: ${JSON.stringify(payload)} (awaiting acknowledgment)`);
-    try {
+    
       const acknowledgement = await lastValueFrom(this.kafkaClient.send(topicName, payload));
       this.logger.log(`Received acknowledgment from topic "${topicName}": ${JSON.stringify(acknowledgement)}`);
       return acknowledgement;
-    } catch (error) {
-      this.logger.error(`Failed to send message and receive acknowledgment from topic "${topicName}": ${error.message}`, error.stack);
-      throw new InternalServerErrorException(`Failed to send message to Kafka topic "${topicName}" and receive acknowledgment.`);
-    }
   }
 }

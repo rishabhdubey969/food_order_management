@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model } from 'mongoose';
 import Stripe from 'stripe';
@@ -16,33 +21,34 @@ export class StripePayService {
   private readonly roleCollections = {
     USER: 'address',
     CART: 'carts',
-    RESTAURANT:'restaurants',
-    ORDER:'orders'
-};
+    RESTAURANT: 'restaurants',
+    ORDER: 'orders',
+  };
   constructor(
     @InjectModel(Payment.name)
     private paymentModel: Model<PaymentDocument>,
     private readonly configService: ConfigService,
     private errorService: errorService,
     private stripeConfig: StripeConfigService,
-    @InjectConnection() private readonly connection: Connection
+    @InjectConnection() private readonly connection: Connection,
   ) {
     this.stripe = this.stripeConfig.getStripeInstance();
   }
 
-
   async createCheckoutSession(payload: CreatePaymentDto) {
     try {
       if (!payload.orderId) {
-              throw new BadRequestException('orderId is required');
-            }
+        throw new BadRequestException('orderId is required');
+      }
       const orderId = payload.orderId;
-      const orderData = await this.connection.collection('orders').findOne({ _id: new ObjectId(orderId) });
-      if(!orderData){
-        throw new BadRequestException("order does not exist")
+      const orderData = await this.connection
+        .collection('orders')
+        .findOne({ _id: new ObjectId(orderId) });
+      if (!orderData) {
+        throw new BadRequestException('order does not exist');
       }
       const total_amount = orderData?.total;
-      
+
       const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
@@ -67,7 +73,7 @@ export class StripePayService {
           metadata: {
             orderId: orderId,
           },
-        }
+        },
       });
 
       const payment = new this.paymentModel({
@@ -88,9 +94,7 @@ export class StripePayService {
       }
       throw new BadRequestException('Failed to create checkout session');
     }
-      
-    }
-  
+  }
 
   async updatePaymentStatus(sessionId: string, status: string) {
     const payment = await this.paymentModel.findOneAndUpdate(
@@ -123,8 +127,17 @@ export class StripePayService {
     return {
       paymentID: paymentdetails.paymentId,
       paymentStatus: paymentdetails.status,
-      paymentmessage: 'Successful',
-      paymentmode: 'Card',
     };
+  }
+
+  async checkEvent(orderId: string) {
+    const sessionId = await this.paymentModel.findOne({ orderId: orderId });
+    // const status = await this.webhookService.eventUpdate(sessionId);
+    // if(status === 1){
+    //   return "Payment Successful"
+    // }
+    // else{
+    //   return "Payment Failed"
+    // }
   }
 }

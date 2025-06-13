@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 async function connectToDatabase(): Promise<void> {
   try {
@@ -6,18 +6,18 @@ async function connectToDatabase(): Promise<void> {
     const dbConnection = process.env.DB_CONNECTION;
 
     if (!dbConnection) {
-      throw new Error('DB_CONNECTION environment variable is not set.');
+      throw new Error("DB_CONNECTION environment variable is not set.");
     }
 
     // Connecting to MongoDB
     await mongoose.connect(dbConnection);
-    console.log('Connected successfully to MongoDB using Mongoose');
+    console.log("Connected successfully to MongoDB using Mongoose");
   } catch (error: unknown) {
     // Type narrowing to make sure 'error' is an instance of Error
     if (error instanceof Error) {
-      console.error('Error connecting to MongoDB:', error.message);
+      console.error("Error connecting to MongoDB:", error.message);
     } else {
-      console.error('Unknown error occurred during DB connection');
+      console.error("Unknown error occurred during DB connection");
     }
 
     // Exit process if connection fails

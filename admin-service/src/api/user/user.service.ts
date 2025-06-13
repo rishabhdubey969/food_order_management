@@ -5,6 +5,8 @@ import { User } from './entities/user.entity';
 import { AuthService } from '../auth/auth.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { ObjectId } from 'mongodb';
+import { EmailService } from 'src/email/email.service';
+
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
@@ -13,7 +15,8 @@ export class UserService {
     // @InjectModel(User.name) private readonly userModel: Model<User>,
      @InjectConnection() private readonly connection: Connection,
     private readonly authService: AuthService,
-     @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
+     private readonly emailService: EmailService,
+    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   async blockUser(userId: string) {
@@ -36,17 +39,16 @@ export class UserService {
       await user.save();
       this.logger.log(`User with ID: ${userId} has been blocked`);
 
-      // Emit email notification
-      try {
-        this.client.emit('send_email', {
-          to: user.email,
-          subject: 'Your Account Has Been Blocked',
-          html: `<p>Your account has been blocked by an admin. Please contact support for more information.</p>`,
-        });
-        this.logger.log(`Block notification email emitted for ${user.email}`);
-      } catch (error) {
-        this.logger.error(`Failed to emit block notification email: ${error.message}`, error.stack);
-      }
+ let  Subject= 'Your Account Has Been Blocked'
+         let text =`<p>Your account has been blocked by an admin. Please contact support for more information.</p>`;
+         let email=user.email
+          await this.emailService.sendEmail(email, Subject, text);
+      // this.client.emit('send_email', {
+      //   to: user.email,
+      //   subject: 'Your Account Has Been Blocked',
+      //   html: `<p>Your account has been blocked by an admin. Please contact support for more information.</p>`,
+      // });
+      // this.logger.log(`Block notification email emitted for ${user.email}`);
 
       return { message: `User with ID ${userId} has been blocked` };
     } catch (error) {
@@ -88,6 +90,18 @@ export class UserService {
       } catch (error) {
         this.logger.error(`Failed to emit unblock notification email: ${error.message}`, error.stack);
       }
+      this.logger.log(`User with ID: ${userId} has been blocked`);
+       let  Subject= 'Your Account Has Been Unblocked'
+         let text =`<p>Your account has been unblocked by an admin. You can now access your account.</p>`;
+         let email=user.email
+          await this.emailService.sendEmail(email, Subject, text);
+  
+      // this.client.emit('send_email', {
+      //   to: ,
+      //   subject: 'Your Account Has Been Unblocked',
+      //   html: `<p>Your account has been unblocked by an admin. You can now access your account.</p>`,
+      // });
+      this.logger.log(`Unblock notification email emitted for ${user.email}`);
 
       return { message: `User with ID ${userId} has been unblocked` };
     } catch (error) {

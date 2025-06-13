@@ -6,14 +6,11 @@ import { CartSchema } from './schema/cart.schema';
 import { CouponSchema } from './schema/coupon.schema';
 import { AddressSchema, Address } from './schema/address.schema';
 import { RestaurantSchema } from './schema/restaurant.schema';
-import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RedisModule } from 'src/redis/redis.module';
 import { MenuItemSchema } from './schema/menu-item.schema';
-
-
 
 @Module({
   imports: [MongooseModule.forFeature([{ name: 'Cart', schema: CartSchema }]),    MongooseModule.forFeature([

@@ -3,7 +3,13 @@ import { ClientGrpc, Client, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { lastValueFrom } from 'rxjs';
 import * as path from 'path';
-import { accessTokenRequest, AUTH_PACKAGE_NAME, AUTH_SERVICE_NAME, generateTokenData, GrpcAuthService } from './auth.interface';
+import {
+  accessTokenRequest,
+  AUTH_PACKAGE_NAME,
+  AUTH_SERVICE_NAME,
+  generateTokenData,
+  GrpcAuthService,
+} from './auth.interface';
 
 @Injectable()
 export class AuthClient implements OnModuleInit {
@@ -22,7 +28,6 @@ export class AuthClient implements OnModuleInit {
     this.grpcAuthService = this.client.getService(AUTH_SERVICE_NAME);
     console.log('grpc started');
   }
-
 
   async ValidateTokenAuthService(accessToken: string) {
     const request: accessTokenRequest = { accessToken };

@@ -13,7 +13,7 @@ export class StripeWebhookService {
   constructor(
     @InjectModel(Webhook.name)
     private webhookModel: Model<WebhookDocument>,
-    
+
     private readonly stripeConfig: StripeConfigService,
     private readonly paymentService: StripePayService,
   ) {}
@@ -44,7 +44,9 @@ export class StripeWebhookService {
       );
 
       if (!webhookEvent) {
-        throw new Error(`Failed to save/update webhook event ${eventData.stripeEventId}`);
+        throw new Error(
+          `Failed to save/update webhook event ${eventData.stripeEventId}`,
+        );
       }
 
       this.logger.log(
@@ -63,7 +65,7 @@ export class StripeWebhookService {
         case 'checkout.session.completed':
           const session = event.data.object;
           await this.handleSuccessfulPayment(session);
-          
+
           break;
 
         case 'checkout.session.expired':
@@ -84,7 +86,7 @@ export class StripeWebhookService {
         case 'payment_intent.payment_failed':
           const paymentIntent = event.data.object;
           await this.handleFailedPayment(paymentIntent);
-          
+
           break;
 
         case 'charge.succeeded':
@@ -101,7 +103,7 @@ export class StripeWebhookService {
         case 'charge.failed':
           const charge = event.data.object;
           await this.handleFailedCharge(charge);
-          break;  
+          break;
 
         default:
           Logger.log(`Unhandled event type: ${event.type}`);
@@ -120,9 +122,9 @@ export class StripeWebhookService {
         eventType: paymentIntent.object,
         payload: paymentIntent,
         createdAtStripe: paymentIntent.created,
-        processingStatus: "created",
+        processingStatus: 'created',
         orderId: paymentIntent.metadata?.orderId || undefined,
-        amount: paymentIntent.amount || undefined
+        amount: paymentIntent.amount || undefined,
       });
     } catch (error) {
       Logger.error('Error handling payment intent created:', error);
@@ -152,8 +154,8 @@ export class StripeWebhookService {
         payload: paymentIntent,
         createdAtStripe: paymentIntent.created,
         processingStatus: paymentIntent.status,
-        status: "COMPLETED",
-        orderId: orderId
+        status: 'COMPLETED',
+        orderId: orderId,
       });
 
       if (session.data.length === 0) {
@@ -172,7 +174,7 @@ export class StripeWebhookService {
   async handleChargeSucceeded(charge: Stripe.Charge) {
     try {
       const paymentIntentId = charge.payment_intent as string;
-      
+
       if (!paymentIntentId) {
         throw new Error('No payment intent found in charge');
       }
@@ -180,7 +182,7 @@ export class StripeWebhookService {
       const paymentIntent = await this.stripeConfig
         .getStripeInstance()
         .paymentIntents.retrieve(paymentIntentId);
-        
+
       const orderId = paymentIntent.metadata?.orderId;
       if (!orderId) {
         throw new Error('No orderId found in payment intent metadata');
@@ -194,7 +196,7 @@ export class StripeWebhookService {
           payment_intent: paymentIntentId,
           limit: 1,
         });
-        
+
       if (session.data.length === 0) {
         throw new Error(
           `No session found for payment intent ${paymentIntentId}`,
@@ -207,8 +209,8 @@ export class StripeWebhookService {
         payload: charge,
         createdAtStripe: charge.created,
         processingStatus: charge.status,
-        status: "COMPLETED",
-        orderId: orderId
+        status: 'COMPLETED',
+        orderId: orderId,
       });
 
       await this.updatePaymentStatus(session.data[0].id, 'completed');
@@ -263,11 +265,11 @@ export class StripeWebhookService {
   async handleSuccessfulPayment(session: Stripe.Checkout.Session) {
     try {
       const orderId = session.metadata?.orderId;
-      
+
       if (!orderId) {
         throw new Error('No orderId found in session metadata');
       }
-      
+
       await this.updatePaymentStatus(session.id, 'completed');
       await this.saveOrUpdateWebhookEvent({
         stripeEventId: session.id,
@@ -276,9 +278,9 @@ export class StripeWebhookService {
         createdAtStripe: session.created,
         processingStatus: session.status,
         orderId: orderId,
-        amount: session.amount_total || undefined
+        amount: session.amount_total || undefined,
       });
-      
+
       Logger.log(`Payment successful for order ${orderId}`);
     } catch (error) {
       Logger.error('Error handling successful payment:', error);
@@ -298,8 +300,8 @@ export class StripeWebhookService {
         payload: session,
         createdAtStripe: session.created,
         processingStatus: session.status,
-        errormessage: "EXPIRED",
-        orderId: orderId
+        errormessage: 'EXPIRED',
+        orderId: orderId,
       });
       Logger.log(`Payment session expired for order ${orderId}`);
     } catch (error) {
@@ -314,7 +316,7 @@ export class StripeWebhookService {
       if (!orderId) {
         throw new Error('No orderId found in payment intent metadata');
       }
-      
+
       await this.paymentService.updatePaymentStatus(orderId, 'failed');
       await this.saveOrUpdateWebhookEvent({
         stripeEventId: paymentIntent.id,
@@ -322,10 +324,10 @@ export class StripeWebhookService {
         payload: paymentIntent,
         createdAtStripe: paymentIntent.created,
         processingStatus: paymentIntent.status,
-        errormessage: "FAILED",
-        orderId: orderId
+        errormessage: 'FAILED',
+        orderId: orderId,
       });
-      
+
       Logger.log(`Payment failed for order ${orderId}`);
       Logger.log(
         `Failure reason: ${paymentIntent.last_payment_error?.message}`,
@@ -358,17 +360,17 @@ export class StripeWebhookService {
       if (!payment) {
         this.logger.warn(`Payment not found for order ID: ${orderId}`);
       }
-      
+
       await this.saveOrUpdateWebhookEvent({
         stripeEventId: charge.id,
         eventType: charge.object,
         payload: charge,
         createdAtStripe: charge.created,
         processingStatus: charge.status,
-        errormessage: "FAILED",
-        orderId: orderId
+        errormessage: 'FAILED',
+        orderId: orderId,
       });
-      
+
       Logger.log(`Charge failed for order ${orderId}`);
       Logger.log(`Failure reason: ${charge.failure_message}`);
     } catch (error) {
@@ -398,5 +400,12 @@ export class StripeWebhookService {
       this.logger.error(`Error updating payment status: ${error.message}`);
       throw error;
     }
+  }
+
+  async eventUpdate(sessionId: string) {
+    const event = await this.webhookModel.findOne({ sessionId: sessionId });
+    if (event?.processingStatus === 'succeeded') {
+      return 1;
+    } else return 0;
   }
 }

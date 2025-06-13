@@ -1,11 +1,12 @@
-import { Controller, Post, Body, Ip, Req, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Ip, Req, HttpException, HttpStatus, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/ reset-password.dto';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiProperty, ApiResponse } from '@nestjs/swagger';
+import { AdminGuard } from './guards/admin.guard';
 
 @Controller('auth/admin')
 export class AuthController {
@@ -75,31 +76,34 @@ export class AuthController {
       );
     }
   }
-
-
+@UseGuards(AdminGuard)
   @Post('logout')
-@ApiBearerAuth() // Indicates this endpoint requires a Bearer token
-@ApiOperation({ summary: 'Logout an admin user' })
-@ApiBody({
-  schema: {
-    type: 'object',
-    properties: {
-      userId: {
-        type: 'string',
-        description: 'The ID of the user to logout',
-        example: '12345',
+  @ApiBearerAuth('JWT')
+  @ApiOperation({ summary: 'Logout an admin user' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        adminId: {
+          type: 'string',
+          description: 'The ID of the admin to logout',
+          example: '12345',
+        },
       },
+      required: ['adminId'],
     },
-    required: ['userId'],
-  },
-})
-@ApiResponse({ status: 200, description: 'Successfully logged out', type: Object })
-@ApiResponse({ status: 400, description: 'Bad Request' })
-@ApiResponse({ status: 401, description: 'Unauthorized' })
-@ApiResponse({ status: 500, description: 'Internal Server Error' })
-  async logout(@Body('userId') userId: string) {
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully logged out',
+    type: Object,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error' })
+  async logout(@Body('adminId') adminId: string) {
     try {
-      return await this.authService.logout(userId);
+      return await this.authService.logout(adminId);
     } catch (error) {
       throw new HttpException(
         error.message || 'Logout failed',
