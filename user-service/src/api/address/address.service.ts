@@ -26,6 +26,7 @@ export class AddressService {
    * @returns The newly created address document.
    */
   async addressCreateService(createAddressDto: CreateAddressDto) {
+    this.logger.error(`Address create start: ${createAddressDto}`);
     const exists = await this.addressModel.findOne({
       user_id: createAddressDto.user_id,
       latitude: createAddressDto.latitude,

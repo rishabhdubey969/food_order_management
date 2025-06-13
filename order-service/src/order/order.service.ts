@@ -6,6 +6,7 @@ import { Address, Order, OrderStatus, PaymentMethod, PaymentStatus, ProductItem 
 import puppeteer from 'puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
+import { observableToBeFn } from 'rxjs/internal/testing/TestScheduler';
 
 
 
@@ -40,8 +41,8 @@ export class OrderService {
         address.address=ADDRESS.address||ADDRESS.address_location_1;
         address.contactNumber=ADDRESS.phone||'9676534567';
         address.email=ADDRESS.email||'abc1@gmail.com';
-        address.latitude=ADDRESS.latitude;
-        address.longitude=ADDRESS.longitude;
+        address.latitude=ADDRESS.coordinates[0];
+        address.longitude=ADDRESS.coordinates[1];
 
         return address;
     }
@@ -192,7 +193,18 @@ export class OrderService {
       }
       
     }
-
+    async  getUserId(orderId:ObjectId){
+      try{
+        const userId=await this.OrderSchema.findById(orderId);
+        if(!userId){
+           throw new NotFoundException("userId not found");
+        }
+        return {"userId":userId.userId};
+      }
+      catch(err){
+         throw err;
+      }
+    }
     async generateInvoice(orderId:string, options: any = {}): Promise<Buffer> {
       const order=await this.OrderSchema.findById(orderId);
       if (!order || !orderId) {

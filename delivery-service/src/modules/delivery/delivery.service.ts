@@ -199,6 +199,7 @@ import { TrackingGateway } from '../tracking/tracking.gateway';
 import { Logger } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { isInstance } from 'class-validator';
+import { KafkaService } from '../kafka/kafka.service';
 
 @Injectable()
 export class DeliveryService {
@@ -207,6 +208,7 @@ export class DeliveryService {
   constructor(
     @Inject(forwardRef(() => TrackingGateway))
     private readonly trackingGateway: TrackingGateway,
+    private readonly kafkaService: KafkaService,
     private readonly redisService: RedisService,
     @InjectModel(Delivery.name)
     private readonly DeliveryModel: Model<DeliveryDocument>,
@@ -216,14 +218,29 @@ export class DeliveryService {
 
 
   async createDelivery(orderId: Types.ObjectId) {
-    this.logger.log(`Creating delivery for order: ${orderId}`);
     try {
       const currentOrder = await this.connection.collection('orders').findOne({ _id: new Types.ObjectId(orderId) });
       if (!currentOrder) {
         this.logger.warn(`Delivery creation failed: Invalid order ID - ${orderId}`);
+        await this.kafkaService.handleEvent('deliveryPartnerResponse', {message:"Invalid Order Id"});
         throw new BadRequestException('Invalid Order Id!!');
       }
 
+      // console.log(currentOrder.restaurantAddress.longitude)
+      // console.log(currentOrder.restaurantAddress.latitude)
+      // console.log(currentOrder.deliveryAddress.latitude)
+      // console.log(currentOrder.deliveryAddress.longitude)
+
+      const restaurantLongitude = currentOrder.restaurantAddress.longitude;
+      const restaurantLatitude = currentOrder.restaurantAddress.latitude;
+      const deliveryLongitude = currentOrder.deliveryAddress.latitude;
+      const deliveryLatitude = currentOrder.deliveryAddress.longitude;
+
+      if(!restaurantLongitude || !restaurantLatitude || !deliveryLongitude || !deliveryLatitude){
+        this.logger.log(`Coordinates Missing!!`);
+        await this.kafkaService.handleEvent('deliveryPartnerResponse', {message:"No Coordinates Provided"});
+        throw new BadRequestException('No coordinates Provided!!')
+      }
       const currentDelivery: CompleteDelivery = {
         orderId: orderId,
         restaurantId: currentOrder.restaurantId,
@@ -236,7 +253,7 @@ export class DeliveryService {
         deliveryLocation: {
           address: currentOrder.deliveryAddress.address,
           mobileNumber: currentOrder.deliveryAddress.contactNumber,
-          coordinates: [parseFloat(currentOrder.deliveryAddress.longitude), parseFloat(currentOrder.restaurantAddress.latitude)],
+          coordinates: [parseFloat(currentOrder.deliveryAddress.longitude), parseFloat(currentOrder.deliveryAddress.latitude)],
         },
         totalOrderAmount: currentOrder.total,
         deliveryFee: currentOrder.deliveryFee,
@@ -251,6 +268,12 @@ export class DeliveryService {
       await this.assignDeliveryPartner(currentDelivery);
       this.logger.log(`Delivery created successfully for order: ${orderId}`);
     } catch (err) {
+      if(err instanceof BadRequestException){
+        throw err;
+      }
+      if(err instanceof NotFoundException){
+        throw err;
+      }
       this.logger.error(`Error creating delivery for order: ${orderId}`, err);
       throw new MongooseError(err.Message);
     }
@@ -261,9 +284,17 @@ export class DeliveryService {
     try {
       const { coordinates } = currentDelivery.pickupLocation;
       const deliveryPartnersList: DriverLocationResult = await this.redisService.findNearestDriver(coordinates[0], coordinates[1], 5, 10);
-      await this.trackingGateway.broadcastRequest(deliveryPartnersList, currentDelivery);
-      this.logger.log(`Delivery partner assigned successfully for order: ${currentDelivery.orderId}`);
+      if(!deliveryPartnersList?.length){
+        this.logger.warn('No delivery partners available'); 
+        await this.kafkaService.handleEvent("deliveryPartnerResponse", { message: 'Delivery Model Not found!!'})
+        throw new NotFoundException('No delivery partners available');
+      }
+        await this.trackingGateway.broadcastRequest(deliveryPartnersList, currentDelivery);
+        this.logger.log(`Delivery partner assigned successfully for order: ${currentDelivery.orderId}`);
     } catch (err) {
+      if(err instanceof NotFoundException){
+        throw err
+      }
       this.logger.error(`Error assigning delivery partner for order: ${currentDelivery.orderId}`, err);
       throw new MongooseError(err.Message);
     }
@@ -284,6 +315,9 @@ export class DeliveryService {
       }
       this.logger.log(`Partner ${partnerId} assigned successfully to order: ${orderId}`);
     } catch (err) {
+      if(err instanceof NotFoundException){
+        throw err;
+      }
       this.logger.error(`Error assigning partner ${partnerId} to order: ${orderId}`, err);
       throw new MongooseError('Updating Partner Error');
     }
@@ -294,9 +328,16 @@ export class DeliveryService {
     this.logger.log(`Checking assigned delivery for partner: ${partnerId}`);
     try {
       const delivery = await this.DeliveryModel.findById(partnerId);
+      if(!delivery){
+        this.logger.log(`Delivery Not Found!!`);
+        throw new NotFoundException('Delivery Document not found !!')
+      }
       this.logger.log(`Fetched delivery for partner: ${partnerId}`);
       return delivery;
     } catch (err) {
+      if(err instanceof NotFoundException){
+        throw err;
+      }
       this.logger.error(`Error fetching delivery for partner: ${partnerId}`, err);
       throw new MongooseError('Error While Fetching Delivery assigned to Particular partner');
     }

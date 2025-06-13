@@ -22,7 +22,7 @@ async function bootstrap() {
       },
 
       consumer:{
-        groupId: 'group-delivery'
+        groupId: 'groupDelivery'
       }
       
     }});
