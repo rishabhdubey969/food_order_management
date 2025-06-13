@@ -22,5 +22,6 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   await app.listen(cartPort);
+  console.log(`Cart service is running on port ${cartPort}`);
 }
 bootstrap();
