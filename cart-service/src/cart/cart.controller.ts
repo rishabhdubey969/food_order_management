@@ -7,6 +7,7 @@ import {
   Post,
   UseGuards,
   Logger,
+  Req,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import {
@@ -38,22 +39,26 @@ export class CartController {
     @Param('userId') userId: string,
     @Param('restaurantId') restaurantId: string,
     @Param('itemId') itemId: string,
+    // @Req() req 
   ) {
+    // const userId = req.user.userId; 
     this.logger.log(`Adding item ${itemId} to user ${userId}'s cart`);
     return this.cartService.addToCartService(userId, itemId);
   }
 
-  @Post('remove/:cartId/:itemId')
-  @ApiOperation({ summary: 'Remove/decrease item quantity from cart' })
-  @ApiParam({ name: 'cartId', type: 'string' })
+  @Post('remove/:userId/:itemId')
+  @ApiOperation({ summary: 'Remove/decrease item quantity from user cart' })
+  @ApiParam({ name: 'userId', type: 'string' })
   @ApiParam({ name: 'itemId', type: 'string' })
   @ApiResponse({ status: 200, description: 'Item removed or quantity decreased' })
   async removeItem(
-    @Param('cartId') cartId: string,
+    @Param('userId') userId: string,
     @Param('itemId') itemId: string,
+    // @Req() req 
   ) {
-    this.logger.log(`Removing item ${itemId} from cart ${cartId}`);
-    return this.cartService.removeItemService(cartId, itemId);
+    // const userId = req.user.userId;
+    this.logger.log(`Removing item ${itemId} from user ${userId}'s cart`);
+    return this.cartService.removeItemService(userId, itemId);
   }
 
   @Roles('user')
@@ -62,7 +67,11 @@ export class CartController {
   @ApiOperation({ summary: 'Delete user’s active cart' })
   @ApiParam({ name: 'userId', type: 'string' })
   @ApiResponse({ status: 200, description: 'Cart deleted successfully' })
-  async deleteCart(@Param('userId') userId: string) {
+  async deleteCart(
+    @Param('userId') userId: string,
+    // @Req() req 
+  ) {
+    // const userId = req.user.userId;
     this.logger.warn(`Deleting cart for user ${userId}`);
     return this.cartService.deleteCartService(userId);
   }
@@ -73,7 +82,11 @@ export class CartController {
   @ApiOperation({ summary: 'Get user’s active cart' })
   @ApiParam({ name: 'userId', type: 'string' })
   @ApiResponse({ status: 200, description: 'User cart retrieved successfully' })
-  async getCart(@Param('userId') userId: string) {
+  async getCart(
+    @Param('userId') userId: string,
+    // @Req() req 
+  ) {
+    // const userId = req.user.userId;
     this.logger.verbose(`Fetching cart for user ${userId}`);
     return this.cartService.getCartService(userId);
   }
@@ -99,9 +112,10 @@ export class CartController {
   async applyCoupon(
     @Param('userId') userId: string,
     @Param('couponId') couponId: string,
+    // @Req() req 
   ) {
+    // const userId = req.user.userId;
     this.logger.log(`Applying coupon ${couponId} to user ${userId}'s cart`);
     return this.cartService.applyCouponService(userId, couponId);
   }
 }
-
