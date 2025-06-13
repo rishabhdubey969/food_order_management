@@ -5,7 +5,7 @@ import { ParseObjectIdPipe } from '@nestjs/mongoose';
 import {ObjectId} from 'mongoose';
 import { OrderStatus, PaymentMethod, PaymentStatus } from 'src/schema/order.schema';
 import { KafkaService } from 'src/kafka/kafka.service';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { jwtGuard } from 'src/guards/jwt-guard';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PrePlaceOrderDto } from 'src/dto/prePlaceOrder.dto';
@@ -158,10 +158,13 @@ export class OrderController {
       }
 
 
-      @EventPattern('partnerAssigned')
-      async handlePartnerAssigned(@Payload() data: any){
+      @MessagePattern('deliveryPartnerResponse')
+      async handlePartnerAssigned(@Payload() data: {message: string}){
+
+        const { message } = data;
+
         console.log('kafka notification recieved ');
-         console.log(data);
+         console.log(message);
       }
 
       async handleDelivery(payload: {orderId: ObjectId})

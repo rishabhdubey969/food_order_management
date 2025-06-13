@@ -160,11 +160,11 @@ export class DeliveryController {
       }
     }
   })
-  async createDelivery(@Payload() orderId: Types.ObjectId) {
+  async createDelivery(@Payload() data: {orderId: Types.ObjectId}) {
+    const { orderId } = data;
     this.logger.log(`Creating new delivery for order: ${orderId}`);
     await this.deliveryService.createDelivery(orderId);
     this.logger.log(`Delivery created successfully for order: ${orderId}`);
-    return { success: true, message: `Delivery created for order ${orderId}` };
   }
 
   @EventPattern('handOvered')

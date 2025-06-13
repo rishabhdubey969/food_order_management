@@ -40,8 +40,8 @@ export class OrderService {
         address.address=ADDRESS.address||ADDRESS.address_location_1;
         address.contactNumber=ADDRESS.phone||'9676534567';
         address.email=ADDRESS.email||'abc1@gmail.com';
-        address.latitude=ADDRESS.latitude;
-        address.longitude=ADDRESS.longitude;
+        address.latitude=ADDRESS.coordinates[0];
+        address.longitude=ADDRESS.coordinates[1];
 
         return address;
     }

@@ -17,7 +17,7 @@ import { Partitioners } from 'kafkajs';
           },
           
           producer: {
-            createPartitioner: Partitioners.LegacyPartitioner
+            allowAutoTopicCreation: true
           }
           
         }
