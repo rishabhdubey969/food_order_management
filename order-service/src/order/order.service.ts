@@ -6,6 +6,7 @@ import { Address, Order, OrderStatus, PaymentMethod, PaymentStatus, ProductItem 
 import puppeteer from 'puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
+import { observableToBeFn } from 'rxjs/internal/testing/TestScheduler';
 
 
 
@@ -192,7 +193,18 @@ export class OrderService {
       }
       
     }
-
+    async  getUserId(orderId:ObjectId){
+      try{
+        const userId=await this.OrderSchema.findById(orderId);
+        if(!userId){
+           throw new NotFoundException("userId not found");
+        }
+        return {"userId":userId.userId};
+      }
+      catch(err){
+         throw err;
+      }
+    }
     async generateInvoice(orderId:string, options: any = {}): Promise<Buffer> {
       const order=await this.OrderSchema.findById(orderId);
       if (!order || !orderId) {
