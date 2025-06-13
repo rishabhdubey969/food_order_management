@@ -15,7 +15,7 @@ export class Admin extends Document {
   @Prop({ required: true, default: 0 })
   phone: number;
 
-  @Prop({ required: true, default: 0 }) 
+  @Prop({ required: true, default: 1 }) // 1 for admin role
   role: number;
 
   @Prop({ required: true, default: true })

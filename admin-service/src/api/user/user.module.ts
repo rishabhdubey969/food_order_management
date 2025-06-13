@@ -3,13 +3,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
-
+import { User, UserSchema } from './entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [
-   
+   EmailModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'yourSecretKey',
       signOptions: { expiresIn: '24h' },
@@ -27,7 +28,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
             },
           },
         ]),
-    AuthModule,
+    AuthModule, // Import AuthModule for session and JWT verification
   ],
   controllers: [UserController],
   providers: [UserService],

@@ -22,7 +22,7 @@ export class ComplaintService {
     private readonly mailerService: MailerService,
   ) {}
 
-  async createComplaint(dto: CreateComplaintDto, managerId: string) {
+  async createComplaint(dto: CreateComplaintDto, userId: string, managerId: string) {
     try {
       const complaint = {
         ...dto,
@@ -110,20 +110,20 @@ export class ComplaintService {
       const complaint = await this.connection
         .collection('complaints')
         .findOne({ _id: new Types.ObjectId(complaintId) });
-
+        
       if (!complaint) {
         throw new NotFoundException(ERROR_MESSAGES.COMPLAINT_NOT_FOUND);
       }
 
       const order = await this.connection
         .collection('orders')
-        .findOne({ _id: new Types.ObjectId(complaint.orderId) });
-
+        .findOne({ _id: new Types.ObjectId('684abd0251c017b95432644b') });
+        console.log(order);
       if (!order) {
         throw new NotFoundException(ERROR_MESSAGES.ORDER_NOT_FOUND);
       }
 
-      await this.connection.collection('complaints').updateOne(
+      const updated = await this.connection.collection('complaints').updateOne(
         { _id: new Types.ObjectId(complaintId) },
         {
           $set: {
@@ -132,6 +132,7 @@ export class ComplaintService {
           },
         },
       );
+      console.log("updated", updated);
 
       let emailSent = false;
       try {
@@ -177,14 +178,14 @@ export class ComplaintService {
   }
 
   async getComplaintsForManager(managerId: string) {
-   console.log(managerId);
+   console.log("Manager ",managerId);
     try {
       const complaints = await this.connection
         .collection('complaints')
-        .find({ managerId: new Types.ObjectId(managerId) })
+        .find({ managerId: "684aa2342f1e39fe3eda0a1f" })
         .project({ __v: 0 })
         .toArray();
-      console.log(managerId);
+      console.log("Complaints ",complaints);
       if (!complaints.length) {
         throw new NotFoundException('No complaints found for this manager');
       }

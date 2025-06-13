@@ -1,4 +1,4 @@
-
+// src/config/global-exception.filter.ts
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, Logger, HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
 import { ErrorHandler } from './error-handler';

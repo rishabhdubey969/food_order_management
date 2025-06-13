@@ -58,12 +58,12 @@ async function bootstrap() {
       options: {
         package: 'payment',
         protoPath: 'src/grpc/proto/payment.proto',
-        url: '0.0.0.0:5000',
+        url: '0.0.0.0:7001',
       },
     });
   await microserviceApp.listen();
   
-  console.log('Product Service (gRPC) is listening on port 5000');
+  console.log('Product Service (gRPC) is listening on port 7001');
   console.log(`Application is running on: ${port}`);
 }
 bootstrap();

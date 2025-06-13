@@ -16,6 +16,6 @@ export class RegisterDto {
   phone?: string;
 
   @IsString()
-  @IsIn(['ADMIN', 'manager', 'user'])
+  @IsIn(['admin', 'manager', 'user'])
   role: string;
 }

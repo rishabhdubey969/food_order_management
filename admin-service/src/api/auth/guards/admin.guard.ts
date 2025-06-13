@@ -9,7 +9,6 @@ export class AdminGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
 
     const token = request.headers.authorization?.split(' ')[1];
-    console.log('token: ',token)
 
     if (!token) {
       throw new UnauthorizedException('No token provided');
@@ -22,12 +21,12 @@ export class AdminGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    if (payload.role !== 'ADMIN') {
+    if (payload.role !== 'admin') {
       throw new UnauthorizedException('Admin access required');
     }
 
+    // Attach the payload to the request for use in the controller
     request.user = payload;
-    console.log('Payload ',payload)
     return true;
   }
 }

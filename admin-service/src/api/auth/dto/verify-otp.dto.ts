@@ -1,4 +1,4 @@
-
+// src/auth/dto/verify-otp.dto.ts
 import { IsString, IsNotEmpty, Length, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -14,11 +14,11 @@ export class VerifyOtpDto {
 
   @ApiProperty({
     description: 'The one-time password (OTP) sent to the user',
-    example: '123456',
+    example: '12345',
   })
   @IsString()
   @IsNotEmpty()
-  @Length(5, 5, { message: 'OTP must be exactly 5 characters long' })
+  @Length(6, 6, { message: 'OTP must be exactly 6 characters long' })
   otp: string;
 
   @ApiProperty({

@@ -2,6 +2,7 @@ import { Controller, Get, Body, Param, Delete, UsePipes, ValidationPipe, Patch, 
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthGuard } from '../../guard/auth.guard';
+import { DeleteProfileSwagger, GetProfileSwagger, UpdateProfileSwagger } from 'src/doc/profile.swagger';
 
 @Controller('profile')
 export class ProfileController {
@@ -15,6 +16,7 @@ export class ProfileController {
    * @returns The updated user profile.
    */
   @Patch(':id')
+  @UpdateProfileSwagger()
   @UseGuards(AuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   profileUpdate(@Param('id') id: string, @Body() updateProfileDto: UpdateProfileDto) {
@@ -28,6 +30,7 @@ export class ProfileController {
    * @returns The user profile.
    */
   @Get(':id')
+  @GetProfileSwagger()
   @UseGuards(AuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true }))
   profileFindOne(@Param('id') id: string) {
@@ -41,6 +44,7 @@ export class ProfileController {
    * @returns The result of the remove operation.
    */
   @Delete(':id')
+  @DeleteProfileSwagger()
   @UseGuards(AuthGuard)
   remove(@Param('id') id: string) {
     return this.profileService.remove(id);

@@ -17,28 +17,14 @@ import ManagerLoginDto from 'src/manager/modules/auth/dto/managerLogindto';
 import ManagerSignupDto from 'src/manager/modules/auth/dto/managerSignuodto';
 import { Manager, ManagerDocument } from './schema/manager.schema';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from 'src/manager/constants/errorand success';
-import { TokenService } from 'src/manager/token/token.service';
-import { ClientGrpc, RpcException } from '@nestjs/microservices';
-import { ManagerGateway } from 'src/manager/gateway/manager.gateway';
+import { TokenService } from 'src/manager/modules/token/token.service';
+import { ClientGrpc } from '@nestjs/microservices';
+import { ManagerGateway } from 'src/manager/modules/gateway/manager.gateway';
 import { Order, OrderDocument } from './schema/order.schema';
 import { async } from 'rxjs';
 import { ObjectId } from 'mongodb';
 import { KafkaService } from './kafka/kafka.service';
 
-
-
-
-export interface ManagerData {
-  id: String;
-  name: String;
-  email: String;
-  phone: String;
-  password: String;
-  restaurantId: String;
-  accountNumber: String;
-  ifscCode: String;
-  bankName: String;
-}
 @Injectable()
 export class ManagerService  {
   private readonly logger = new Logger(ManagerService.name);
@@ -151,30 +137,6 @@ export class ManagerService  {
     }
   }
 
-      return {
-        message: SUCCESS_MESSAGES.MANAGER_SIGNUP,
-        data: {
-          id: savedManager._id.toString(),
-          name: savedManager.name,
-          email: savedManager.email,
-          phone: savedManager.phone,
-          restaurant_id: savedManager.restaurantId,
-          account_number: savedManager.accountNumber,
-          ifsc_code: savedManager.ifscCode,
-          bank_name: savedManager.bankName,
-        },
-      };
-    } catch (error) {
-      this.logger.error(`Signup failed: ${error.message}`, error.stack);
-      if (error instanceof RpcException) {
-        throw error;
-      }
-      throw new RpcException({
-        code: 13, // INTERNAL
-        message: `Signup error: ${error.message}`,
-      });
-    }
-  }
   async getManagerById(id: string) {
     try {
       const manager = await this.managerModel.findById(id);

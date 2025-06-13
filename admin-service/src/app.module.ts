@@ -17,11 +17,11 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [  
-     ConfigModule.forRoot({ 
+    MongooseModule.forRoot('mongodb+srv://FoodOrder:FoodAdmin123@cluster0.hcogxon.mongodb.net/food?retryWrites=true&w=majority&appName=Cluster0'),
+    ConfigModule.forRoot({ 
       isGlobal: true, 
-      load: [jwtConfig, userConfig] 
+      load: [jwtConfig, userConfig] // Add userConfig here
     }),
-    MongooseModule.forRoot(process.env.URL as string),
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '10m' },

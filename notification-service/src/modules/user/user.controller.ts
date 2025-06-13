@@ -12,4 +12,16 @@ export class UserController {
   async handleUserCreated(@Payload() data: any) {
     await this.userService.signupUser(data);
   }
+
+ @EventPattern('signup_otp')
+  async handleSignupOtp(@Payload() data: any) {
+    console.log("check");
+    await this.userService.signupOtp(data);
+  }
+
+   @EventPattern('reset_link')
+  async handleResetLink(@Payload() data: any) {
+    await this.userService.resetLink(data);
+  }
+
 }

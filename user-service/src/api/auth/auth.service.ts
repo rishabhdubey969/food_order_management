@@ -115,7 +115,8 @@ export class AuthService {
 
       const userId = user._id.toString();
       const token = await this.tokenService.generate(userId);
-
+      const mailData = {email, token}
+       this.client.emit('reset_link', mailData);
       return { message: 'Reset link sent', token: token };
     } catch (error) {
       this.logger.error('Error in forgotPassword', error);

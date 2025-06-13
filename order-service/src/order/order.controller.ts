@@ -15,7 +15,7 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
 
 @ApiBearerAuth()
 @ApiTags('Order')
-// @UseGuards(jwtGuard)
+@UseGuards(jwtGuard)
 @Controller('order')
 export class OrderController {
 
@@ -30,8 +30,6 @@ export class OrderController {
       @ApiOperation({ summary: 'Get service status' })
       @ApiResponse({ status: 200, description: 'Service is running' })
      async getHello(){
-        // const token=await this.authClient.getSignUpAccess("12345678","123456","qwertyu");
-        // console.log(token);
         return this.orderService.getHello();
       }
      
@@ -47,6 +45,7 @@ export class OrderController {
       @ApiResponse({ status: 400, description: 'Bad Request' })
       @ApiResponse({ status: 401, description: 'Unauthorized' })
       async prePlaceOrder(@Body('cartId',ParseObjectIdPipe) cartId: ObjectId){
+          console.log(cartId);
             return await this.orderService.createOrder(cartId);   
       }   
 
@@ -72,7 +71,6 @@ export class OrderController {
         }
         else if(modeOfPayment=="online"){
               const paymentData= await this.paymentClient.getPayStatus(orderId.toString());
-              
               if(paymentData.paymentStatus=="Failed"){
                 const orderCancelled=this.orderService.updateOrder(orderId,paymentData.paymentID,PaymentStatus.FAILED,PaymentMethod.UPI,OrderStatus.CANCELLED);
                 return orderCancelled;
@@ -155,7 +153,8 @@ export class OrderController {
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     @ApiResponse({ status: 404, description: 'Order not found' })
       async generateInvoice(@Param('orderId') orderId:string){
-        return await this.orderService.getInvoice(orderId);
+        const pdfBuffer = await this.orderService.generateInvoice(orderId, { debug: true });
+        return pdfBuffer
       }
 
 

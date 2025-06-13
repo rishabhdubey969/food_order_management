@@ -1,7 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import Redis from 'ioredis';
 
-@Global()
+@Global() // Ensure this module is global
 @Module({
   providers: [
     {

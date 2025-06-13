@@ -11,6 +11,7 @@ import { KafkaModule } from './manager/kafka/kafka.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
