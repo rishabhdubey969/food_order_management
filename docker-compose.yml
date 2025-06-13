@@ -51,6 +51,14 @@ services:
     networks:
       - app-network
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # RabbitMQ AMQP protocol
+      - "15672:15672" # RabbitMQ management UI
+    networks:
+      - app-network
+      
 networks:
   app-network:
     driver: bridge
