@@ -9,7 +9,6 @@ import { UpdateRestaurantDto } from './dto/updateRestaurant.dto';
 import { Coupon } from './schema/copon.schema';
 import { CouponDto } from './dto/coupon.dto';
 import { UpdateCoponDto } from './dto/updateCoupon.dto';
-import Redis from 'ioredis';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from './redis/redis.service';
 
