@@ -28,10 +28,10 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-    origin: '*', 
-    methods: 'GET,POST,PUT,DELETE', 
-    credentials: true, 
-    allowedHeaders: 'Content-Type, Authorization', 
+    origin: '*',
+    methods: 'GET,POST,PUT,DELETE',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Authorization',
   });
 
   const swaggerConfig = new DocumentBuilder()
@@ -42,7 +42,7 @@ async function bootstrap() {
       {
         type: 'http',
         scheme: 'bearer',
-        bearerFormat: 'JWT'
+        bearerFormat: 'JWT',
       },
       'JWT',
     )
@@ -62,11 +62,10 @@ async function bootstrap() {
       },
     });
   await microserviceApp.listen();
-  
+
   console.log('Product Service (gRPC) is listening on port 7001');
   console.log(`Application is running on: ${port}`);
 }
 bootstrap();
-
 
 //172.50.1.20:5000

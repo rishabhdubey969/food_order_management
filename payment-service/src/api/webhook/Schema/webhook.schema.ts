@@ -4,8 +4,6 @@ import { StringifyOptions } from 'querystring';
 
 export type WebhookDocument = Webhook & Document;
 
-
-
 @Schema({
   timestamps: true,
 })
@@ -23,16 +21,16 @@ export class Webhook {
   eventType: string;
 
   @Prop({
-    type: Object, 
+    type: Object,
     required: true,
   })
-  payload: Record<string, any>; // Use Record<string, any> or any for flexible JSON
+  payload: Record<string, any>; 
 
   @Prop({
     required: true,
     index: true,
   })
-  createdAtStripe: Date; 
+  createdAtStripe: Date;
 
   @Prop({
     default: Date.now,
@@ -42,21 +40,19 @@ export class Webhook {
 
   @Prop({
     type: String,
-    
+
     index: true,
   })
-  processingStatus: String;
+  processingStatus: string;
 
   @Prop()
-  errorMessage?: string; 
+  errorMessage?: string;
 
-
-  @Prop({required:true})
-  orderId:string;
+  @Prop({ required: true })
+  orderId: string;
 
   @Prop()
-  amount:string
-  
+  amount: string;
 }
 
 export const WebhookSchema = SchemaFactory.createForClass(Webhook);

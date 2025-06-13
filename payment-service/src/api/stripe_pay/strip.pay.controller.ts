@@ -2,8 +2,7 @@ import {
   Controller,
   Post,
   Body,
-  Logger,
-  BadRequestException,
+  
   UseGuards,
 } from '@nestjs/common';
 
@@ -11,7 +10,13 @@ import { StripePayService } from './stripe.pay.service';
 import { CreatePaymentDto } from './DTO/create.payment.dto';
 import { StripeConfigService } from '../../config/stripe.config';
 import { GrpcMethod } from '@nestjs/microservices';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
 
 @ApiBearerAuth()
@@ -25,32 +30,28 @@ export class StripePayController {
 
   @GrpcMethod('PaymentService', 'GetPayStatus')
   async GetPayStatus(data: { orderId: string }) {
-    
     return this.paymentService.getPayStatus(data.orderId);
-  
   }
 
   @UseGuards(AuthGuard)
   @Post('checkout')
   @ApiOperation({ summary: 'Finalize order placement with payment method' })
-  @ApiBody({ type: CreatePaymentDto  })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiBody({ type: CreatePaymentDto })
+  @ApiResponse({
+    status: 201,
     description: 'Order placed successfully',
-    type: CreatePaymentDto
+    type: CreatePaymentDto,
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 402, description: 'Payment Failed' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   async createSession(@Body() payload: CreatePaymentDto) {
+    return await this.paymentService.createCheckoutSession(payload);
+  }
 
-      return await this.paymentService.createCheckoutSession(payload);
-
-    }
-  
   @Post('retry')
-  async checkEvent(orderId:string){
+  async checkEvent(orderId: string) {
     return this.paymentService.checkEvent(orderId);
-}
+  }
 }

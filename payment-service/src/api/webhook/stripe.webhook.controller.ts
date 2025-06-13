@@ -48,7 +48,6 @@ export class StripeWebhookController {
 
       await this.webhookService.handleWebhookEvent(event);
       return res.status(200).json({ received: true });
-      
     } catch (err) {
       this.logger.error('Webhook error:', err);
 
