@@ -63,83 +63,90 @@ The User Service is a critical component of our Food Order Management system, ha
 
    ```
 
-2. Install dependencies
+2. **Install dependencies**
+
+```bash
    npm install
 
-3. Build the project
+```
+
+3. **Build the project**
+
+```bash
    npm run build
 
-4. Start the service
+```
+
+4. ## Start the service
 
    # Development
 
+```bash
    npm run start:dev
 
-   # Production
+```
 
+# Production
+
+```bash
    npm run start:prod
 
-⚙️ Environment Setup
+```
+
+## ⚙️ Environment Setup
+
 Create a .env file in the root directory:
 
 # Application
 
+```bash
 PORT=3000
 NODE_ENV=development
 
+```
+
 # Database
 
+```bash
 MONGODB_URI=mongodb://localhost:27017/food_order_management
+
+```
 
 # JWT Authentication
 
+```bash
 JWT_SECRET=your_jwt_secret_key
 JWT_EXPIRES_IN=24h
 
+```
+
 # Email Configuration
 
+```bash
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-email-password
 EMAIL_FROM=noreply@yourapp.com
 
+```
+
 # OTP Configuration
 
+```bash
 OTP_EXPIRY=5 # minutes
 
-GitHub Copilot
-Install dependencies
+```
 
-Build the project
+## 📚 API Documentation
 
-Start the service
-
-⚙️ Environment Setup
-Create a .env file in the root directory:
-
-📚 API Documentation
 Authentication Endpoints
 
 1. Send OTP
 
-GitHub Copilot
-Install dependencies
+2. **User Registration**
 
-Build the project
-
-Start the service
-
-⚙️ Environment Setup
-Create a .env file in the root directory:
-
-📚 API Documentation
-Authentication Endpoints
-
-1. Send OTP
-
-2. User Registration
-
+```bash
 POST /auth/signup
 Content-Type: application/json
 
@@ -150,8 +157,11 @@ Content-Type: application/json
 "otp": "123456"
 }
 
-3. Forgot Password
+```
 
+3. **Forgot Password**
+
+```bash
 POST /auth/forgot-password
 Content-Type: application/json
 
@@ -159,7 +169,11 @@ Content-Type: application/json
 "email": "user@example.com"
 }
 
-4. Reset Password
+```
+
+4. **Reset Password**
+
+```bash
    POST /auth/reset-password/:token
    Content-Type: application/json
 
@@ -167,44 +181,72 @@ Content-Type: application/json
 "password": "NewSecurePass123!"
 }
 
-💻 Development
+```
+
+## 💻 Development
 
 # Run in development mode
 
+```bash
 npm run start:dev
+
+```
 
 # Generate API documentation
 
+```bash
 npm run doc:generate
+
+```
 
 # Lint code
 
+```bash
 npm run lint
+
+```
 
 # Format code
 
+```bash
 npm run format
 
-🧪 Testing# Unit tests
+```
+
+# 🧪 Testing# Unit tests
+
+```bash
 npm run test
+
+```
 
 # e2e tests
 
+```bash
 npm run test:e2e
+
+```
 
 # Test coverage
 
+```bash
 npm run test:cov
 
-🤝 Contributing
-Fork the repository
+```
+
+## 🤝 Contributing
+
+**Fork the repository**
 Create your feature branch (git checkout -b feature/AmazingFeature)
 Commit your changes (git commit -m 'Add some AmazingFeature')
 Push to the branch (git push origin feature/AmazingFeature)
 Open a Pull Request
 
-📝 Error Handling
+## 📝 Error Handling
+
 The service implements a global error handling mechanism with standardized error responses:
+
+```bash
 {
 "status": number,
 "message": string,
@@ -212,21 +254,31 @@ The service implements a global error handling mechanism with standardized error
 "timestamp": string
 }
 
-🔒 Security
+```
+
+## 🔒 Security
+
 Password hashing using bcrypt
 JWT token-based authentication
 Rate limiting on sensitive endpoints
 Input validation and sanitization
 CORS protection
-📈 API Response Format
 
-Success Response:{
+## 📈 API Response Format
+
+```bash
+Success Response:
+{
 "status": "success",
-"data": {
+"data":
+{
 // Response data
 }
 }
 
+```
+
+```bash
 Error Response:
 {
 "status": "error",
@@ -234,7 +286,10 @@ Error Response:
 "code": "ERROR_CODE"
 }
 
-📜 License
+```
+
+## 📜 License
+
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 <p align="center">Made with ❤️ by Your Rishabh Dubey</p>
