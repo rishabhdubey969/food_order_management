@@ -36,7 +36,7 @@ export class RestaurantController {
         return this.restaurantService.createRestaurant(createRestaurantDto, managerId);
     }
 
-    @UseGuards(UserGuard)
+    // @UseGuards(UserGuard)
     @Get('/nearby')
     @ApiOperation({ summary: 'Get nearby restaurants' })
     @ApiQuery({ name: 'latitude', required: true })
