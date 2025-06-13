@@ -146,7 +146,7 @@ export class RestaurantService {
 
     const restaurantIds = results.map(r => r._id);
 
-    return this.restaurantModel.find({ _id: { $in: restaurantIds } });
+    return this.restaurantModel.find({ _id: { $in: restaurantIds } }).exec();
   }
 
 
