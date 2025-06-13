@@ -48,7 +48,7 @@ async function bootstrap() {
   app.connectMicroservice(grpcOptions);
 
   await app.startAllMicroservices();
- app.enableCors({ origin: '*' });
+  app.enableCors({ origin: '*'});
   await app.listen(port);
 
   console.log(`HTTP server running on port ${port}`);
