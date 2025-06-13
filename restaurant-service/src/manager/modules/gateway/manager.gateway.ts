@@ -1,10 +1,7 @@
-import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, MessageBody, ConnectedSocket } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
-import { ManagerService } from 'src/manager/manager.service';
-
-
-import { ObjectId, Types } from 'mongoose';
+import { Logger } from '@nestjs/common';
+import { Types } from 'mongoose';
 import { KafkaService } from 'src/manager/kafka/kafka.service';
 
 @WebSocketGateway({
@@ -23,14 +20,10 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
   constructor(private readonly kafkaService: KafkaService){}
 
   async handleConnection(client: Socket & { data: { manager: { id: string } } }) {
-    // Manager is already validated by the guard at this point
     const managerId = client.data.manager.id;
     
     this.connectedManagers.set(managerId, client);
     this.logger.log(`Manager ${managerId} connected`);
-    
-    // Optional: Fetch full manager details if needed
-    // const fullManager = await this.managerService.getManagerById(managerId);
   }
 
   handleDisconnect(client: Socket & { data?: { manager?: { id: string } }}) {
@@ -40,17 +33,6 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
       this.logger.log(`Manager disconnected: ${managerId}`);
     }
   }
-
-  // async handleNewOrder(managerId: Types.ObjectId, cartData: any) {
-  //   const managerSocket = this.connectedManagers.get(managerId);
-  //   if (managerSocket) {
-  //       managerSocket.emit('newOrder', cartData);
-
-  //        managerSocket?.on('orderResponse', (data) => {
-  //         return data;
-  //       })
-  //   }
-  // }
   async handleIsFoodAvailable(managerId: Types.ObjectId, cartData: any): Promise<boolean> {
     const managerSocket = this.connectedManagers.get(managerId);
     if (!managerSocket) {
@@ -58,25 +40,16 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
     }
 
     return new Promise((resolve, reject) => {
-        // Timeout for no response
         const timeoutId = setTimeout(() => {
             reject(new Error('Manager response timeout'));
-        }, 30000); // 30 seconds timeout
-
-        // Send the order to manager's frontend
+        }, 30000); 
         managerSocket.emit('newOrder', cartData);
-
-        // Temporary listener for response
         const responseHandler = (data: { approved: boolean }) => {
             clearTimeout(timeoutId);
-            managerSocket.off('orderResponse', responseHandler); // Cleanup
+            managerSocket.off('orderResponse', responseHandler); 
             resolve(data.approved);
         };
-
         managerSocket.on('orderResponse', responseHandler);
     });
 }
-
- 
-
 }

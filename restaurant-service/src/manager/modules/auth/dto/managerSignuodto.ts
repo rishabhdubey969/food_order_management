@@ -12,9 +12,6 @@ export default class ManagerSignupDto {
   @IsEmail()
   email: string;
 
-  // @ApiProperty({ example: '+1234567890' })
-  // phone: number;
-
   @ApiProperty({ example: 'StrongPassword123' })
   @IsString()
   @IsNotEmpty()
@@ -42,8 +39,6 @@ export default class ManagerSignupDto {
   @IsNotEmpty()
   bankName: string;
 
-//   @Prop({ type: Date })
-// deletedAt: Date;
 }
 
 

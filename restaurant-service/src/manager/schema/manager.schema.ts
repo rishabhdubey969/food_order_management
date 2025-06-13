@@ -9,17 +9,8 @@ export class Manager {
   @Prop({ required: true, unique: true })
   email: string;
 
-  // @Prop({ required: true })
-  // phone: string;
-
   @Prop({ required: true })
   password: string;
-
-  // @Prop({ required: true })
-  // restaurantId: string;
-
-  // @Prop({ default: 'pending', enum: ['pending', 'active', 'rejected'] })
-  // isActive: string;
 
   @Prop()
   accountNumber: string;

@@ -22,8 +22,10 @@ import { CreateComplaintDto } from '../auth/dto/create-complaint.dto';
 export class ComplaintController {
   tokenService: any;
   constructor(private readonly complaintService: ComplaintService) {}
+  
 
   @Post('/:managerId')
+  @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Create a new complaint (User only)' })
   @ApiBody({
     description: 'Details of the complaint to be created',
@@ -44,6 +46,7 @@ export class ComplaintController {
   }
 
   @Patch('status/:id')
+  @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Update complaint status (Manager only)' })
   @ApiParam({ name: 'id', description: 'Complaint ID' })
   @ApiBody({ type: UpdateComplaintStatusDto })
@@ -57,17 +60,9 @@ export class ComplaintController {
   }
 
   @Get('manager/:managerId')
+  @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Get all complaints for this manager (Manager only)' })
   async getManagerComplaints(@Param('managerId') managerId: string) {
-    // const user = req['user'];
     return this.complaintService.getComplaintsForManager(managerId);
-  }
-
-  @Get('admin')
-  @ApiOperation({ summary: 'Get all complaints with manager and restaurant info (Admin only)' })
-  async getAllComplaints(@Req() req: Request) {
-    const user = req['user'];
-    console.log("Controller", user);
-    return this.complaintService.getAllComplaints(user);
   }
 }

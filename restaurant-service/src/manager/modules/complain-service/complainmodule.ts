@@ -5,7 +5,6 @@ import { ComplaintService } from './complainservice';
 import { ComplaintController } from './complaincontroller';
 import { TokenModule } from '../token/token.module';
 import { JwtAuthGuard } from '../auth/guards/authguard';
-import { MailerService } from '../../common/mailer.service';
 import { Order, OrderSchema } from '../../schema/order.schema';
 import { MailerModule } from '@nestjs-modules/mailer';
 
@@ -16,7 +15,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
     TokenModule,
     MailerModule,
   ],
-  providers: [ComplaintService, JwtAuthGuard,MailerService],
+  providers: [ComplaintService, JwtAuthGuard],
   controllers: [ComplaintController],
 })
 export class ComplaintModule {}

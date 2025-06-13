@@ -3,10 +3,8 @@ import {
   Controller,
   Get,
   Post,
-  Query,
   Param,
   Put,
-  Delete,
   UseGuards,
   Headers,
 } from '@nestjs/common';
@@ -16,17 +14,13 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBody,
-  ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
 import ManagerLoginDto from 'src/manager/modules/auth/dto/managerLogindto';
 import ManagerSignupDto from 'src/manager/modules/auth/dto/managerSignuodto';
 import { ManagerService } from './manager.service';
-import { EventPattern, GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
-import { Roles } from 'src/manager/common/roles.decorator';
-import { AdminGuard } from 'src/manager/modules/auth/guards/admin.guard';
+import {GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
 import { JwtAuthGuard } from './modules/auth/guards/authguard';
-import { AuthGuard } from '@nestjs/passport';
 import { Types } from 'mongoose';
 
 @ApiTags('Manager')
@@ -63,10 +57,12 @@ logout(@Headers('authorization') authHeader: string) {
   return this.managerService.logout(token);
 }
 
-   @UseGuards(JwtAuthGuard)
-     @Get("/:id")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT')
+  @Get("/:id")
   @ApiOperation({ summary: 'Get Manager by ID' })
-  @ApiQuery({ name: 'id', required: true, description: 'Manager ID' })
+  // @ApiQuery({ name: 'id', required: true, description: 'Manager ID' })
+  @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, description: 'Manager details fetched successfully' })
   getManagerById(@Param('id') id: string) {
     console.log(id);
@@ -74,6 +70,7 @@ logout(@Headers('authorization') authHeader: string) {
   }
   
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT')
   @Put('update/:id')
   @ApiOperation({ summary: 'Update Manager Details' })
   @ApiParam({ name: 'id', required: true, description: 'Manager ID' })

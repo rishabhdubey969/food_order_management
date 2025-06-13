@@ -5,8 +5,6 @@ export type ComplaintDocument = Complaint & Document;
 
 @Schema({ timestamps: true })
 export class Complaint {
-  // @Prop({ required: true })
-  // managerId: string;
 
   @Prop({ required: true })
   userId: string;

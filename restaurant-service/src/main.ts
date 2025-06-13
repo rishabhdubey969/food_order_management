@@ -1,8 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { join } from 'path';
-import { ManagerModule } from './manager/manager.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { GlobalExceptionFilter } from './manager/common/global-exception.filter';
@@ -12,7 +10,6 @@ async function bootstrap() {
    const app = await NestFactory.create(AppModule);
    app.useGlobalFilters(new GlobalExceptionFilter());
   
-  // Add validation pipe
   app.useGlobalPipes(new ValidationPipe({
     transform: true,
     whitelist: true,      
@@ -33,8 +30,8 @@ async function bootstrap() {
   const port = configService.get<number>('PORT') || 3005; 
  
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('API with NestJS')
-    .setDescription('API developed throughout the API with NestJS course')
+    .setTitle('Manager and Restaurant API')
+    .setDescription('API with NestJS')
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -49,15 +46,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
   
-  const restaurantPort: number = Number(process.env.RESTAURANT_PORT||3005);
   
-  const grpcMicroservice = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.GRPC,
-    options: {
-      package: 'auth',
-      protoPath:  'src/manager/grpc/proto/auth.proto',
-    },
-  });
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,
     options: {

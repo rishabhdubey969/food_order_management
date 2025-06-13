@@ -3,32 +3,24 @@ import {
   BadRequestException,
   NotFoundException,
   UnauthorizedException,
-  Inject,
-  OnModuleInit,
   InternalServerErrorException,
-  ForbiddenException,
   Logger,
-  HttpException,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Collection, Connection, Model, Types ,isValidObjectId} from 'mongoose';
+import {Connection, Model, Types ,isValidObjectId} from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import ManagerLoginDto from 'src/manager/modules/auth/dto/managerLogindto';
 import ManagerSignupDto from 'src/manager/modules/auth/dto/managerSignuodto';
-import { Manager, ManagerDocument } from './schema/manager.schema';
+import { Manager } from './schema/manager.schema';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from 'src/manager/constants/errorand success';
 import { TokenService } from 'src/manager/modules/token/token.service';
-import { ClientGrpc } from '@nestjs/microservices';
 import { ManagerGateway } from 'src/manager/modules/gateway/manager.gateway';
-import { Order, OrderDocument } from './schema/order.schema';
-import { async } from 'rxjs';
 import { ObjectId } from 'mongodb';
 import { KafkaService } from './kafka/kafka.service';
 
 @Injectable()
 export class ManagerService  {
   private readonly logger = new Logger(ManagerService.name);
-  private cartCollection: Collection;
   cartService: any;
   orderService: any;
 
@@ -56,10 +48,7 @@ export class ManagerService  {
     const hashedPassword = await bcrypt.hash(password, 10);
     const newManager = new this.managerModel({
       ...managerSignupDto,
-      password: hashedPassword,
-      isActiveManager: false,
-      isdeleted: false,
-      
+      password: hashedPassword
     });
 
     const savedManager = await newManager.save();
@@ -70,7 +59,6 @@ export class ManagerService  {
         id: savedManager._id,
         name: savedManager.name,
         email: savedManager.email,
-        // phone: savedManager.phone,
         accountNumber: savedManager.accountNumber,
         ifscCode: savedManager.ifscCode,
         bankName: savedManager.bankName,
@@ -109,7 +97,7 @@ export class ManagerService  {
       role: 'manager',
     };
 
-    const token = await this.tokenService.sign(payload);
+    const token = this.tokenService.sign(payload);
 
     return {
       message: SUCCESS_MESSAGES.MANAGER_LOGIN,
@@ -118,7 +106,6 @@ export class ManagerService  {
         id: manager._id,
         name: manager.name,
         email: manager.email,
-        // phone: manager.phone,
       },
     };
   }
@@ -126,7 +113,7 @@ export class ManagerService  {
   async logout(token: string) {
     try {
       await this.tokenService.verify(token);
-      await this.tokenService.blacklistToken(token);
+      // this.tokenService.blacklistToken(token);
 
       return {
         message: SUCCESS_MESSAGES.LOGOUT_SUCCESS,
@@ -150,7 +137,6 @@ export class ManagerService  {
           id: manager._id,
           name: manager.name,
           email: manager.email,
-          // phone: manager.phone,
         },
       };
     } catch (error) {
@@ -158,19 +144,17 @@ export class ManagerService  {
       throw error;
     }
   }
-
   async updateManager(id: string, updateManagerDto: Partial<ManagerSignupDto>) {
     try {
       const updatedManager = await this.managerModel.findByIdAndUpdate(
-        id,
-        updateManagerDto,
-        { new: true },
+        {
+          _id: id,
+          ...updateManagerDto,
+        }
       );
-
       if (!updatedManager) {
         throw new NotFoundException(ERROR_MESSAGES.MANAGER_NOT_FOUND);
       }
-
       return {
         message: SUCCESS_MESSAGES.MANAGER_UPDATED,
         data: updatedManager,
@@ -185,18 +169,14 @@ export class ManagerService  {
     if (!cartId || !isValidObjectId(cartId)) {
       throw new BadRequestException('Invalid cart ID');
     }
-
     const cartData = await this.connection.collection('carts').findOne({_id: cartId});
-    
     if (!cartData) {
       throw new NotFoundException(`Cart with ID ${cartId} not found`);
     }
-
     const restaurantId = cartData.restaurantId;
     if (!restaurantId) {
       throw new BadRequestException('Cart has no associated restaurant');
     }
-
     const manager = await this.managerModel.findOne(
       { restaurantId: restaurantId }, 
       { _id: 1 }
