@@ -8,10 +8,12 @@ import { AuthService } from '../auth/auth.service';
 import { Admin, AdminSchema } from '../auth/entities/admin.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
+   
+    EmailModule,
     JwtModule.register({
           secret: process.env.JWT_SECRET || 'yourSecretKey',
           signOptions: { expiresIn: '24h' },

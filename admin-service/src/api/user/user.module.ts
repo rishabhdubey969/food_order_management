@@ -6,10 +6,11 @@ import { UserController } from './user.controller';
 import { User, UserSchema } from './entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+   EmailModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'yourSecretKey',
       signOptions: { expiresIn: '24h' },

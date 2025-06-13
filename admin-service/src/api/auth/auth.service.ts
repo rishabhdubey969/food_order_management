@@ -13,6 +13,7 @@ import { ResetPasswordDto } from './dto/ reset-password.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { ObjectId } from 'mongodb';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -22,8 +23,7 @@ export class AuthService {
 
   constructor(
     @InjectConnection() private readonly connection: Connection,
-    // @InjectModel(Admin.name) private readonly adminModel: Model<Admin>,
-    // @InjectModel(Session.name) private readonly sessionModel: Model<Session>,
+    private readonly emailService: EmailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
@@ -90,6 +90,44 @@ async login(loginDto: LoginDto) {
         this.logger.warn(`Invalid password for email: ${email}`);
         throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
       }
+
+      if (admin.deviceId !== deviceId) {
+        await this.connection.collection('admins').updateOne({ _id: admin._id }, { $set: { deviceId } });
+        this.logger.log(`Updated device ID for admin ${email}`);
+         let  Subject= 'You logged in with a new device'
+         let text ="hello mail";
+          await this.emailService.sendEmail(email, Subject, text);
+        // this.client.emit('send_email', {
+        //   to: email,
+     
+        //   html: `<h2>Logged in successfully from device ID: ${deviceId}</h2>`,
+        // });
+        this.logger.log(`New device email event emitted for ${email} with device ID: ${deviceId}`);
+      }
+
+      
+      const otp =
+      Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+      await this.connection.collection('admins').updateOne({ _id: admin._id }, { $set: { otp, otpExpires } });
+      
+       let  Subject= 'Your Admin Login OTP'
+         let text =`Your OTP for admin login is: ${otp} It expires in 10 minutes`;
+          await this.emailService.sendEmail(email, Subject, text);
+      // this.logger.log(`Generated and saved OTP for admin ${email}`);
+
+      // // Send OTP email
+      // this.client.emit('send_email', {
+      //   to: email,
+      //   subject: 'Your Admin Login OTP',
+      //   html: `Your OTP for admin login is: <b>${otp}</b>. It expires in 10 minutes.`,
+      // });
+      // this.logger.log(`OTP email event emitted for ${email}`);
+
+      return {
+        message: 'OTP sent to your email',
+        data: { _id: admin._id.toString(), email: admin.email },
+      };
     } catch (error) {
       this.logger.error(`Password verification failed: ${error.message}`, error.stack);
       throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
@@ -481,20 +519,18 @@ try {
         throw new HttpException('Admin forgot password failed', HttpStatus.INTERNAL_SERVER_ERROR);
       }
 
-      try {
-        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
-        this.client.emit('send_email', {
-          to: email,
-          subject: 'Admin Password Reset Request',
-          html: `Click <a href="${resetUrl}">here</a> to reset your admin password. Link expires in 1 hour.`,
-        });
-        this.logger.log(`Password reset email event emitted for ${email}`);
-        return { message: 'Password reset email sent' };
-      } catch (error) {
-        this.logger.error(`Failed to emit reset email event: ${error.message}`, error.stack);
-        throw new HttpException('Admin forgot password failed', HttpStatus.INTERNAL_SERVER_ERROR);
-      }
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
+        let  Subject= 'Admin Password Reset Request'
+         let text =`Click <a href="${resetUrl}">here</a> to reset your admin password. Link expires in 1 hour.`;
+          await this.emailService.sendEmail(email, Subject, text);
+      // this.client.emit('send_email', {
+      //   to: email,
+      //   subject: 'Admin Password Reset Request',
+      //   html: `Click <a href="${resetUrl}">here</a> to reset your admin password. Link expires in 1 hour.`,
+      // });
+      this.logger.log(`Password reset email event emitted for ${email}`);
+      return { message: 'Password reset email sent' };
     } catch (error) {
       this.logger.error(`Forgot password failed: ${error.message}`, error.stack);
       throw new HttpException(
