@@ -13,7 +13,7 @@ export class ErrorInterceptor implements NestInterceptor {
     return next.handle().pipe(
       catchError((err) => {
         return throwError(
-          () => new BadRequestException(err.message || 'Unexpected error'),
+          () => new BadRequestException(err.message ),
         );
       }),
     );

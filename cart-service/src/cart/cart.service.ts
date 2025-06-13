@@ -10,10 +10,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Cart, CartDocument } from './schema/cart.schema';
 import { Address, AddressDocument } from './schema/address.schema';
-import { Coupon, CouponDocument } from './schema/coupon.schema';
+import {  CouponDocument } from './schema/coupon.schema';
 import { Restaurant } from './schema/restaurant.schema';
 import Redis from 'ioredis';
 import { MenuItem } from './schema/menu-item.schema';
+import { EventPattern } from '@nestjs/microservices';
 
 @Injectable()
 export class CartService {
@@ -53,60 +54,6 @@ export class CartService {
   private calculateDeliveryCharges(distance: number): number {
     return Math.ceil(distance) * 5;
   }
-
-  // async removeItemService(cartId: string, itemId: string) {
-  //   this.logger.log(`Attempting to remove item ${itemId} from cart ${cartId}`);
-  //   const cart = await this.cartModel.findById(cartId);
-  //   if (!cart) {
-  //     this.logger.warn(`Cart ${cartId} not found`);
-  //     throw new NotFoundException('Cart not found');
-  //   }
-
-  //   const itemIndex = cart.items.findIndex(item => item.itemId.toString() === itemId);
-  //   if (itemIndex === -1) {
-  //     this.logger.warn(`Item ${itemId} not found in cart`);
-  //     throw new NotFoundException('Item not found in cart');
-  //   }
-
-  //   this.logger.verbose(`Item ${itemId} found at index ${itemIndex}`);
-
-  //   const taxPercent = 5;
-  //   const item = cart.items[itemIndex];
-  //   item.quantity -= 1;
-
-  //   if (item.quantity <= 0) {
-  //     cart.items.splice(itemIndex, 1);
-  //     this.logger.log(`Item ${itemId} removed completely from cart`);
-  //   } else {
-  //     item.tax = (item.price * item.quantity * taxPercent) / 100;
-  //     this.logger.log(`Item ${itemId} quantity decreased to ${item.quantity}`);
-  //   }
-
-  //   if (cart.items.length === 0) {
-  //     await this.cartModel.deleteOne({ _id: cart._id });
-  //     this.logger.warn(`Cart ${cartId} deleted because no items left`);
-  //     return { message: 'Cart deleted because no items left' };
-  //   }
-
-  //   const itemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  //   const tax = (itemTotal * taxPercent) / 100;
-  //   const total = Math.round(itemTotal + cart.deliveryCharges + cart.platformFee + tax - (cart.discount || 0));
-
-  //   Object.assign(cart, {
-  //     itemTotal,
-  //     subtotal: itemTotal,
-  //     tax,
-  //     total,
-  //   });
-
-  //   await cart.save();
-
-  //   this.logger.log(`Cart ${cartId} updated successfully`);
-  //   return {
-  //     message: 'Item quantity updated',
-  //     updatedCart: cart,
-  //   };
-  // }
 
   async removeItemService(userId: string, itemId: string) {
     this.logger.log(`Attempting to remove item ${itemId} from user ${userId}'s cart`);
@@ -163,46 +110,55 @@ export class CartService {
   
 
 
-  async addToCartService(userId: string, itemId: string) {
+  async addToCartService(userId: string, restaurantId: string, itemId: string) {
     this.logger.log(`Adding item ${itemId} to cart for user ${userId}`);
-    const item = await this.menuItemModel.findById(itemId);
-    if (!item) {
-      this.logger.warn(`Item ${itemId} not found`);
-      throw new NotFoundException('Item not found');
-    }
-
-    const restaurantId = item.restaurantId;
+  
+    let cart = await this.cartModel.findOne({ userId });
+  
     const restaurant = await this.restaurantModel.findById(restaurantId);
     if (!restaurant) {
       this.logger.warn(`Restaurant ${restaurantId} not found`);
       throw new NotFoundException('Restaurant not found');
     }
-
-    let cart = await this.cartModel.findOne({ userId });
-    if (cart && cart.restaurantId.toString() !== restaurantId.toString()) {
-      this.logger.warn(`User ${userId} tried to add item from different restaurant`);
-      throw new ConflictException('You already have a cart for another restaurant. Please clear it first.');
+  
+    const item = await this.menuItemModel.findById(itemId);
+    if (!item) {
+      this.logger.warn(`Item ${itemId} not found`);
+      throw new NotFoundException('Item not found');
     }
-
+  
+    if (cart) {
+      if (cart.restaurantId.toString() !== restaurantId.toString()) {
+        this.logger.warn(`User ${userId} has a cart for another restaurant`);
+        throw new ConflictException('You already have a cart for another restaurant. Please clear it first.');
+      }
+  
+      if (item.restaurantId.toString() !== restaurantId.toString()) {
+        this.logger.warn(`Item ${itemId} does not belong to restaurant ${restaurantId}`);
+        throw new ConflictException('This item does not belong to the restaurant in your cart');
+      }
+    }
+  
     const redisKey = `address:${userId}:coordinates`;
     const redisValue = await this.redisClient.get(redisKey);
     const { latitude: userLat = 12.9715, longitude: userLon = 77.5946 } = redisValue
       ? JSON.parse(redisValue)
       : {};
-
+  
     const restLat = Number(restaurant.location.coordinates[1]);
     const restLon = Number(restaurant.location.coordinates[0]);
-
+  
     if ([userLat, userLon, restLat, restLon].some(coord => isNaN(coord))) {
       this.logger.error('Invalid location coordinates');
       throw new BadRequestException('Invalid location coordinates');
     }
-
+  
+  
     const distance = this.calculateDistance(userLat, userLon, restLat, restLon);
     const deliveryCharges = this.calculateDeliveryCharges(distance);
     const platformFee = 9;
     const taxPercent = 5;
-
+  
     const newItem = {
       itemId: item._id as string,
       name: item.name,
@@ -210,12 +166,13 @@ export class CartService {
       price: item.price,
       tax: (item.price * taxPercent) / 100,
     };
-
+  
+   
     if (!cart) {
       const itemTotal = item.price;
       const tax = (itemTotal * taxPercent) / 100;
       const total = Math.round(itemTotal + tax + deliveryCharges + platformFee);
-
+  
       cart = new this.cartModel({
         userId,
         restaurantId,
@@ -231,8 +188,10 @@ export class CartService {
         couponCode: null,
         couponId: null,
       });
+  
       this.logger.log(`New cart created for user ${userId}`);
     } else {
+      
       const existingItemIndex = cart.items.findIndex(i => i.itemId === itemId);
       if (existingItemIndex !== -1) {
         cart.items[existingItemIndex].quantity += 1;
@@ -240,16 +199,16 @@ export class CartService {
           (cart.items[existingItemIndex].price *
             cart.items[existingItemIndex].quantity *
             taxPercent) / 100;
-        this.logger.verbose(`Item ${itemId} quantity increased`);
+        this.logger.verbose(`Increased quantity of item ${itemId}`);
       } else {
         cart.items.push(newItem);
-        this.logger.verbose(`Item ${itemId} added to existing cart`);
+        this.logger.verbose(`Added item ${itemId} to existing cart`);
       }
-
+  
       const itemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
       const tax = (itemTotal * taxPercent) / 100;
       const total = Math.round(itemTotal + tax + deliveryCharges + platformFee - (cart.discount || 0));
-
+  
       Object.assign(cart, {
         itemTotal,
         subtotal: itemTotal,
@@ -259,18 +218,19 @@ export class CartService {
         platformFee,
         distanceInKm: parseFloat(distance.toFixed(2)),
       });
-
+  
       this.logger.log(`Cart for user ${userId} updated`);
     }
-
+  
     await cart.save();
-
+  
     return {
       message: 'Item added to cart',
       cart,
     };
   }
-
+  
+  @EventPattern('orderCreated')
   async deleteCartService(userId: string) {
     this.logger.warn(`Deleting cart for user ${userId}`);
     const cart = await this.cartModel.findOne({ userId });

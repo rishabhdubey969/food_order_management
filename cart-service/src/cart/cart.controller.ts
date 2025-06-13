@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
@@ -35,6 +34,8 @@ export class CartController {
   @ApiParam({ name: 'restaurantId', type: 'string' })
   @ApiParam({ name: 'itemId', type: 'string' })
   @ApiResponse({ status: 201, description: 'Item added to cart successfully' })
+  @ApiResponse({ status: 404, description: 'Item or restaurant not found' })
+  @ApiResponse({ status: 409, description: 'Cart already exists for a different restaurant' })
   async addToCart(
     @Param('userId') userId: string,
     @Param('restaurantId') restaurantId: string,
@@ -43,7 +44,7 @@ export class CartController {
   ) {
     // const userId = req.user.userId; 
     this.logger.log(`Adding item ${itemId} to user ${userId}'s cart`);
-    return this.cartService.addToCartService(userId, itemId);
+    return this.cartService.addToCartService(userId, restaurantId, itemId );
   }
 
   @Post('remove/:userId/:itemId')
@@ -51,6 +52,7 @@ export class CartController {
   @ApiParam({ name: 'userId', type: 'string' })
   @ApiParam({ name: 'itemId', type: 'string' })
   @ApiResponse({ status: 200, description: 'Item removed or quantity decreased' })
+  @ApiResponse({ status: 404, description: 'Cart or item not found in cart' })
   async removeItem(
     @Param('userId') userId: string,
     @Param('itemId') itemId: string,
@@ -67,6 +69,7 @@ export class CartController {
   @ApiOperation({ summary: 'Delete user’s active cart' })
   @ApiParam({ name: 'userId', type: 'string' })
   @ApiResponse({ status: 200, description: 'Cart deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Cart not found for user' })
   async deleteCart(
     @Param('userId') userId: string,
     // @Req() req 
@@ -82,6 +85,7 @@ export class CartController {
   @ApiOperation({ summary: 'Get user’s active cart' })
   @ApiParam({ name: 'userId', type: 'string' })
   @ApiResponse({ status: 200, description: 'User cart retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Cart not found for user' })
   async getCart(
     @Param('userId') userId: string,
     // @Req() req 
@@ -97,6 +101,7 @@ export class CartController {
   @ApiOperation({ summary: 'Get all available coupons for a restaurant' })
   @ApiParam({ name: 'restaurantId', type: 'string' })
   @ApiResponse({ status: 200, description: 'Coupons retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Restaurant or coupons not found' })
   async getCoupons(@Param('restaurantId') restaurantId: string) {
     this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`);
     return this.cartService.viewCouponsService(restaurantId);
@@ -109,6 +114,8 @@ export class CartController {
   @ApiParam({ name: 'userId', type: 'string' })
   @ApiParam({ name: 'couponId', type: 'string' })
   @ApiResponse({ status: 200, description: 'Coupon applied successfully' })
+  @ApiResponse({ status: 404, description: 'Cart or coupon not found' })
+  @ApiResponse({ status: 400, description: 'Coupon not applicable or already applied' })
   async applyCoupon(
     @Param('userId') userId: string,
     @Param('couponId') couponId: string,
@@ -118,4 +125,6 @@ export class CartController {
     this.logger.log(`Applying coupon ${couponId} to user ${userId}'s cart`);
     return this.cartService.applyCouponService(userId, couponId);
   }
+
+  
 }
