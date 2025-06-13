@@ -74,7 +74,7 @@ export class Order {
   @Prop({ required: true, index: true })
   cartId: string;
 
-  @Prop({ required: true, index: true })
+  @Prop({required: true, index: true })
   paymentId: string;
 
   @Prop({ 
