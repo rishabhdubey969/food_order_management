@@ -18,6 +18,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { PaymmentDoc, RetryDoc } from 'src/swagger/stripe_pay.swagger';
 
 @ApiBearerAuth()
 @ApiTags('Order')
@@ -35,22 +36,14 @@ export class StripePayController {
 
   @UseGuards(AuthGuard)
   @Post('checkout')
-  @ApiOperation({ summary: 'Finalize order placement with payment method' })
-  @ApiBody({ type: CreatePaymentDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Order placed successfully',
-    type: CreatePaymentDto,
-  })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 402, description: 'Payment Failed' })
-  @ApiResponse({ status: 404, description: 'Not Found' })
+  @PaymmentDoc()
   async createSession(@Body() payload: CreatePaymentDto) {
     return await this.paymentService.createCheckoutSession(payload);
   }
 
+  @UseGuards(AuthGuard)
   @Post('retry')
+  @RetryDoc()
   async checkEvent(orderId: string) {
     return this.paymentService.checkEvent(orderId);
   }

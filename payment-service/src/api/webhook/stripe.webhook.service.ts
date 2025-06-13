@@ -386,12 +386,24 @@ export class StripeWebhookService {
         status,
       );
 
+      const paymentHistory = await this.paymentService.updatePaymentHistory(
+        sessionId,
+        status
+      )
+
       if (!payment) {
         this.logger.warn(`Payment not found for session ID: ${sessionId}`);
         throw new NotFoundException(
           `Payment not found for session ID: ${sessionId}`,
         );
+
       }
+      if(!paymentHistory){
+      this.logger.warn(`Payment not found for session ID: ${sessionId}`);
+      throw new NotFoundException(
+        `Payment not found for session ID: ${sessionId}`,
+      );}
+      
 
       this.logger.log(
         `Updated payment status to ${status} for payment ID: ${sessionId}`,

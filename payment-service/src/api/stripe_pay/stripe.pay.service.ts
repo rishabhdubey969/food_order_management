@@ -7,7 +7,7 @@ import {
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model } from 'mongoose';
 import Stripe from 'stripe';
-import { Payment, PaymentDocument } from './Schema/stripe.pay.schema';
+import { Payment, PaymentDocument, paymentHistory, paymentHistoryDocument } from './Schema/stripe.pay.schema';
 import { ConfigService } from '@nestjs/config';
 import { errorService } from 'src/error/error.service';
 import { StripeConfigService } from '../../config/stripe.config';
@@ -27,6 +27,8 @@ export class StripePayService {
   constructor(
     @InjectModel(Payment.name)
     private paymentModel: Model<PaymentDocument>,
+    @InjectModel(paymentHistory.name)
+    private paymentHistoryModel : Model<paymentHistoryDocument>,
     private readonly configService: ConfigService,
     private errorService: errorService,
     private stripeConfig: StripeConfigService,
@@ -48,6 +50,7 @@ export class StripePayService {
         throw new BadRequestException('order does not exist');
       }
       const total_amount = orderData?.total;
+      const userId = orderData.userId;
 
       const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -72,6 +75,7 @@ export class StripePayService {
         payment_intent_data: {
           metadata: {
             orderId: orderId,
+            userId:userId
           },
         },
       });
@@ -84,7 +88,21 @@ export class StripePayService {
         status: 'pending',
       });
 
+
       await payment.save();
+
+      const paymentHistory = new this.paymentHistoryModel({
+        orderId: orderId,
+        amount: total_amount,
+        currency: 'usd',
+        sessionId: session.id,
+        status: 'pending',
+        userId:userId
+      })
+
+      await paymentHistory.save();
+
+      
 
       return { url: session.url };
     } catch (error) {
@@ -103,6 +121,15 @@ export class StripePayService {
       { new: true },
     );
     return payment;
+  }
+
+  async updatePaymentHistory(sessionId:string,status:string){
+    const paymentHistory = await this.paymentModel.findByIdAndUpdate(
+      { sessionId },
+      { status },
+      { new: true },
+    );
+    return paymentHistory;
   }
 
   async extractPaymentDetails(orderId: string) {
@@ -140,4 +167,7 @@ export class StripePayService {
     //   return "Payment Failed"
     // }
   }
+
+
+
 }
