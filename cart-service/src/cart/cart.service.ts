@@ -54,26 +54,79 @@ export class CartService {
     return Math.ceil(distance) * 5;
   }
 
-  async removeItemService(cartId: string, itemId: string) {
-    this.logger.log(`Attempting to remove item ${itemId} from cart ${cartId}`);
-    const cart = await this.cartModel.findById(cartId);
+  // async removeItemService(cartId: string, itemId: string) {
+  //   this.logger.log(`Attempting to remove item ${itemId} from cart ${cartId}`);
+  //   const cart = await this.cartModel.findById(cartId);
+  //   if (!cart) {
+  //     this.logger.warn(`Cart ${cartId} not found`);
+  //     throw new NotFoundException('Cart not found');
+  //   }
+
+  //   const itemIndex = cart.items.findIndex(item => item.itemId.toString() === itemId);
+  //   if (itemIndex === -1) {
+  //     this.logger.warn(`Item ${itemId} not found in cart`);
+  //     throw new NotFoundException('Item not found in cart');
+  //   }
+
+  //   this.logger.verbose(`Item ${itemId} found at index ${itemIndex}`);
+
+  //   const taxPercent = 5;
+  //   const item = cart.items[itemIndex];
+  //   item.quantity -= 1;
+
+  //   if (item.quantity <= 0) {
+  //     cart.items.splice(itemIndex, 1);
+  //     this.logger.log(`Item ${itemId} removed completely from cart`);
+  //   } else {
+  //     item.tax = (item.price * item.quantity * taxPercent) / 100;
+  //     this.logger.log(`Item ${itemId} quantity decreased to ${item.quantity}`);
+  //   }
+
+  //   if (cart.items.length === 0) {
+  //     await this.cartModel.deleteOne({ _id: cart._id });
+  //     this.logger.warn(`Cart ${cartId} deleted because no items left`);
+  //     return { message: 'Cart deleted because no items left' };
+  //   }
+
+  //   const itemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  //   const tax = (itemTotal * taxPercent) / 100;
+  //   const total = Math.round(itemTotal + cart.deliveryCharges + cart.platformFee + tax - (cart.discount || 0));
+
+  //   Object.assign(cart, {
+  //     itemTotal,
+  //     subtotal: itemTotal,
+  //     tax,
+  //     total,
+  //   });
+
+  //   await cart.save();
+
+  //   this.logger.log(`Cart ${cartId} updated successfully`);
+  //   return {
+  //     message: 'Item quantity updated',
+  //     updatedCart: cart,
+  //   };
+  // }
+
+  async removeItemService(userId: string, itemId: string) {
+    this.logger.log(`Attempting to remove item ${itemId} from user ${userId}'s cart`);
+    
+    const cart = await this.cartModel.findOne({ userId });
     if (!cart) {
-      this.logger.warn(`Cart ${cartId} not found`);
+      this.logger.warn(`Cart not found for user ${userId}`);
       throw new NotFoundException('Cart not found');
     }
-
+  
     const itemIndex = cart.items.findIndex(item => item.itemId.toString() === itemId);
     if (itemIndex === -1) {
       this.logger.warn(`Item ${itemId} not found in cart`);
       throw new NotFoundException('Item not found in cart');
     }
-
-    this.logger.verbose(`Item ${itemId} found at index ${itemIndex}`);
-
+  
     const taxPercent = 5;
     const item = cart.items[itemIndex];
     item.quantity -= 1;
-
+  
     if (item.quantity <= 0) {
       cart.items.splice(itemIndex, 1);
       this.logger.log(`Item ${itemId} removed completely from cart`);
@@ -81,32 +134,34 @@ export class CartService {
       item.tax = (item.price * item.quantity * taxPercent) / 100;
       this.logger.log(`Item ${itemId} quantity decreased to ${item.quantity}`);
     }
-
+  
     if (cart.items.length === 0) {
       await this.cartModel.deleteOne({ _id: cart._id });
-      this.logger.warn(`Cart ${cartId} deleted because no items left`);
+      this.logger.warn(`Cart for user ${userId} deleted because no items left`);
       return { message: 'Cart deleted because no items left' };
     }
-
+  
     const itemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const tax = (itemTotal * taxPercent) / 100;
     const total = Math.round(itemTotal + cart.deliveryCharges + cart.platformFee + tax - (cart.discount || 0));
-
+  
     Object.assign(cart, {
       itemTotal,
       subtotal: itemTotal,
       tax,
       total,
     });
-
+  
     await cart.save();
-
-    this.logger.log(`Cart ${cartId} updated successfully`);
+  
+    this.logger.log(`Cart for user ${userId} updated successfully`);
     return {
       message: 'Item quantity updated',
       updatedCart: cart,
     };
   }
+  
+
 
   async addToCartService(userId: string, itemId: string) {
     this.logger.log(`Adding item ${itemId} to cart for user ${userId}`);
