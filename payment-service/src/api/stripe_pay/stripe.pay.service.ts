@@ -115,6 +115,7 @@ export class StripePayService {
       currency: payment.currency,
       status: payment.status,
       sessionId: payment.sessionId,
+     
     };
   }
 
@@ -123,8 +124,19 @@ export class StripePayService {
     return {
       paymentID: paymentdetails.paymentId,
       paymentStatus: paymentdetails.status,
-      paymentmessage: 'Successful',
-      paymentmode: 'Card',
     };
+  }
+
+
+  async checkEvent(orderId:string){
+    const sessionId = await this.paymentModel.findOne({orderId:orderId})
+    // const status = await this.webhookService.eventUpdate(sessionId);
+    // if(status === 1){
+    //   return "Payment Successful"
+    // }
+    // else{
+    //   return "Payment Failed"
+    // }
+    
   }
 }

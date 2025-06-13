@@ -47,15 +47,16 @@ export class StripeWebhookController {
         );
 
       await this.webhookService.handleWebhookEvent(event);
+      return res.status(200).json({ received: true });
       
     } catch (err) {
       this.logger.error('Webhook error:', err);
 
       if (err.type === 'StripeSignatureVerificationError') {
-        return res.status(400).send(`Webhook Error: ${err.message}`);
+        return res.status(400).json({ error: `Webhook Error: ${err.message}` });
       }
 
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+      return res.status(400).json({ error: `Webhook Error: ${err.message}` });
     }
   }
 }

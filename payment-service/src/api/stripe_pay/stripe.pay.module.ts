@@ -10,6 +10,7 @@ import { StripeConfigService } from '../../config/stripe.config';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
+import { StripeWebhookModule } from '../webhook/stripe.webhook.module';
 
 @Module({
   imports: [

@@ -399,4 +399,12 @@ export class StripeWebhookService {
       throw error;
     }
   }
+
+   async eventUpdate(sessionId:string){
+    const event = await this.webhookModel.findOne({sessionId:sessionId})
+    if(event?.processingStatus === "succeeded"){
+      return 1
+    }
+    else return 0
+   }
 }

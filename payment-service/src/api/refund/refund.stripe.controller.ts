@@ -6,7 +6,6 @@ export class RefundStripeController {
   constructor(private readonly stripeService: RefundStripeService) {}
 
   @Post('refund')
-  // @HttpCode(200)
   async refundPayment(@Body() body: { orderId: string }) {
     const { orderId } = body;
     const refund = await this.stripeService.createRefund(orderId);

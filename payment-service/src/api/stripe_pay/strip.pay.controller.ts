@@ -13,7 +13,6 @@ import { StripeConfigService } from '../../config/stripe.config';
 import { GrpcMethod } from '@nestjs/microservices';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
-// import { AuthGuard } from 'src/guards/auth.guard';
 
 @ApiBearerAuth()
 @ApiTags('Order')
@@ -43,10 +42,15 @@ export class StripePayController {
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 402, description: 'Payment Failed' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
   async createSession(@Body() payload: CreatePaymentDto) {
 
       return await this.paymentService.createCheckoutSession(payload);
 
     }
   
+  @Post('retry')
+  async checkEvent(orderId:string){
+    return this.paymentService.checkEvent(orderId);
+}
 }
