@@ -45,7 +45,7 @@ export class StripeWebhookService {
 
       if (!webhookEvent) {
         throw new Error(
-          `Failed to save/update webhook event ${eventData.stripeEventId}`,
+          `Failed to update webhook event ${eventData.stripeEventId}`,
         );
       }
 
@@ -54,7 +54,7 @@ export class StripeWebhookService {
       );
       return webhookEvent;
     } catch (error) {
-      this.logger.error('Error saving/updating webhook event:', error);
+      this.logger.error('Error saving webhook event:', error);
       throw error;
     }
   }
@@ -399,7 +399,7 @@ export class StripeWebhookService {
 
       }
       if(!paymentHistory){
-      this.logger.warn(`Payment not found for session ID: ${sessionId}`);
+        this.logger.warn(`Payment not found for session ID: ${sessionId}`);
       throw new NotFoundException(
         `Payment not found for session ID: ${sessionId}`,
       );}
