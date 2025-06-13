@@ -2,11 +2,12 @@
 import { CanActivate, ExecutionContext, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Observable } from 'rxjs';
-import { helperService } from 'src/helper/helper.service';
+import { AuthClient } from 'src/grpc/authentication/auth.client';
+// import { helperService } from 'src/helper/helper.service';
 
 @Injectable()
 export class jwtGuard implements CanActivate {
-  constructor(private helperService:helperService){}
+  constructor(private authclient:AuthClient){}
  async canActivate(
     context: ExecutionContext,
   ): Promise<boolean>{
@@ -18,9 +19,10 @@ export class jwtGuard implements CanActivate {
     }
 
     const token = authHeader.split(' ')[1];
-     
     try {
-      const payload = await this.helperService.verifyToken(token);
+      // console.log("hii");
+      const payload = await this.authclient.ValidateTokenAuthService(token);
+      console.log(payload);
       request['user'] = payload;
       return true;
     } catch (err) {
