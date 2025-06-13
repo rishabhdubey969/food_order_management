@@ -36,48 +36,58 @@ export class OrderService {
         }
         return items;
     }
-    createAddress(ADDRESS){
+    createRestaurantAddress(ADDRESS: any){
         const address=new Address();
         address.address=ADDRESS.address||ADDRESS.address_location_1;
         address.contactNumber=ADDRESS.phone||'9676534567';
         address.email=ADDRESS.email||'abc1@gmail.com';
-        address.latitude=ADDRESS.coordinates[0];
-        address.longitude=ADDRESS.coordinates[1];
+        address.latitude=ADDRESS.location.coordinates[0];
+        address.longitude=ADDRESS.location.coordinates[1];
 
         return address;
     }
-    
+    async createUserAddress(ADDRESS: any){
+        const address=new Address();
+        address.address=ADDRESS.address||ADDRESS.address_location_1;
+        address.contactNumber=ADDRESS.phone||'9676534567';
+        address.email=ADDRESS.email||'abc1@gmail.com';
+        address.latitude=ADDRESS.latitude
+        address.longitude=ADDRESS.longitude;
+    }
     async createOrder(cartId) {
         try {
           // console.log(cartId);
           const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id:cartId });
+          console.log(cartData);
           if (!cartData) {
             throw new NotFoundException('Cart not found');
           }
           if (!cartData.items || cartData.items.length === 0) {
             throw new BadRequestException('Cart is empty');
           }
-      
+          
+          // console.log(cartData)
           // modification of cart id in processing phase
           // cartData.deleted=true;
           const items = this.createItems(cartData.items);
            
-        
+          // console.log(items);
           const restaurantData=await this.connection.collection(this.roleCollections.RESTAURANT).findOne({_id:new ObjectId(cartData.restaurantId)});
           // console.log(restaurantData);
           if (!restaurantData) {
             throw new NotFoundException('Restaurant not found');
           }
-          const restaurantAddress = this.createAddress(restaurantData);
+          const restaurantAddress = this.createRestaurantAddress(restaurantData);
       
-       
+          // console.log("hii");
           const userAddressData = await this.connection.collection(this.roleCollections.USER)
             .findOne({ user_id: cartData.userId });
+            // console.log(userAddressData);
           if (!userAddressData) {
             throw new NotFoundException('User address not found');
           }
-          const userAddress = this.createAddress(userAddressData);
-      
+          const userAddress = this.createUserAddress(userAddressData);
+          // console.log("hello");
        
           if (isNaN(cartData.subtotal) || isNaN(cartData.total) || 
               isNaN(cartData.tax) || isNaN(cartData.deliveryCharges) || 
@@ -87,7 +97,7 @@ export class OrderService {
       
           
           const epochSeconds = Math.floor(Date.now() / 1000);
-
+        
           const orderCreated = await this.OrderSchema.create({
             userId: cartData.userId,
             restaurantId: cartData.restaurantId,
@@ -107,14 +117,16 @@ export class OrderService {
             status: OrderStatus.CONFIRMED,
             timestamp:epochSeconds,
           });
-    
+        
+
+           console.log("hii");
           return {"orderId":orderCreated._id};
       
         } catch (error) {
           if (error instanceof HttpException) {
             throw error;
           }
-          
+          console.log(error);
           throw new InternalServerErrorException('Failed to create order');
         }
     }
