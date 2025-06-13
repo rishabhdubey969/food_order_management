@@ -153,8 +153,8 @@ export class RestaurantController {
     @Get('/search/food')
     @ApiOperation({ summary: 'Search restaurants by food keyword' })
     @ApiQuery({ name: 'q', required: true, description: 'Search query string' })
-    async searchByFood(@Query('q') query: string, @Query('limit') limit: number, @Query('offset') offset: number) {
-        return this.restaurantService.searchRestaurantsByFood(query,limit, offset);
+    async searchByFood(@Query('q') query: string) {
+        return this.restaurantService.searchRestaurantsByFood(query );
     }
 
     @Get('/:id')
