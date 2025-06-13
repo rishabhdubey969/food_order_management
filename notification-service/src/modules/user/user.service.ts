@@ -18,4 +18,8 @@ export class UserService {
     console.log('Sending signup OTP:', data);
     return this.notificationHelperService.welcomeEmail(data, 'Signup OTP', 'signup-otp');
   }
+
+  async resetLink(data: any){
+ return this.notificationHelperService.resetEmail(data, 'Reset Password', 'reset-link');
+  }
 }

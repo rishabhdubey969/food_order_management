@@ -4,6 +4,7 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ForgotPasswordSwagger, ResetPasswordSwagger, SendOtpSwagger, SignUpSwagger } from 'src/doc/auth.swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -15,6 +16,7 @@ export class AuthController {
    * @returns Response from the send OTP service
    */
   @Post('send-otp')
+  @SendOtpSwagger()
   sendOtp(@Body() sendOtpDto: SendOtpDto) {
     return this.authService.sendOtpService(sendOtpDto.email);
   }
@@ -26,6 +28,7 @@ export class AuthController {
    * @returns Response from the sign-up service
    */
   @Post('signup')
+  @SignUpSwagger()
   @UsePipes(new ValidationPipe({ whitelist: true }))
   signUp(@Body() createAuthDto: CreateAuthDto, @Req() req: any) {
     return this.authService.signUpService(createAuthDto, req);
@@ -37,6 +40,7 @@ export class AuthController {
    * @returns Response from the forgot password service.
    */
   @Post('forgot-password')
+  @ForgotPasswordSwagger()
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }
@@ -48,6 +52,7 @@ export class AuthController {
    * @returns Response from the reset password service.
    */
   @Post('reset-password/:token')
+  @ResetPasswordSwagger()
   @UsePipes(new ValidationPipe({ whitelist: true }))
   async resetPassword(@Param('token') token: string, @Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(token, resetPasswordDto);

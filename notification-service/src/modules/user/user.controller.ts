@@ -19,4 +19,9 @@ export class UserController {
     await this.userService.signupOtp(data);
   }
 
+   @EventPattern('reset_link')
+  async handleResetLink(@Payload() data: any) {
+    await this.userService.resetLink(data);
+  }
+
 }
