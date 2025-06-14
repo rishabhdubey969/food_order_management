@@ -2,7 +2,7 @@ import { Controller, Get, Body, Param, Delete, UsePipes, ValidationPipe, Patch, 
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthGuard } from '../../guard/auth.guard';
-import { DeleteProfileSwagger, GetProfileSwagger, UpdateProfileSwagger } from 'src/doc/profile.swagger';
+import { DeleteProfileSwagger, GetProfileSwagger, UpdateProfileSwagger } from 'src/swagger_doc/profile.swagger';
 
 @Controller('profile')
 export class ProfileController {

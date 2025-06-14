@@ -4,7 +4,7 @@ import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { ApiTags } from '@nestjs/swagger';
-import { CreateAddressDoc, DeleteAddressByIdDoc, GetAddressAllDoc, GetAddressByIdDoc, UpdateAddressByIdDoc } from 'src/doc/address.swagger';
+import { CreateAddressDoc, DeleteAddressByIdDoc, GetAddressAllDoc, GetAddressByIdDoc, UpdateAddressByIdDoc } from 'src/swagger_doc/address.swagger';
 
 @ApiTags('address')
 @Controller('address')
