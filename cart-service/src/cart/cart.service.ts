@@ -491,6 +491,5 @@ export class CartService {
   private findItemIndex(items: any[], itemId: string): number {
     return items.findIndex(i => String(i.itemId) === itemId);
   }
-
 }
 
