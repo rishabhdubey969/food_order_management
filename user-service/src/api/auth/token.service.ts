@@ -22,7 +22,8 @@ export class TokenService {
   }
 
   async validate(token: string): Promise<string | null> {
-  return await this.redisService.get(`reset:${token}`); 
+    const hashed = createHash('sha256').update(token).digest('hex'); // Hash incoming token
+  return await this.redisService.get(`reset:${hashed}`); 
   }
 
   async remove(token: string): Promise<void> {
