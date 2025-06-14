@@ -6,7 +6,7 @@ import { ProfileModule } from './api/profile/profile.module';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { WinstonModule } from 'nest-winston';
-import { winstonConfig } from 'logger/winston.logger';
+import { winstonLogger } from 'logger/winston.logger';
 import { JwtConstant } from 'jwt_security/jwt.const';
 import { JwtModule } from '@nestjs/jwt';
 import { AddressModule } from './api/address/address.module';
@@ -21,7 +21,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       // Globally Env Connection
       isGlobal: true,
     }),
-    WinstonModule.forRoot(winstonConfig),
+    WinstonModule.forRoot(winstonLogger),
     MongooseModule.forRoot(process.env.MONGO_CONNECTION as string), // Mongo Connection
     JwtModule.register({
       // JWT Configuration

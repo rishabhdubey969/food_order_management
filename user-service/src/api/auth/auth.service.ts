@@ -1,16 +1,9 @@
-import {
-  Injectable,
-  Inject,
-  HttpException,
-  HttpStatus,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Inject, HttpException, HttpStatus, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { InjectModel } from '@nestjs/mongoose';
-import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { Logger as WinstonLogger } from 'winston';
 import { AuthenticationDocument, Auth } from './entities/auth.entity';
 import { Model, Types } from 'mongoose';
 import { Auth as AuthConst } from 'constants/auth.const';
@@ -71,8 +64,7 @@ export class AuthService {
         })
         .exec();
 
-      if (existingAuthenticationLogin)
-        throw new HttpException(AuthConst.USER_MATCH, HttpStatus.FORBIDDEN);
+      if (existingAuthenticationLogin) throw new HttpException(AuthConst.USER_MATCH, HttpStatus.FORBIDDEN);
 
       // Hash the password before saving the user
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -86,11 +78,7 @@ export class AuthService {
 
       this.client.emit('user_created', createdAuthentication);
       this.logger.info('user store success');
-      const tokensData = await this.authClient.getSignUpAccess(
-        id,
-        req.ip,
-        req.headers['user-agent'],
-      );
+      const tokensData = await this.authClient.getSignUpAccess(id, req.ip, req.headers['user-agent']);
 
       return {
         message: 'Congratulations, you’ve successfully signed up!',
@@ -115,8 +103,8 @@ export class AuthService {
 
       const userId = user._id.toString();
       const token = await this.tokenService.generate(userId);
-      const mailData = {email, token}
-       this.client.emit('reset_link', mailData);
+      const mailData = { email, token };
+      this.client.emit('reset_link', mailData);
       return { message: 'Reset link sent', token: token };
     } catch (error) {
       this.logger.error('Error in forgotPassword', error);
@@ -133,8 +121,7 @@ export class AuthService {
   async resetPassword(token: string, resetPasswordDto: ResetPasswordDto) {
     try {
       const resetTokenValidate = await this.tokenService.validate(token);
-      if (!resetTokenValidate)
-        throw new BadRequestException('Invalid or expired token');
+      if (!resetTokenValidate) throw new BadRequestException('Invalid or expired token');
 
       const hashed = await bcrypt.hash(resetPasswordDto.password, 10);
       await this.updatePassword(resetTokenValidate, hashed);
@@ -155,13 +142,10 @@ export class AuthService {
   async updatePassword(userId: string, newPassword: string): Promise<void> {
     try {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-      await this.authenticationModel
-        .updateOne({ _id: userId }, { $set: { password: hashedPassword } })
-        .exec();
+      await this.authenticationModel.updateOne({ _id: userId }, { $set: { password: hashedPassword } }).exec();
     } catch (error) {
       this.logger.error('Error updating password', error);
       throw new BadRequestException(error);
     }
   }
-
 }
