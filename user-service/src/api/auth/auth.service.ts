@@ -123,8 +123,8 @@ export class AuthService {
       const resetTokenValidate = await this.tokenService.validate(token);
       if (!resetTokenValidate) throw new BadRequestException('Invalid or expired token');
 
-      const hashed = await bcrypt.hash(resetPasswordDto.password, 10);
-      await this.updatePassword(resetTokenValidate, hashed);
+      console.log(resetTokenValidate);
+      await this.updatePassword(resetTokenValidate, resetPasswordDto.password);
       await this.tokenService.remove(token);
 
       return { message: 'Password updated' };

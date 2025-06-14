@@ -128,7 +128,7 @@ export class AuthService {
         CONSTANTS.ERROR_MESSAGES.ACCOUNT_INACTIVE,
       );
     }
-
+  
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException(
