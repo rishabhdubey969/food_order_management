@@ -124,7 +124,7 @@ export class RestaurantService {
         $match: {
           $or: [
             { name: { $regex: query, $options: 'i' } }, 
-            { tags: { $regex: query, $options: 'i' } }
+            { tags: { $elemMatch: { $regex: query, $options: 'i' } } }
           ]
         }
       },
@@ -134,15 +134,10 @@ export class RestaurantService {
         }
       },
     ]);
-
-<<<<<<< HEAD
+    console.log(results);
     const restaurantIds = results.map(r => r._id);
 
     return this.restaurantModel.find({ _id: { $in: restaurantIds } }).exec();
-=======
-    console.log(results);
-    return results;
->>>>>>> 5fda7bdae5204e6c663a25215ac82dc7f78701cc
   }
   
 
