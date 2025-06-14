@@ -1,5 +1,3 @@
-# food_order_management
-This web-based application automates the food ordering process for customers, restaurant staff, and administrators.
 # 🍽️ Food Order Management System
 
 A scalable, microservices-based food ordering platform built using **NestJS**, **Express**, **Kafka**, **MongoDB**, **Redis**, and **RabbitMQ**.
