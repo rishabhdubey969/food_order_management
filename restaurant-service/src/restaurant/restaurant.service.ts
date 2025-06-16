@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { ConsoleLogger, Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { Restaurant } from './schema/restaurant.schema';
 import { CreateRestaurantDto } from './dto/restaurant.dto';

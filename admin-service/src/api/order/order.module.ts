@@ -1,11 +1,11 @@
-// order.module.ts
+
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
-import { Order, OrderSchema } from './entities/order.entity';
+
 import { AuthService } from '../auth/auth.service';
-import { Admin, AdminSchema } from '../auth/entities/admin.entity';
+
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
 import { EmailModule } from 'src/email/email.module';
@@ -35,6 +35,6 @@ import { EmailModule } from 'src/email/email.module';
           ]),],
 
   controllers: [OrderController],
-  providers: [OrderService, AuthService], // Include AuthService as a dependency
+  providers: [OrderService, AuthService], 
 })
 export class OrderModule {}
