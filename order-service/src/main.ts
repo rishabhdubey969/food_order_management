@@ -50,11 +50,16 @@ async function bootstrap() {
     options: {
 
       client:{
-        brokers:["localhost:29092"]
+        brokers:["localhost:29092"],
+        clientId:"orderConsumer",
       },
 
       consumer:{
-        groupId: 'groupDelivery'
+        groupId: 'groupOrder',
+        allowAutoTopicCreation:true
+      },
+      producer:{
+         allowAutoTopicCreation:true
       }
       
     }});
@@ -64,7 +69,12 @@ async function bootstrap() {
     .setTitle('API with NestJS')
     .setDescription('API developed throughout the API with NestJS course')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+    },
+    'JWT')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
