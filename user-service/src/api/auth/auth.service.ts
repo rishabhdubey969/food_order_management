@@ -147,4 +147,5 @@ export class AuthService {
       throw new BadRequestException(error);
     }
   }
+
 }
