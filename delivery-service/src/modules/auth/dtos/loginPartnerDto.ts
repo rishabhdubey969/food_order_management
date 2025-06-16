@@ -5,7 +5,7 @@ export class LoginPartnerDto {
 
     @ApiProperty({
         description: 'The email address of the partner',
-        example: 'partner@example.com',
+        example: 'john.doe@example.com',
         format: 'email',
     })
     @IsString({ message: 'Email must be a string' })
@@ -15,7 +15,7 @@ export class LoginPartnerDto {
     @ApiProperty({
         description: 'The partner\'s password (minimum 8 characters)',
         minLength: 8,
-        example: 'securePassword123',
+        example: 'StrongPass@123',
     })
     @IsString({ message: 'Password must be a string' })
     @MinLength(8, { message: 'Password must be at least 8 characters long' })

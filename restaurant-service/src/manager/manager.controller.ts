@@ -89,8 +89,25 @@ logout(@Headers('authorization') authHeader: string) {
     return await this.managerService.handleIsFoodAvailable(cartId);
   }
 
+  @ApiOperation({ summary: 'Update Manager Details' })
+  @ApiBody({
+  schema: {
+    type: 'object',
+    properties: {
+      orderId: {
+        type: 'string',
+        example: '664a12ef3ff8cdbe0246823e',
+      },
+    },
+    required: ['orderId'],
+  },
+})
   @Post('orderHandOver')
   async handleOrderhandover(@Body('orderId') orderId: Types.ObjectId){
     await this.managerService.handleOrderHandover(orderId);
+    return {
+      success: true,
+      message: "Order HandOvered Accepted"
+    }
   }
 }

@@ -8,20 +8,22 @@ import { Partitioners } from 'kafkajs';
   imports: [
     ClientsModule.register([
       {
-        name: "KAFKA_SERVICE",
+        name: 'KAFKA_SERVICE',
         transport: Transport.KAFKA,
         options: {
-
           client: {
-            brokers: ['localhost:29092', 'kafka:9092', 'host.docker.internal:9092']
+            brokers: ['localhost:29092'],
+            clientId: 'deliveryProducer',
           },
-          
           producer: {
+            allowAutoTopicCreation: true,
+          },
+          consumer:{
+            groupId: "deliveryGroup",
             allowAutoTopicCreation: true
           }
-          
-        }
-      }
+        },
+      },
     ])
   ],
   controllers: [KafkaController],

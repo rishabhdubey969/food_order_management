@@ -1,164 +1,9 @@
-// import { ObjectId, Types } from 'mongoose';
 
-// import { forwardRef, Inject, UseGuards } from '@nestjs/common';
-// import { WebSocketGuard } from './guards/webSocketGuard';
-// import { Server, Socket } from 'socket.io';
-// import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-// import { LocationUpdate } from './interfaces/locationUpdateInterface';
-// import { DeliveryPartnerService } from '../deliveryPartner/deliveryPartnerService';
-// import { DeliveryPartnerStatus } from '../deliveryPartner/enums/partnerEnum';
-// import { RedisService } from '../redis/redisService';
-// import { UpdatedSocket } from './interfaces/updatedSocketInterface';
-// import { CompleteDelivery, DriverLocationResult } from '../delivery/interfaces/deliveryInterfaces';
-// import { DeliveryService } from '../delivery/delivery.service';
-// import { Role } from 'src/common/enums';
-// import { MidModuleService } from '../mid-module/mid-module.service';
-
-
-
-
-// @UseGuards(WebSocketGuard)
-// @WebSocketGateway({
-//   cors:{
-//     origin: 'localhost:5173'
-//   },
-//   port: 4003
-// })
-// export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect{
-
-//   @WebSocketServer() 
-//   server: Server
-
-//   private deliveryPartnersMap: Map<Types.ObjectId, Socket> = new Map();
-//   private customersMap: Map<Types.ObjectId, Socket> = new Map();
-//   private trackingMap: Map<Types.ObjectId, Socket> = new Map();
-
-//   constructor(
-//     private readonly redisService: RedisService,
-//     @Inject(forwardRef(() => MidModuleService))
-//     private readonly midModuleService: MidModuleService
-//   ){}
-
-//   handleConnection(client: UpdatedSocket){
-//       const { role } = client.payload;
-
-//       if(role === Role.DELIVERY_PARTNER){
-//         const { partnerId } = client.payload;
-//         this.deliveryPartnersMap.set(partnerId, client);
-//       }
-
-//       else if(role === Role.USER){
-//         const { userId } = client.payload;
-//         this.customersMap.set(userId, client);
-//       }
-//   }
-
-//   handleDisconnect(client: UpdatedSocket) {
-//       const { role } = client.payload;
-
-//       if(role === Role.DELIVERY_PARTNER){
-//         const { partnerId } = client.payload;
-//         this.deliveryPartnersMap.delete(partnerId);
-//       }
-
-//       else if(role === Role.USER){
-//         const { userId } = client.payload;
-//         this.customersMap.delete(userId);
-//       }
-//   }
-
-//   @SubscribeMessage('availableLocationUpdate')
-//   async handleAvailableLocationUpdate(@MessageBody() location: LocationUpdate, @ConnectedSocket() client: UpdatedSocket){
-
-//     const { partnerId } = client.payload;
-//     const status = await this.midModuleService.findStatus(partnerId);
-
-//     if(status === DeliveryPartnerStatus.ONLINE){
-//       await this.redisService.addAvailableDriver(partnerId, location.longitude, location.latitude);
-//       console.log(`Updated available driver ${partnerId} location: [${location.longitude}, ${location.latitude}]`);
-//     }
-
-//   }
-
-//   // Tracking Part
-//   @SubscribeMessage('occupiedLocationUpdate')
-//   async handleAssignedLocationUpdate(@MessageBody() location: LocationUpdate, @ConnectedSocket() client: UpdatedSocket){
-//     const { partnerId } = client.payload;
-//     const userSocket = this.trackingMap.get(partnerId);
-//     if(userSocket){
-//       await this.server.to(userSocket.id).emit('trackingUpdate', location);
-//     }
-//   }
-
-//   async broadcastRequest(deliveryPartnersList: DriverLocationResult, currentDelivery: CompleteDelivery){
-
-//     deliveryPartnersList.forEach((partnerId) => {
-//       if(partnerId != null){
-//         const socket = this.deliveryPartnersMap.get(partnerId);
-//         if (socket) {
-//           this.server.to(socket.id).emit('newDelivery', currentDelivery);
-//         }
-//       }
-//     });
-//   }
-
-
-//   @SubscribeMessage('deliveryResponseAccept')
-//   async handleDeliveryResponse(@ConnectedSocket() client: UpdatedSocket, @MessageBody() data: {orderId: Types.ObjectId, userId: Types.ObjectId}){
-
-//     const { partnerId } = client.payload;
-//     const { orderId, userId } = data;
-
-//     const assigned = await this.redisService.isKeyExists(`deliveryResponse:${orderId}`)
-
-//     if(!assigned){
-
-//       // Seting in Redis for conflict Resolution
-//       await this.redisService.setData(`deliveryResponse:${orderId}`, 'ACCEPT', 5 * 60 * 1000);
-
-//       // Sending Acceptance Request
-//       this.server.to(client.id).emit('acknowledgement', {acknowledgement: true});
-
-//       // Updating Delivery Partner Status
-//       await this.midModuleService.updateStatus(partnerId, DeliveryPartnerStatus.OCCUPIED);
-
-//       // Updating Delivery Status 
-//       await this.midModuleService.assignedPartner(partnerId, orderId);
-
-//       // Updating the Mapping 
-//       const userSocket = this.customersMap.get(userId);
-//       if(userSocket){
-//         this.trackingMap.set(partnerId, userSocket);
-//       }
-
-//     }else{
-//       this.server.to(client.id).emit('acknowledgement', {acknowledgement: false})
-//     }
-//   }
-
-// }
-
+import { ObjectId } from 'mongodb';
 import { Types } from 'mongoose';
-
-import {
-  forwardRef,
-  Inject,
-  UseGuards,
-  Logger, // Import Logger
-  InternalServerErrorException, // Import suitable exceptions
-  BadRequestException,
-} from '@nestjs/common';
-import { WebSocketGuard } from './guards/webSocketGuard';
+import { forwardRef, Inject, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import {
-  ConnectedSocket,
-  MessageBody,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-  SubscribeMessage,
-  WebSocketGateway,
-  WebSocketServer,
-} from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { LocationUpdate } from './interfaces/locationUpdateInterface';
 import { DeliveryPartnerStatus } from '../deliveryPartner/enums/partnerEnum';
 import { RedisService } from '../redis/redisService';
@@ -166,21 +11,25 @@ import { UpdatedSocket } from './interfaces/updatedSocketInterface';
 import { CompleteDelivery, DriverLocationResult } from '../delivery/interfaces/deliveryInterfaces';
 import { Role } from 'src/common/enums';
 import { MidModuleService } from '../mid-module/mid-module.service';
+import { TRACKING_CONSTANTS } from './trackingConstants';
+import { TokenService } from '../token/token.service';
 
-@UseGuards(WebSocketGuard)
-@WebSocketGateway({
-  cors: {
-    origin: 'localhost:5173', // Ensure this matches your frontend origin
-  },
-  port: 4003,
-})
+
+
+@WebSocketGateway(
+  { cors: 
+    { origin: TRACKING_CONSTANTS.CONFIG.CORS_ORIGIN, 
+      allowedHeaders: ['*'],
+      credentials: true
+    }
+  }
+)
+
 export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  private readonly logger = new Logger(TrackingGateway.name); // Instantiate logger
-
-  
+  private readonly logger = new Logger(TrackingGateway.name);
   private deliveryPartnersMap: Map<Types.ObjectId, Socket> = new Map();
   private customersMap: Map<Types.ObjectId, Socket> = new Map();
   private trackingMap: Map<Types.ObjectId, Socket> = new Map();
@@ -189,90 +38,112 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly redisService: RedisService,
     @Inject(forwardRef(() => MidModuleService))
     private readonly midModuleService: MidModuleService,
+    private readonly tokenService: TokenService
   ) {}
 
-  // Handle new client connections
+
+ 
   async handleConnection(client: UpdatedSocket) {
-    this.logger.log(`Client connected: ${client.id}`);
+
+    const accessToken = client.handshake.headers.authorization?.split(' ')[1];
+    
+    if (!accessToken) {
+      this.logger.warn('Access token not found in headers');
+      client.emit('error', { message: 'Unauthorized: No token provided' });
+      client.disconnect(true);
+      return;
+    }
+
+    let payload: any;
     try {
+      payload = await this.tokenService.verify(accessToken);
+      client['payload'] = payload;
+    } catch (error) {
+      this.logger.warn(`JWT verification failed: ${error.message}`);
+      client.emit('error', { message: 'Unauthorized: Invalid or expired token' });
+      client.disconnect(true);
+      return;
+    }
+    
+    
+    this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.CLIENT_CONNECTED}: ${client.id}`);
+    
       const { role } = client.payload;
 
       if (!role) {
-        this.logger.warn(`Client ${client.id} connected without a role in payload. Disconnecting.`);
-        client.disconnect(true); // Disconnect client immediately
+        this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.ERROR.INVALID_ROLE}: ${client.id}`);
+        client.disconnect(true);
         return;
       }
 
       if (role === Role.DELIVERY_PARTNER) {
         const { partnerId } = client.payload;
         if (!partnerId) {
-          this.logger.warn(`Delivery partner client ${client.id} connected without partnerId. Disconnecting.`);
+          this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.ERROR.INVALID_PARTNER_ID}: ${client.id}`);
           client.disconnect(true);
           return;
         }
-        this.deliveryPartnersMap.set(new Types.ObjectId(partnerId), client);
-        this.logger.log(`Delivery Partner ${partnerId} connected and added to map.`);
+        this.deliveryPartnersMap.set(new ObjectId(partnerId), client);
+        this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.DELIVERY_PARTNER_CONNECTED}: ${partnerId}`);
       } else if (role === Role.USER) {
         const { userId } = client.payload;
         if (!userId) {
-          this.logger.warn(`User client ${client.id} connected without userId. Disconnecting.`);
+          this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.ERROR.INVALID_USER_ID}: ${client.id}`);
           client.disconnect(true);
           return;
         }
         this.customersMap.set(new Types.ObjectId(userId), client);
-        this.logger.log(`User ${userId} connected and added to map.`);
+        this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.USER_CONNECTED}: ${userId}`);
       } else {
-        this.logger.warn(`Client ${client.id} connected with unknown role: ${role}. Disconnecting.`);
+        this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.WARN.UNKNOWN_ROLE}: ${role}. Disconnecting: ${client.id}`);
         client.disconnect(true);
       }
-    } catch (error) {
-      this.logger.error(`Error handling connection for client ${client.id}: ${error.message}`, error.stack);
-      client.disconnect(true); // Ensure client is disconnected on error
-    }
   }
 
-  // Handle client disconnections
   async handleDisconnect(client: UpdatedSocket) {
-    this.logger.log(`Client disconnected: ${client.id}`);
+    this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.CLIENT_DISCONNECTED}: ${client.id}`);
     try {
-      const { role, partnerId, userId } = client.payload;
+      if (!client.payload) {
+        return;
+      }
+      const { role } = client.payload;
 
       if (role === Role.DELIVERY_PARTNER) {
+        const { partnerId } = client.payload;
         if (partnerId) {
           this.deliveryPartnersMap.delete(new Types.ObjectId(partnerId));
-          this.logger.log(`Delivery Partner ${partnerId} disconnected and removed from map.`);
+          this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.DELIVERY_PARTNER_DISCONNECTED}: ${partnerId}`);
           await this.redisService.removeDriver(partnerId.toHexString());
         }
       } else if (role === Role.USER) {
+        const { userId } = client.payload;
         if (userId) {
           this.customersMap.delete(new Types.ObjectId(userId));
-          this.logger.log(`User ${userId} disconnected and removed from map.`);
+          this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.USER_DISCONNECTED}: ${userId}`);
         }
       }
-      // Also remove from trackingMap if this client was tracking someone
-      // This part might need more complex logic depending on how tracking is initiated/ended
+
       this.trackingMap.forEach((socket, pId) => {
         if (socket.id === client.id) {
           this.trackingMap.delete(pId);
-          this.logger.log(`Removed tracking for partner ${pId} as client ${client.id} disconnected.`);
+          this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.TRACKING_REMOVED}: ${pId}`);
         }
       });
     } catch (error) {
-      this.logger.error(`Error handling disconnection for client ${client.id}: ${error.message}`, error.stack);
+      this.logger.error(`${TRACKING_CONSTANTS.MESSAGES.ERROR.DISCONNECTION_FAILED}: ${client.id}: ${error.message}`, error.stack);
     }
   }
 
-  // Handle location updates from available delivery partners
-  @SubscribeMessage('availableLocationUpdate')
+  @SubscribeMessage(TRACKING_CONSTANTS.EVENTS.AVAILABLE_LOCATION_UPDATE)
   async handleAvailableLocationUpdate(@MessageBody() location: LocationUpdate, @ConnectedSocket() client: UpdatedSocket) {
-    this.logger.log(`Received 'availableLocationUpdate' from partner ${client.payload?.partnerId} (Socket ID: ${client.id})`);
+    this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.LOCATION_UPDATE_ATTEMPT}: ${client.payload?.partnerId} (Socket ID: ${client.id})`);
     if (!client.payload?.partnerId) {
-      this.logger.warn(`'availableLocationUpdate' received from unauthenticated or invalid partner: ${client.id}`);
-      return; // Do not process if partnerId is missing
+      this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.WARN.NO_PARTNER_ID}: ${client.id}`);
+      return;
     }
     if (!location || typeof location.longitude !== 'number' || typeof location.latitude !== 'number') {
-      this.logger.warn(`Invalid location data received from ${client.payload.partnerId}: ${JSON.stringify(location)}`);
-      client.emit('error', 'Invalid location data provided.');
+      this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.ERROR.INVALID_LOCATION_DATA}: ${client.payload.partnerId}: ${JSON.stringify(location)}`);
+      client.emit(TRACKING_CONSTANTS.EVENTS.ERROR, TRACKING_CONSTANTS.MESSAGES.ERROR.INVALID_LOCATION_DATA);
       return;
     }
 
@@ -283,131 +154,116 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
 
       if (status === DeliveryPartnerStatus.ONLINE) {
         await this.redisService.addAvailableDriver(partnerId.toHexString(), location.longitude, location.latitude);
-        this.logger.debug(`Updated available driver ${partnerId} location: [${location.longitude}, ${location.latitude}]`);
+        this.logger.debug(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.LOCATION_UPDATED}: ${partnerId} [${location.longitude}, ${location.latitude}]`);
       } else {
-        this.logger.warn(`Partner ${partnerId} status is ${status}, not ONLINE. Location update not processed.`);
-        // Optionally, inform the client that they are not online to send updates
-        client.emit('statusMismatch', `Your status is ${status}, not ONLINE.`);
+        this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.WARN.STATUS_MISMATCH}: ${partnerId} status is ${status}`);
+        client.emit(TRACKING_CONSTANTS.EVENTS.STATUS_MISMATCH, `Your status is ${status}, not ONLINE`);
       }
     } catch (error) {
-      this.logger.error(`Error handling 'availableLocationUpdate' for partner ${partnerId}: ${error.message}`, error.stack);
-      client.emit('error', 'Failed to update location. Please try again.');
+      this.logger.error(`${TRACKING_CONSTANTS.MESSAGES.ERROR.LOCATION_UPDATE_FAILED}: ${partnerId}: ${error.message}`, error.stack);
+      client.emit(TRACKING_CONSTANTS.EVENTS.ERROR, TRACKING_CONSTANTS.MESSAGES.ERROR.LOCATION_UPDATE_FAILED);
     }
   }
 
-  // Handle location updates from occupied (assigned) delivery partners for tracking
-  @SubscribeMessage('occupiedLocationUpdate')
+  @SubscribeMessage(TRACKING_CONSTANTS.EVENTS.OCCUPIED_LOCATION_UPDATE)
   async handleAssignedLocationUpdate(@MessageBody() location: LocationUpdate, @ConnectedSocket() client: UpdatedSocket) {
-    this.logger.log(`Received 'occupiedLocationUpdate' from partner ${client.payload?.partnerId} (Socket ID: ${client.id})`);
+    this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.ASSIGNED_UPDATE_ATTEMPT}: ${client.payload?.partnerId} (Socket ID: ${client.id})`);
     if (!client.payload?.partnerId) {
-      this.logger.warn(`'occupiedLocationUpdate' received from unauthenticated or invalid partner: ${client.id}`);
+      this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.WARN.NO_PARTNER_ID}: ${client.id}`);
       return;
     }
     if (!location || typeof location.longitude !== 'number' || typeof location.latitude !== 'number') {
-      this.logger.warn(`Invalid location data received from ${client.payload.partnerId}: ${JSON.stringify(location)}`);
-      client.emit('error', 'Invalid location data provided.');
+      this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.ERROR.INVALID_LOCATION_DATA}: ${client.payload.partnerId}: ${JSON.stringify(location)}`);
+      client.emit(TRACKING_CONSTANTS.EVENTS.ERROR, TRACKING_CONSTANTS.MESSAGES.ERROR.INVALID_LOCATION_DATA);
       return;
     }
 
     const partnerId = new Types.ObjectId(client.payload.partnerId);
 
     try {
-      // Find the customer socket that is tracking this partner
       const userSocket = this.trackingMap.get(partnerId);
       if (userSocket) {
-        // Emit the tracking update to the specific customer socket
-        this.server.to(userSocket.id).emit('trackingUpdate', location);
-        this.logger.debug(`Tracking update sent to user ${userSocket.id} for partner ${partnerId}.`);
+        this.server.to(userSocket.id).emit(TRACKING_CONSTANTS.EVENTS.TRACKING_UPDATE, location);
+        this.logger.debug(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.TRACKING_UPDATE_SENT}: ${userSocket.id} for partner ${partnerId}`);
       } else {
-        this.logger.warn(`No customer found tracking partner ${partnerId}. Location update not forwarded.`);
+        this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.WARN.NO_CUSTOMER_TRACKING}: ${partnerId}`);
       }
     } catch (error) {
-      this.logger.error(`Error handling 'occupiedLocationUpdate' for partner ${partnerId}: ${error.message}`, error.stack);
-      client.emit('error', 'Failed to forward tracking update.');
+      this.logger.error(`${TRACKING_CONSTANTS.MESSAGES.ERROR.ASSIGNED_UPDATE_FAILED}: ${partnerId}: ${error.message}`, error.stack);
+      client.emit(TRACKING_CONSTANTS.EVENTS.ERROR, TRACKING_CONSTANTS.MESSAGES.ERROR.ASSIGNED_UPDATE_FAILED);
     }
   }
 
-  // Broadcast a new delivery request to a list of eligible delivery partners
   async broadcastRequest(deliveryPartnersList: DriverLocationResult, currentDelivery: CompleteDelivery) {
-    this.logger.log(`Broadcasting new delivery request for order ${currentDelivery?.orderId} to ${deliveryPartnersList?.length} partners.`);
+    this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.BROADCAST_ATTEMPT}: ${currentDelivery?.orderId} to ${deliveryPartnersList?.length} partners`);
     if (!deliveryPartnersList) {
-      this.logger.warn(`No delivery partners in the list to broadcast request for order ${currentDelivery?.orderId}.`);
+      this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.WARN.NO_DELIVERY_PARTNERS}: ${currentDelivery?.orderId}`);
       return;
     }
 
-    
-      deliveryPartnersList.forEach((partnerId) => {
-        if (partnerId) { // Check if partnerId is not null
-          const socket = this.deliveryPartnersMap.get(partnerId);
-          if (socket) {
-            this.server.to(socket.id).emit('newDelivery', currentDelivery);
-            this.logger.debug(`New delivery request for order ${currentDelivery.orderId} sent to partner ${partnerId} (Socket ID: ${socket.id}).`);
-          } else {
-            this.logger.warn(`Partner ${partnerId} is in the list but their socket is not found in deliveryPartnersMap.`);
-          }
+    deliveryPartnersList.forEach((partnerId) => {
+      if (partnerId) {
+        const socket = this.deliveryPartnersMap.get(partnerId);
+        if (socket) {
+          this.server.to(socket.id).emit(TRACKING_CONSTANTS.EVENTS.NEW_DELIVERY, currentDelivery);
+          this.logger.debug(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.NEW_DELIVERY_SENT}: ${currentDelivery.orderId} to partner ${partnerId} (Socket ID: ${socket.id})`);
+        } else {
+          this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.WARN.PARTNER_SOCKET_NOT_FOUND}: ${partnerId}`);
         }
-      });
-      this.logger.log(`Finished broadcasting delivery request for order ${currentDelivery?.orderId}.`);
-    
+      }
+    });
+    this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.BROADCAST_COMPLETED}: ${currentDelivery?.orderId}`);
   }
 
-  // Handle a delivery response (accept/reject) from a delivery partner
-  @SubscribeMessage('deliveryResponseAccept')
+  @SubscribeMessage(TRACKING_CONSTANTS.EVENTS.DELIVERY_RESPONSE_ACCEPT)
   async handleDeliveryResponse(@ConnectedSocket() client: UpdatedSocket, @MessageBody() data: { orderId: Types.ObjectId; userId: Types.ObjectId }) {
-    this.logger.log(`Received 'deliveryResponseAccept' from partner ${client.payload?.partnerId} for order ${data?.orderId}`);
+    this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.DELIVERY_RESPONSE_ATTEMPT}: ${client.payload?.partnerId} for order ${data?.orderId}`);
     if (!client.payload?.partnerId) {
-      this.logger.warn(`'deliveryResponseAccept' received from unauthenticated or invalid partner: ${client.id}`);
-      client.emit('acknowledgement', { acknowledgement: false, error: 'Unauthorized partner.' });
+      this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.WARN.NO_PARTNER_ID}: ${client.id}`);
+      client.emit(TRACKING_CONSTANTS.EVENTS.ACKNOWLEDGEMENT, { acknowledgement: false, error: TRACKING_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED_PARTNER });
       return;
     }
     if (!data || !data.orderId || !data.userId) {
-      this.logger.warn(`Invalid data received for 'deliveryResponseAccept' from ${client.payload.partnerId}: ${JSON.stringify(data)}`);
-      client.emit('acknowledgement', { acknowledgement: false, error: 'Invalid order or user ID provided.' });
+      this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.ERROR.INVALID_RESPONSE_DATA}: ${client.payload.partnerId}: ${JSON.stringify(data)}`);
+      client.emit(TRACKING_CONSTANTS.EVENTS.ACKNOWLEDGEMENT, { acknowledgement: false, error: TRACKING_CONSTANTS.MESSAGES.ERROR.INVALID_RESPONSE_DATA });
       return;
     }
 
     const partnerId = new Types.ObjectId(client.payload.partnerId);
     const { orderId, userId } = data;
 
-    try {
-      const assigned = await this.redisService.isKeyExists(`deliveryResponse:${orderId.toHexString()}`); // Use toHexString() for Redis keys
+    const assigned = await this.redisService.isKeyExists(`${TRACKING_CONSTANTS.REDIS.DELIVERY_RESPONSE_PREFIX}${orderId.toHexString()}`);
+    if (!assigned) {
+      this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.WARN.ORDER_NOT_ASSIGNED}: ${orderId}. Partner ${partnerId} is accepting`);
 
-      if (!assigned) {
-        this.logger.log(`Order ${orderId} is not yet assigned. Partner ${partnerId} is accepting.`);
+      await this.redisService.setData(
+        `${TRACKING_CONSTANTS.REDIS.DELIVERY_RESPONSE_PREFIX}${orderId.toHexString()}`,
+        'ACCEPT',
+        TRACKING_CONSTANTS.REDIS.TTL_MS
+      );
+      this.logger.debug(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.DELIVERY_RESPONSE_SET}: ${orderId}`);
 
-        // Setting in Redis for conflict Resolution (to prevent multiple partners from accepting the same order)
-        await this.redisService.setData(`deliveryResponse:${orderId.toHexString()}`, 'ACCEPT', 5 * 60 * 1000); // 5 minutes TTL
-        this.logger.debug(`Set deliveryResponse:${orderId} in Redis to prevent conflicts.`);
+      client.emit(TRACKING_CONSTANTS.EVENTS.ACKNOWLEDGEMENT, { acknowledgement: true, message: TRACKING_CONSTANTS.MESSAGES.SUCCESS.DELIVERY_ACCEPTED });
+      this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.DELIVERY_ACCEPTED}: ${partnerId} for order ${orderId}`);
 
-        // Sending Acceptance Acknowledgment back to the partner
-        client.emit('acknowledgement', { acknowledgement: true, message: 'Delivery accepted.' });
-        this.logger.log(`Acknowledged acceptance to partner ${partnerId} for order ${orderId}.`);
+      await this.midModuleService.updateStatus(partnerId, DeliveryPartnerStatus.OCCUPIED);
+      this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.PARTNER_STATUS_UPDATED}: ${partnerId}`);
 
-        // Updating Delivery Partner Status to OCCUPIED
-        await this.midModuleService.updateStatus(partnerId, DeliveryPartnerStatus.OCCUPIED);
-        this.logger.log(`Updated partner ${partnerId} status to OCCUPIED.`);
+      await this.midModuleService.assignedPartner(partnerId, orderId);
+      this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.PARTNER_ASSIGNED}: ${partnerId} to order ${orderId}`);
 
-        // Updating Delivery Status (assigning partner to delivery)
-        await this.midModuleService.assignedPartner(partnerId, orderId);
-        this.logger.log(`Assigned partner ${partnerId} to order ${orderId}.`);
-
-        // Updating the Tracking Map: Map this partner's ID to the customer's socket
-        const userSocket = this.customersMap.get(userId);
-        if (userSocket) {
-          this.trackingMap.set(partnerId, userSocket);
-          this.logger.log(`Added partner ${partnerId} to trackingMap with customer ${userId}'s socket.`);
-          // Optionally, notify the customer that a driver has been assigned
-          this.server.to(userSocket.id).emit('driverAssigned', { orderId: orderId, partnerId: partnerId });
-        } else {
-          this.logger.warn(`Customer ${userId} not found in customersMap. Tracking might not be active.`);
-        }
+      const userSocket = this.customersMap.get(userId);
+      if (userSocket) {
+        this.trackingMap.set(partnerId, userSocket);
+        this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.TRACKING_MAP_UPDATED}: ${partnerId} with customer ${userId}`);
+        this.server.to(userSocket.id).emit(TRACKING_CONSTANTS.EVENTS.DRIVER_ASSIGNED, { orderId, partnerId });
+        this.logger.log(`${TRACKING_CONSTANTS.MESSAGES.SUCCESS.DRIVER_ASSIGNED}: ${userId} for order ${orderId}`);
       } else {
-        this.logger.warn(`Order ${orderId} is already assigned. Partner ${partnerId}'s acceptance rejected.`);
-        client.emit('acknowledgement', { acknowledgement: false, error: 'Order already assigned to another partner.' });
+        this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.WARN.NO_CUSTOMER_SOCKET}: ${userId}`);
       }
-    } catch (error) {
-      this.logger.error(`Error handling 'deliveryResponseAccept' for partner ${partnerId}, order ${orderId}: ${error.message}`, error.stack);
-      client.emit('acknowledgement', { acknowledgement: false, error: 'Failed to process delivery acceptance. Please try again.' });
+    } else {
+      this.logger.warn(`${TRACKING_CONSTANTS.MESSAGES.ERROR.ORDER_ALREADY_ASSIGNED}: ${orderId}. Partner ${partnerId}'s acceptance rejected`);
+      client.emit(TRACKING_CONSTANTS.EVENTS.ACKNOWLEDGEMENT, { acknowledgement: false, error: TRACKING_CONSTANTS.MESSAGES.ERROR.ORDER_ALREADY_ASSIGNED });
     }
   }
 }

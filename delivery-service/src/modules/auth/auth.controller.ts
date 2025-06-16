@@ -1,203 +1,4 @@
 
-// import { Body, Controller, Patch, Post, UseGuards } from '@nestjs/common';
-// import { AuthService } from './auth.service';
-// import { RegisterPartnerDto } from './dtos/registerPartnerDto';
-// import { LoginPartnerDto } from './dtos/loginPartnerDto';
-// import { ChangePasswordDto } from './dtos/changePasswordDto';
-// import { ForgotPasswordDto } from './dtos/forgotPasswordDto';
-// import { UpdatePasswordDto } from './dtos/updatePasswordDto';
-// import { ForgetPasswordGuard } from './guards/forgetPasswordGuard';
-// import { AuthGuard } from './guards/authGuard';
-// import { CurrentPartner } from 'src/common/decorators';
-// import { Types } from 'mongoose';
-// import { OtpVerifiedGuard } from './guards/otpVerifiedGuard';
-
-
-
-// @Controller('authDeliveryPartner')
-// export class AuthController {
-//   constructor(private readonly authService: AuthService) {}
-
-//     @Post('register')
-//       async register(@Body() createDeliveryPartnerData: RegisterPartnerDto) {
-//         return await this.authService.register(createDeliveryPartnerData);
-//     }
-  
-//     @Post('login')
-//     async login(@Body() credentials: LoginPartnerDto){
-//       return await this.authService.login(credentials);
-//     }
-
-//     @UseGuards(AuthGuard)
-//     @Patch('logout')
-//     async logout(@CurrentPartner() partnerId: Types.ObjectId){
-//       await this.authService.logout(partnerId);
-//     }
-
-//     @UseGuards(AuthGuard)
-//     @Patch('changePassword')
-//     async changePassword(@CurrentPartner() partnerId: Types.ObjectId, @Body() changePasswordData: ChangePasswordDto){
-//         return this.authService.changePassword(partnerId, changePasswordData);
-//     }
-
-//     @Post('forgetPassword')
-//     async forgotPassword(@Body() forgotPasswordData: ForgotPasswordDto){
-//         return this.authService.forgetPassword(forgotPasswordData);
-//     }
-
-//     @UseGuards(ForgetPasswordGuard)
-//     @Post('/resendOtp')
-//     async sendOtp(@CurrentPartner() user: any){
-//       await this.authService.sendOtp(user.userEmail)
-//     }
-
-//     @UseGuards(ForgetPasswordGuard)
-//     @Post('/verifyOtp')
-//     async verifyOtp(@CurrentPartner() partnerEmail: string, @Body('otp') otp: string){
-//       return this.authService.verifyOtp(partnerEmail, otp);
-//     }
-
-//     @UseGuards(OtpVerifiedGuard)
-//     @Patch('/updatePassword')
-//     async updatePassword(@CurrentPartner() partnerEmail: string, @Body() updatePasswordData: UpdatePasswordDto){
-//         return this.authService.updatePassword(partnerEmail, updatePasswordData);
-//     }
-// }
-
-
-// import { Body, Controller, Patch, Post, UseGuards } from '@nestjs/common';
-// import { AuthService } from './auth.service';
-// import { RegisterPartnerDto } from './dtos/registerPartnerDto';
-// import { LoginPartnerDto } from './dtos/loginPartnerDto';
-// import { ChangePasswordDto } from './dtos/changePasswordDto';
-// import { ForgotPasswordDto } from './dtos/forgotPasswordDto';
-// import { UpdatePasswordDto } from './dtos/updatePasswordDto';
-// import { ForgetPasswordGuard } from './guards/forgetPasswordGuard';
-// import { AuthGuard } from './guards/authGuard';
-// import { CurrentPartner } from 'src/common/decorators';
-// import { Types } from 'mongoose';
-// import { OtpVerifiedGuard } from './guards/otpVerifiedGuard';
-// import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-// import { Logger } from '@nestjs/common';
-// import { MongooseError } from 'mongoose';
-
-// @ApiTags('authDeliveryPartner')
-// @Controller('authDeliveryPartner')
-// export class AuthController {
-//   private readonly logger = new Logger(AuthController.name);
-
-//   constructor(private readonly authService: AuthService) {}
-
-//   @Post('register')
-//   @ApiOperation({ summary: 'Register a new delivery partner' })
-//   @ApiBody({ type: RegisterPartnerDto })
-//   @ApiResponse({ status: 201, description: 'Partner registered successfully' })
-//   @ApiResponse({ status: 400, description: 'Invalid input data' })
-//   async register(@Body() createDeliveryPartnerData: RegisterPartnerDto) {
-//     this.logger.log('Registering new delivery partner');
-//     const result = await this.authService.register(createDeliveryPartnerData);
-//     this.logger.log('Partner registered successfully');
-//     return result;
-//   }
-
-//   @Post('login')
-//   @ApiOperation({ summary: 'Login a delivery partner' })
-//   @ApiBody({ type: LoginPartnerDto })
-//   @ApiResponse({ status: 200, description: 'Login successful, returns JWT token' })
-//   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-//   async login(@Body() credentials: LoginPartnerDto) {
-//     this.logger.log('Attempting partner login');
-//     const result = await this.authService.login(credentials);
-//     this.logger.log('Partner logged in successfully');
-//     return result;
-//   }
-
-//   @UseGuards(AuthGuard)
-//   @Patch('logout')
-//   @ApiBearerAuth('JWT')
-//   @ApiOperation({ summary: 'Logout a delivery partner' })
-//   @ApiResponse({ status: 200, description: 'Logout successful' })
-//   @ApiResponse({ status: 401, description: 'Unauthorized' })
-//   async logout(@CurrentPartner() partnerId: Types.ObjectId) {
-//     this.logger.log(`Logging out partner: ${partnerId}`);
-//     await this.authService.logout(partnerId);
-//     this.logger.log('Partner logged out successfully');
-//   }
-
-//   @UseGuards(AuthGuard)
-//   @Patch('changePassword')
-//   @ApiBearerAuth('JWT')
-//   @ApiOperation({ summary: 'Change password for a delivery partner' })
-//   @ApiBody({ type: ChangePasswordDto })
-//   @ApiResponse({ status: 200, description: 'Password changed successfully' })
-//   @ApiResponse({ status: 401, description: 'Unauthorized' })
-//   async changePassword(
-//     @CurrentPartner() partnerId: Types.ObjectId,
-//     @Body() changePasswordData: ChangePasswordDto,
-//   ) {
-//     this.logger.log(`Changing password for partner: ${partnerId}`);
-//     const result = await this.authService.changePassword(partnerId, changePasswordData);
-//     this.logger.log('Password changed successfully');
-//     return result;
-//   }
-
-//   @Post('forgetPassword')
-//   @ApiOperation({ summary: 'Initiate forgot password process' })
-//   @ApiBody({ type: ForgotPasswordDto })
-//   @ApiResponse({ status: 200, description: 'OTP sent to email' })
-//   @ApiResponse({ status: 400, description: 'Invalid email' })
-//   async forgotPassword(@Body() forgotPasswordData: ForgotPasswordDto) {
-//     this.logger.log('Initiating forgot password process');
-
-//     const result = await this.authService.forgetPassword(forgotPasswordData);
-//     this.logger.log('Forgot password OTP sent');
-//     return result;
-//   }
-
-//   @UseGuards(ForgetPasswordGuard)
-//   @Post('/resendOtp')
-//   @ApiBearerAuth('JWT')
-//   @ApiOperation({ summary: 'Resend OTP for forgot password' })
-//   @ApiResponse({ status: 200, description: 'OTP resent successfully' })
-//   @ApiResponse({ status: 401, description: 'Unauthorized' })
-//   async sendOtp(@CurrentPartner() user: any) {
-//     this.logger.log(`Resending OTP for email: ${user.userEmail}`);
-//     await this.authService.sendOtp(user.userEmail);
-//     this.logger.log('OTP resent successfully');
-//   }
-
-//   @UseGuards(ForgetPasswordGuard)
-//   @Post('/verifyOtp')
-//   @ApiBearerAuth('JWT')
-//   @ApiOperation({ summary: 'Verify OTP for forgot password' })
-//   @ApiBody({ schema: { type: 'object', properties: { otp: { type: 'string' } } } })
-//   @ApiResponse({ status: 200, description: 'OTP verified successfully' })
-//   @ApiResponse({ status: 400, description: 'Invalid OTP' })
-//   async verifyOtp(@CurrentPartner() partnerEmail: string, @Body('otp') otp: string) {
-//     this.logger.log(`Verifying OTP for email: ${partnerEmail}`);
-//     const result = await this.authService.verifyOtp(partnerEmail, otp);
-//     this.logger.log('OTP verified successfully');
-//     return result;
-//   }
-
-//   @UseGuards(OtpVerifiedGuard)
-//   @Patch('/updatePassword')
-//   @ApiBearerAuth('JWT')
-//   @ApiOperation({ summary: 'Update password after OTP verification' })
-//   @ApiBody({ type: UpdatePasswordDto })
-//   @ApiResponse({ status: 200, description: 'Password updated successfully' })
-//   @ApiResponse({ status: 401, description: 'Unauthorized' })
-//   async updatePassword(
-//     @CurrentPartner() partnerEmail: string,
-//     @Body() updatePasswordData: UpdatePasswordDto,
-//   ) {
-//     this.logger.log(`Updating password for email: ${partnerEmail}`);
-//     const result = await this.authService.updatePassword(partnerEmail, updatePasswordData);
-//     this.logger.log('Password updated successfully');
-//     return result;
-//   }
-// }
-
 import { Body, Controller, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterPartnerDto } from './dtos/registerPartnerDto';
@@ -212,8 +13,7 @@ import { Types } from 'mongoose';
 import { OtpVerifiedGuard } from './guards/otpVerifiedGuard';
 import { 
   ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
+  ApiOperation,  
   ApiBearerAuth, 
   ApiBody,
   ApiUnauthorizedResponse,
@@ -223,15 +23,17 @@ import {
   ApiOkResponse
 } from '@nestjs/swagger';
 import { Logger } from '@nestjs/common';
+import { AUTH_CONSTANTS } from './authConstants';
+
 
 @ApiTags('Auth - Delivery Partner')
-@Controller('auth/delivery-partner')
+@Controller(AUTH_CONSTANTS.ENDPOINTS.AUTH_DELIVERY_PARTNER)
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
   constructor(private readonly authService: AuthService) {}
 
-  @Post('register')
+  @Post(AUTH_CONSTANTS.ENDPOINTS.REGISTER)
   @ApiOperation({ 
     summary: 'Register a new delivery partner',
     description: 'Creates a new delivery partner account with the provided details.'
@@ -241,50 +43,42 @@ export class AuthController {
     description: 'Delivery partner registration data'
   })
   @ApiCreatedResponse({ 
-    description: 'Partner registered successfully',
+    description: AUTH_CONSTANTS.MESSAGES.SUCCESS.REGISTER,
     schema: {
       example: {
         success: true,
-        message: 'Partner registered successfully',
-        data: {
-          accessToken: 'jwt.token.here',
-          partner: {
-            _id: '507f1f77bcf86cd799439011',
-            email: 'partner@example.com',
-            name: 'John Doe'
-          }
-        }
+        message: AUTH_CONSTANTS.MESSAGES.SUCCESS.REGISTER,
       }
     }
   })
   @ApiBadRequestResponse({ 
-    description: 'Invalid input data or validation failed',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.BAD_REQUEST,
     schema: {
       example: {
         statusCode: 400,
         message: ['email must be a valid email'],
-        error: 'Bad Request'
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.BAD_REQUEST
       }
     }
   })
   @ApiConflictResponse({
-    description: 'Email already exists',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.EMAIL_ALREADY_EXISTS,
     schema: {
       example: {
         statusCode: 409,
-        message: 'Email already exists',
-        error: 'Conflict'
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.EMAIL_ALREADY_EXISTS,
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.CONFLICT
       }
     }
   })
   async register(@Body() createDeliveryPartnerData: RegisterPartnerDto) {
     this.logger.log('Registering new delivery partner');
     const result = await this.authService.register(createDeliveryPartnerData);
-    this.logger.log('Partner registered successfully');
+    this.logger.log(AUTH_CONSTANTS.MESSAGES.SUCCESS.REGISTER);
     return result;
   }
 
-  @Post('login')
+  @Post(AUTH_CONSTANTS.ENDPOINTS.LOGIN)
   @ApiOperation({ 
     summary: 'Login a delivery partner',
     description: 'Authenticates a delivery partner and returns JWT tokens.'
@@ -294,84 +88,77 @@ export class AuthController {
     description: 'Delivery partner login credentials'
   })
   @ApiOkResponse({ 
-    description: 'Login successful, returns JWT token',
+    description: AUTH_CONSTANTS.MESSAGES.SUCCESS.LOGIN,
     schema: {
       example: {
         success: true,
-        message: 'Login successful',
-        data: {
-          accessToken: 'jwt.token.here',
-          partner: {
-            _id: '507f1f77bcf86cd799439011',
-            email: 'partner@example.com',
-            name: 'John Doe'
-          }
-        }
+        message: AUTH_CONSTANTS.MESSAGES.SUCCESS.LOGIN,
+        accessToken: 'jwt.token.here',
       }
     }
   })
   @ApiUnauthorizedResponse({ 
-    description: 'Invalid credentials',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.INVALID_CREDENTIALS,
     schema: {
       example: {
         statusCode: 401,
-        message: 'Invalid credentials',
-        error: 'Unauthorized'
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.INVALID_CREDENTIALS,
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED
       }
     }
   })
   @ApiBadRequestResponse({ 
-    description: 'Invalid input data',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.BAD_REQUEST,
     schema: {
       example: {
         statusCode: 400,
         message: ['email must be a valid email'],
-        error: 'Bad Request'
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.BAD_REQUEST
       }
     }
   })
   async login(@Body() credentials: LoginPartnerDto) {
     this.logger.log('Attempting partner login');
     const result = await this.authService.login(credentials);
-    this.logger.log('Partner logged in successfully');
+    this.logger.log(AUTH_CONSTANTS.MESSAGES.SUCCESS.LOGIN);
     return result;
   }
 
   @UseGuards(AuthGuard)
-  @Patch('logout')
+  @Patch(AUTH_CONSTANTS.ENDPOINTS.LOGOUT)
   @ApiBearerAuth('JWT')
   @ApiOperation({ 
     summary: 'Logout a delivery partner',
     description: 'Invalidates the current session token.'
   })
   @ApiOkResponse({ 
-    description: 'Logout successful',
+    description: AUTH_CONSTANTS.MESSAGES.SUCCESS.LOGOUT,
     schema: {
       example: {
         success: true,
-        message: 'Logout successful'
+        message: AUTH_CONSTANTS.MESSAGES.SUCCESS.LOGOUT
       }
     }
   })
   @ApiUnauthorizedResponse({ 
-    description: 'Unauthorized - Invalid or missing token',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED,
     schema: {
       example: {
         statusCode: 401,
-        message: 'Unauthorized',
-        error: 'Unauthorized'
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED,
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED
       }
     }
   })
   async logout(@CurrentPartner() partnerId: Types.ObjectId) {
     this.logger.log(`Logging out partner: ${partnerId}`);
     await this.authService.logout(partnerId);
-    this.logger.log('Partner logged out successfully');
-    return { success: true, message: 'Logout successful' };
+    this.logger.log(AUTH_CONSTANTS.MESSAGES.SUCCESS.LOGOUT);
+    return { success: true, message: AUTH_CONSTANTS.MESSAGES.SUCCESS.LOGOUT };
   }
 
   @UseGuards(AuthGuard)
-  @Patch('change-password')
+  @Patch(AUTH_CONSTANTS.ENDPOINTS.CHANGE_PASSWORD)
   @ApiBearerAuth('JWT')
   @ApiOperation({ 
     summary: 'Change password for authenticated delivery partner',
@@ -382,31 +169,31 @@ export class AuthController {
     description: 'Current and new password details'
   })
   @ApiOkResponse({ 
-    description: 'Password changed successfully',
+    description: AUTH_CONSTANTS.MESSAGES.SUCCESS.CHANGE_PASSWORD,
     schema: {
       example: {
         success: true,
-        message: 'Password changed successfully'
+        message: AUTH_CONSTANTS.MESSAGES.SUCCESS.CHANGE_PASSWORD
       }
     }
   })
   @ApiUnauthorizedResponse({ 
-    description: 'Unauthorized - Invalid or missing token',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED,
     schema: {
       example: {
         statusCode: 401,
-        message: 'Unauthorized',
-        error: 'Unauthorized'
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED,
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED
       }
     }
   })
   @ApiBadRequestResponse({ 
-    description: 'Invalid current password or validation failed',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.INVALID_CURRENT_PASSWORD,
     schema: {
       example: {
         statusCode: 400,
-        message: 'Current password is incorrect',
-        error: 'Bad Request'
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.INVALID_CURRENT_PASSWORD,
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.BAD_REQUEST
       }
     }
   })
@@ -416,11 +203,11 @@ export class AuthController {
   ) {
     this.logger.log(`Changing password for partner: ${partnerId}`);
     const result = await this.authService.changePassword(partnerId, changePasswordData);
-    this.logger.log('Password changed successfully');
+    this.logger.log(AUTH_CONSTANTS.MESSAGES.SUCCESS.CHANGE_PASSWORD);
     return result;
   }
 
-  @Post('forgot-password')
+  @Post(AUTH_CONSTANTS.ENDPOINTS.FORGOT_PASSWORD)
   @ApiOperation({ 
     summary: 'Initiate password reset process',
     description: 'Sends an OTP to the registered email for password reset.'
@@ -430,11 +217,11 @@ export class AuthController {
     description: 'Email address for password reset'
   })
   @ApiOkResponse({ 
-    description: 'OTP sent to email',
+    description: AUTH_CONSTANTS.MESSAGES.SUCCESS.FORGOT_PASSWORD,
     schema: {
       example: {
         success: true,
-        message: 'OTP sent to email',
+        message: AUTH_CONSTANTS.MESSAGES.SUCCESS.FORGOT_PASSWORD,
         data: {
           tempToken: 'temporary.jwt.token'
         }
@@ -442,57 +229,57 @@ export class AuthController {
     }
   })
   @ApiBadRequestResponse({ 
-    description: 'Invalid email or email not registered',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.EMAIL_NOT_FOUND,
     schema: {
       example: {
         statusCode: 400,
-        message: 'Email not found',
-        error: 'Bad Request'
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.EMAIL_NOT_FOUND,
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.BAD_REQUEST
       }
     }
   })
   async forgotPassword(@Body() forgotPasswordData: ForgotPasswordDto) {
     this.logger.log('Initiating forgot password process');
     const result = await this.authService.forgetPassword(forgotPasswordData);
-    this.logger.log('Forgot password OTP sent');
+    this.logger.log(AUTH_CONSTANTS.MESSAGES.SUCCESS.FORGOT_PASSWORD);
     return result;
   }
 
   @UseGuards(ForgetPasswordGuard)
-  @Post('resend-otp')
+  @Post(AUTH_CONSTANTS.ENDPOINTS.RESEND_OTP)
   @ApiBearerAuth('JWT')
   @ApiOperation({ 
     summary: 'Resend OTP for password reset',
     description: 'Resends the OTP to the email associated with the temporary token.'
   })
   @ApiOkResponse({ 
-    description: 'OTP resent successfully',
+    description: AUTH_CONSTANTS.MESSAGES.SUCCESS.RESEND_OTP,
     schema: {
       example: {
         success: true,
-        message: 'OTP resent successfully'
+        message: AUTH_CONSTANTS.MESSAGES.SUCCESS.RESEND_OTP
       }
     }
   })
   @ApiUnauthorizedResponse({ 
-    description: 'Unauthorized - Invalid or expired temporary token',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED,
     schema: {
       example: {
         statusCode: 401,
-        message: 'Unauthorized',
-        error: 'Unauthorized'
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED,
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED
       }
     }
   })
   async resendOtp(@CurrentPartner() partnerEmail: string) {
     this.logger.log(`Resending OTP for email: ${partnerEmail}`);
     await this.authService.sendOtp(partnerEmail);
-    this.logger.log('OTP resent successfully');
-    return { success: true, message: 'OTP resent successfully' };
+    this.logger.log(AUTH_CONSTANTS.MESSAGES.SUCCESS.RESEND_OTP);
+    return { success: true, message: AUTH_CONSTANTS.MESSAGES.SUCCESS.RESEND_OTP };
   }
 
   @UseGuards(ForgetPasswordGuard)
-  @Post('verify-otp')
+  @Post(AUTH_CONSTANTS.ENDPOINTS.VERIFY_OTP)
   @ApiBearerAuth('JWT')
   @ApiOperation({ 
     summary: 'Verify OTP for password reset',
@@ -512,11 +299,11 @@ export class AuthController {
     }
   })
   @ApiOkResponse({ 
-    description: 'OTP verified successfully',
+    description: AUTH_CONSTANTS.MESSAGES.SUCCESS.VERIFY_OTP,
     schema: {
       example: {
         success: true,
-        message: 'OTP verified successfully',
+        message: AUTH_CONSTANTS.MESSAGES.SUCCESS.VERIFY_OTP,
         data: {
           verifiedToken: 'verified.jwt.token'
         }
@@ -524,34 +311,34 @@ export class AuthController {
     }
   })
   @ApiBadRequestResponse({ 
-    description: 'Invalid or expired OTP',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.INVALID_OTP,
     schema: {
       example: {
         statusCode: 400,
-        message: 'Invalid OTP',
-        error: 'Bad Request'
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.INVALID_OTP,
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.BAD_REQUEST
       }
     }
   })
   @ApiUnauthorizedResponse({ 
-    description: 'Unauthorized - Invalid or expired temporary token',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED,
     schema: {
       example: {
         statusCode: 401,
-        message: 'Unauthorized',
-        error: 'Unauthorized'
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED,
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED
       }
     }
   })
   async verifyOtp(@CurrentPartner() partnerEmail: string, @Body('otp') otp: string) {
     this.logger.log(`Verifying OTP for email: ${partnerEmail}`);
     const result = await this.authService.verifyOtp(partnerEmail, otp);
-    this.logger.log('OTP verified successfully');
+    this.logger.log(AUTH_CONSTANTS.MESSAGES.SUCCESS.VERIFY_OTP);
     return result;
   }
 
   @UseGuards(OtpVerifiedGuard)
-  @Patch('update-password')
+  @Patch(AUTH_CONSTANTS.ENDPOINTS.UPDATE_PASSWORD)
   @ApiBearerAuth('JWT')
   @ApiOperation({ 
     summary: 'Update password after OTP verification',
@@ -562,31 +349,30 @@ export class AuthController {
     description: 'New password details'
   })
   @ApiOkResponse({ 
-    description: 'Password updated successfully',
+    description: AUTH_CONSTANTS.MESSAGES.SUCCESS.UPDATE_PASSWORD,
     schema: {
       example: {
         success: true,
-        message: 'Password updated successfully'
+        message: AUTH_CONSTANTS.MESSAGES.SUCCESS.UPDATE_PASSWORD
       }
     }
   })
   @ApiUnauthorizedResponse({ 
-    description: 'Unauthorized - Invalid or expired verified token',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED,
     schema: {
       example: {
         statusCode: 401,
-        message: 'Unauthorized',
-        error: 'Unauthorized'
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.UNAUTHORIZED
       }
     }
   })
   @ApiBadRequestResponse({ 
-    description: 'Password validation failed',
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.INVALID_PASSWORD_FORMAT,
     schema: {
       example: {
         statusCode: 400,
-        message: ['Password must be at least 8 characters'],
-        error: 'Bad Request'
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.INVALID_PASSWORD_FORMAT,
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.BAD_REQUEST
       }
     }
   })
@@ -596,7 +382,7 @@ export class AuthController {
   ) {
     this.logger.log(`Updating password for email: ${partnerEmail}`);
     const result = await this.authService.updatePassword(partnerEmail, updatePasswordData);
-    this.logger.log('Password updated successfully');
+    this.logger.log(AUTH_CONSTANTS.MESSAGES.SUCCESS.UPDATE_PASSWORD);
     return result;
   }
 }

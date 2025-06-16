@@ -5,13 +5,9 @@ import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
 import { MongooseModule } from '@nestjs/mongoose';
-import { DeliveryPartnerModule } from './modules/deliveryPartner/deliveryPartnerModule';
 import { AuthModule } from './modules/auth/auth.module';
-import { DeliveryModule } from './modules/delivery/delivery.module';
 import { TrackingModule } from './modules/tracking/tracking.module';
-import { MidModuleModule } from './modules/mid-module/mid-module.module';
-import { KafkaModule } from './modules/kafka/kafka.module';
-import { TrackingGateway } from './modules/tracking/tracking.gateway';
+
 
 @Module({
   imports: [
