@@ -9,6 +9,7 @@ import { TokenModule } from './modules/token/token.module';
 import { ComplaintModule } from './modules/complain-service/complainmodule';
 import { ManagerGateway } from './modules/gateway/manager.gateway';
 import { KafkaModule } from './kafka/kafka.module';
+import { LoggerModule } from 'src/logger/logger.module';
 
 @Module({
   imports: [
@@ -43,7 +44,8 @@ import { KafkaModule } from './kafka/kafka.module';
     ]),
     TokenModule,
     ComplaintModule,
-    KafkaModule
+    KafkaModule,
+    LoggerModule
   ],
   controllers: [ManagerController],
   providers: [ManagerGateway, ManagerService],

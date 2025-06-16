@@ -5,6 +5,7 @@ import { ManagerModule } from './manager/manager.module';
 import { RestaurantModule } from './restaurant/restaurant.module';
 import { ManagerGateway } from './manager/modules/gateway/manager.gateway';
 import { KafkaModule } from './manager/kafka/kafka.module';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { KafkaModule } from './manager/kafka/kafka.module';
       inject: [ConfigService],
     }),
     ManagerModule, 
-    RestaurantModule,
+    RestaurantModule, RabbitmqModule,
   ],
   controllers: [],
   providers: [],

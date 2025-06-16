@@ -1,7 +1,7 @@
 import { Body, Controller, Put, UseGuards } from '@nestjs/common';
 import { DeliveryService } from './delivery.service';
 import { AuthGuard } from '../auth/guards/authGuard';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { Ctx, EventPattern, KafkaContext, Payload } from '@nestjs/microservices';
 import { Types } from 'mongoose';
 import { 
   ApiTags, 
@@ -17,6 +17,7 @@ import {
 import { Logger } from '@nestjs/common';
 import { DELIVERY_CONSTANTS } from './deliveryConstants';
 import { DeliveryStatus } from './enums/deliveryEnums';
+
 
 
 @ApiTags('Delivery Management')
@@ -75,7 +76,22 @@ export class DeliveryController {
       }
     }
   })
-  async handleOrderPickup(@Payload('orderId') orderId: Types.ObjectId) {
+  async handleOrderPickup(@Payload('orderId') orderId: Types.ObjectId, @Ctx() context: KafkaContext) {
+
+      console.log('Received message:');
+      
+      const consumer = context.getConsumer();
+      const topic = context.getTopic();
+      const partition = context.getPartition();
+      const offset = context.getMessage().offset;
+      
+      await consumer.commitOffsets([{
+        topic,
+        partition,
+        offset: (parseInt(offset) + 1).toString(),
+      }]);
+      
+      console.log('Offset committed successfully');
     this.logger.log(`Handling order pickup for order: ${orderId}`);
   
     await this.deliveryService.updateDeliveryStatus(orderId, DeliveryStatus.PICKED_UP);
@@ -122,7 +138,22 @@ export class DeliveryController {
       }
     }
   })
-  async createDelivery(@Payload() data: {orderId: Types.ObjectId}) {
+  async createDelivery(@Payload() data: {orderId: Types.ObjectId}, @Ctx() context: KafkaContext) {
+
+      console.log('Received message');
+      
+      const consumer = context.getConsumer();
+      const topic = context.getTopic();
+      const partition = context.getPartition();
+      const offset = context.getMessage().offset;
+      
+      await consumer.commitOffsets([{
+        topic,
+        partition,
+        offset: (parseInt(offset) + 1).toString(),
+      }]);
+      
+      console.log('Offset committed successfully');
     const { orderId } = data;
     this.logger.log(`Creating new delivery for order: ${orderId}`);
     await this.deliveryService.createDelivery(orderId);

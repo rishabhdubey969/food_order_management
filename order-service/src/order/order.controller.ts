@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards,Res } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards,Res, BadRequestException } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { PaymentClient } from 'src/grpc/payment/payment.client';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
@@ -16,7 +16,7 @@ import { Response } from 'express'
 
 
 
-@ApiBearerAuth()
+@ApiBearerAuth('JWT')
 @ApiTags('Order')
 @UseGuards(jwtGuard)
 @Controller('order')
@@ -84,7 +84,9 @@ export class OrderController {
                 const orderConfirmed=this.orderService.updateOrder(orderId,paymentData.paymentID,PaymentStatus.COMPLETED,PaymentMethod.UPI,OrderStatus.CONFIRMED);
                 return orderConfirmed;
               }
-        
+        }
+        else{
+           throw new BadRequestException('Invalid  values');
         }
       }
    
@@ -180,5 +182,11 @@ export class OrderController {
       async handleCart(payload:{orderId:ObjectId}){
         const userId=await this.orderService.getUserId(payload.orderId);
         await this.kafkaService.handleEvent('orderCreated',userId);
+      }
+
+      @EventPattern('deliveryPatenerResponse')
+      async deliveryAssigned(payload:{})
+      {
+
       }
 }

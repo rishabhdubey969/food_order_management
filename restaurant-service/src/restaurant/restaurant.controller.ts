@@ -1,165 +1,199 @@
-import { Body, Controller, Get, Param, Post, Put, Query, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
-import { RestaurantService } from './restaurant.service';
-import { CreateRestaurantDto } from './dto/restaurant.dto';
-import { CreateMenuItemDto } from './dto/createMenuItem.dto';
-import { RolesGuard } from './guards/roles.guard';
-import { UpdateRestaurantDto } from './dto/updateRestaurant.dto';
-import { AdminGuard } from './guards/admin.guard';
 import {
-    ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery,
-    ApiResponse, ApiTags
-} from '@nestjs/swagger';
-import { JwtAuthGuard } from './guards/jwtAuth.guard';
-import {  CouponDto } from './dto/coupon.dto';
-import { UpdateCoponDto } from './dto/updateCoupon.dto';
-import { UserGuard } from './guards/user.guard';
-
-interface MediaService {
+    Body,
+    Controller,
+    Get,
+    Param,
+    Post,
+    Put,
+    Query,
+    Req,
+    UseGuards,
+  } from '@nestjs/common';
+  import { RestaurantService } from './restaurant.service';
+  import {
+    ApiBearerAuth,
+    ApiBody,
+    ApiConsumes,
+    ApiOperation,
+    ApiQuery,
+    ApiResponse,
+    ApiTags,
+  } from '@nestjs/swagger';
+  import { CreateRestaurantDto } from './dto/restaurant.dto';
+  import { UpdateRestaurantDto } from './dto/updateRestaurant.dto';
+  import { CreateMenuItemDto } from './dto/createMenuItem.dto';
+  import { CouponDto } from './dto/coupon.dto';
+  import { UpdateCoponDto } from './dto/updateCoupon.dto';
+  import { GrpcAuthGuard } from './guards/auth.guard';
+  import { Roles } from './decorators/roles.decorator';
+  import { Role } from './common/role.enum';
+  
+  interface MediaService {
     getSignedUrl(fileName: string, fileType: string, folderName: string): Promise<string>;
-}
-
-// @UseGuards(JwtAuthGuard)
-@ApiTags('Restaurants')
-@ApiBearerAuth()
-// @UseGuards(JwtAuthGuard)
-@Controller('restaurant')
-export class RestaurantController {
-
-    private mediaService: MediaService;
-
-    constructor(private readonly restaurantService: RestaurantService) { }
-
+  }
+  
+  @ApiTags('Restaurants')
+  @ApiBearerAuth()
+  @UseGuards(GrpcAuthGuard)
+  @Controller('restaurant')
+  export class RestaurantController {
+    private  readonly mediaService: MediaService;
+  
+    constructor(private readonly restaurantService: RestaurantService) {}
+  
     @Post('create/:managerId')
+    @Roles(Role.ADMIN)
     @ApiOperation({ summary: 'Create a restaurant' })
     @ApiResponse({ status: 201, description: 'Restaurant created successfully.' })
-    async createRestaurant(@Body() createRestaurantDto: CreateRestaurantDto, @Param('managerId') managerId: string) {
-        return this.restaurantService.createRestaurant(createRestaurantDto, managerId);
+    async createRestaurant(
+      @Param('managerId') managerId: string,
+      @Body() dto: CreateRestaurantDto,
+    ) {
+      return this.restaurantService.createRestaurant(dto, managerId);
     }
-
-    // @UseGuards(UserGuard)
-    @Get('/nearby')
+  
+    @Get('nearby')
+    @Roles(Role.USER)
     @ApiOperation({ summary: 'Get nearby restaurants' })
     @ApiQuery({ name: 'latitude', required: true })
     @ApiQuery({ name: 'longitude', required: true })
     @ApiQuery({ name: 'limit', required: false })
     @ApiQuery({ name: 'offset', required: false })
     async getNearbyRestaurants(
-        @Query('latitude') latitude: number,
-        @Query('longitude') longitude: number,
-        @Query('limit') limit = 10,
-        @Query('offset') offset = 0,
-        @Req() req: any,
+      @Query('latitude') latitude: number,
+      @Query('longitude') longitude: number,
+      @Query('limit') limit = 10,
+      @Query('offset') offset = 0,
+      @Req() req: any,
     ) {
-        const user  = req.user;
-        return this.restaurantService.getNearbyRestaurants(latitude, longitude, +limit, +offset, user);
+      const user = req.user;
+      return this.restaurantService.getNearbyRestaurants(latitude, longitude, +limit, +offset, user);
     }
-
-    // @UseGuards(AdminGuard)
-    @Get('/all')
-    @ApiOperation({ summary: 'Get all restaurants (Admin only)' })
-    async getAllRestaurants(@Query('limit') limit = 10, @Query('offset') offset = 0) {
-        return this.restaurantService.getAllRestaurants(+limit, +offset);
+  
+    @Get('all')
+    @Roles(Role.ADMIN)
+    @ApiOperation({ summary: 'Get all restaurants' })
+    async getAllRestaurants(
+      @Query('limit') limit = 10,
+      @Query('offset') offset = 0,
+    ) {
+      return this.restaurantService.getAllRestaurants(+limit, +offset);
     }
-
-    @Put('/:id')
-    @UseGuards(RolesGuard)
+  
+    @Put(':id')
+    @Roles(Role.ADMIN, Role.MANAGER)
     @ApiOperation({ summary: 'Update a restaurant' })
-    async updateRestaurant(@Param('id') id: string, @Body() updateRestaurantDto: UpdateRestaurantDto) {
-        return this.restaurantService.updateRestaurant(id, updateRestaurantDto);
+    async updateRestaurant(
+      @Param('id') id: string,
+      @Body() dto: UpdateRestaurantDto,
+    ) {
+      return this.restaurantService.updateRestaurant(id, dto);
     }
-
-    @Get('/manager/:managerId')
+  
+    @Get('manager/:managerId')
+    @Roles(Role.ADMIN, Role.MANAGER)
     @ApiOperation({ summary: 'Get restaurant by manager ID' })
-    async getRestaurantByManagerId(@Param('managerId') managerId: string) {
-        return this.restaurantService.getRestaurantByManagerId(managerId);
+    async getByManager(@Param('managerId') managerId: string) {
+      return this.restaurantService.getRestaurantByManagerId(managerId);
     }
-
-    // @UseGuards(AdminGuard)
-    @Get('/tags')
-    @ApiOperation({ summary: 'Get restaurants by tags (Admin only)' })
-    @ApiQuery({ name: 'tags', required: false, description: 'Comma-separated list of tags' })
-    async getRestaurants(@Query('tags') tags?: string) {
-        const tagArray = tags ? tags.split(',') : [];
-        return this.restaurantService.findByTags(tagArray);
+  
+    @Get('tags')
+    @Roles(Role.ADMIN)
+    @ApiOperation({ summary: 'Get restaurants by tags' })
+    @ApiQuery({ name: 'tags', required: false })
+    async getByTags(@Query('tags') tags?: string) {
+      const tagArray = tags ? tags.split(',') : [];
+      return this.restaurantService.findByTags(tagArray);
     }
-
+  
     @Post('signed-url')
-    getSignedUrlForRestaurant(@Body() body: { fileName: string; fileType: string }) {
-        const { fileName, fileType } = body;
-        const signedUrl = this.mediaService.getSignedUrl(fileName, fileType, 'restaurant');
-        return { signedUrl };
+    @Roles(Role.ADMIN, Role.MANAGER)
+    @ApiOperation({ summary: 'Get signed URL for restaurant image' })
+    async getRestaurantImageSignedUrl(
+      @Body() body: { fileName: string; fileType: string },
+    ) {
+      const { fileName, fileType } = body;
+      const signedUrl = await this.mediaService.getSignedUrl(fileName, fileType, 'restaurant');
+      return { signedUrl };
     }
-
+  
     @Post('menu/signed-url')
-    getSignedUrlForMenuItem(@Body() body: { fileName: string; fileType: string }){
-        const { fileName, fileType } = body;
-        const signedUrl = this.mediaService.getSignedUrl(fileName, fileType, 'menu');
-        return { signedUrl };
+    @Roles(Role.ADMIN, Role.MANAGER)
+    @ApiOperation({ summary: 'Get signed URL for menu item image' })
+    async getMenuImageSignedUrl(
+      @Body() body: { fileName: string; fileType: string },
+    ) {
+      const { fileName, fileType } = body;
+      const signedUrl = await this.mediaService.getSignedUrl(fileName, fileType, 'menu');
+      return { signedUrl };
     }
-
-    // @UseGuards(RolesGuard)
-    @Post('/:restaurantId/menu')
-    @ApiOperation({ summary: 'Create a menu item for a restaurant' })
+  
+    @Post(':restaurantId/menu')
+    @Roles(Role.ADMIN, Role.MANAGER)
+    @ApiOperation({ summary: 'Create menu item' })
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: CreateMenuItemDto })
     async createMenu(
-        @Param('restaurantId') restaurantId: string,
-        @Body() createMenuItemDto: CreateMenuItemDto,
+      @Param('restaurantId') restaurantId: string,
+      @Body() dto: CreateMenuItemDto,
     ) {
-        return this.restaurantService.createMenuItem(restaurantId, createMenuItemDto);
+      return this.restaurantService.createMenuItem(restaurantId, dto);
     }
-
-    @Get('/:restaurantId/menu/:itemId')
+  
+    @Get(':restaurantId/menu/:itemId')
     @ApiOperation({ summary: 'Get menu item by ID' })
-    async getItemById(
-        @Param('restaurantId') restaurantId: string,
-        @Param('itemId') itemId: string,
+    async getMenuItemById(
+      @Param('restaurantId') restaurantId: string,
+      @Param('itemId') itemId: string,
     ) {
-        return this.restaurantService.getItemById(restaurantId, itemId);
+      return this.restaurantService.getItemById(restaurantId, itemId);
     }
-
-    @Get('/:restaurantId/menu')
-    @ApiOperation({ summary: 'Get all menu items by restaurant ID' })
+  
+    @Get(':restaurantId/menu')
+    @ApiOperation({ summary: 'Get all menu items' })
     async getMenuItems(@Param('restaurantId') restaurantId: string) {
-        return this.restaurantService.getMenuItems(restaurantId);
+      return this.restaurantService.getMenuItems(restaurantId);
     }
-
-    @Get('/coupons/:restaurantId')
+  
+    @Get('coupons/:restaurantId')
+    @Roles(Role.ADMIN, Role.MANAGER)
     @ApiOperation({ summary: 'Get coupons by restaurant ID' })
     async getCoupons(@Param('restaurantId') restaurantId: string) {
-        return this.restaurantService.getCoupons(restaurantId);
+      return this.restaurantService.getCoupons(restaurantId);
     }
-
-    @Post('/coupons/:restaurantId')
-    // @UseGuards(RolesGuard)
-    @ApiOperation({ summary: 'Create a coupon for a restaurant' })
+  
+    @Post('coupons/:restaurantId')
+    @Roles(Role.ADMIN, Role.MANAGER)
+    @ApiOperation({ summary: 'Create coupon' })
     async createCoupon(
-        @Param('restaurantId') restaurantId: string,
-        @Body() createCouponDto: CouponDto
+      @Param('restaurantId') restaurantId: string,
+      @Body() dto: CouponDto,
     ) {
-        return this.restaurantService.createCoupon(restaurantId, createCouponDto);
+      return this.restaurantService.createCoupon(restaurantId, dto);
     }
-
-    @Put('/coupons/:couponId')
-    // @UseGuards(RolesGuard)
-    @ApiOperation({ summary: 'Update a coupon for a restaurant' })
+  
+    @Put('coupons/:couponId')
+    @Roles(Role.ADMIN, Role.MANAGER)
+    @ApiOperation({ summary: 'Update coupon' })
     async updateCoupon(
-        @Param('couponId') couponId: string,
-        @Body() updateCouponDto: UpdateCoponDto
+      @Param('couponId') couponId: string,
+      @Body() dto: UpdateCoponDto,
     ) {
-        return this.restaurantService.updateCoupon(couponId, updateCouponDto);
+      return this.restaurantService.updateCoupon(couponId, dto);
     }
-
-    @Get('/search/food')
-    @ApiOperation({ summary: 'Search restaurants by food keyword' })
-    @ApiQuery({ name: 'q', required: true, description: 'Search query string' })
+  
+    @Get('search/food')
+    @Roles(Role.USER)
+    @ApiOperation({ summary: 'Search by food name' })
+    @ApiQuery({ name: 'q', required: true })
     async searchByFood(@Query('q') query: string) {
-        return this.restaurantService.searchRestaurantsByFood(query );
+      return this.restaurantService.searchRestaurantsByFood(query);
     }
-
-    @Get('/:id')
+  
+    @Get(':id')
     @ApiOperation({ summary: 'Get restaurant by ID' })
     async getRestaurantById(@Param('id') id: string) {
-        return this.restaurantService.getRestaurantById(id);
+      return this.restaurantService.getRestaurantById(id);
     }
-}
+  }
+  

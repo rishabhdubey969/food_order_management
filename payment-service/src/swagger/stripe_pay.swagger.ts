@@ -7,7 +7,21 @@ export function PaymmentDoc() {
   return applyDecorators(
     ApiOperation({ summary: 'Create a new payment checkout-session' }),
     ApiBody({ type: CreatePaymentDto }),
-    ApiResponse({ status: 201, description: ' Payment completed successfully', type: CreatePaymentDto }),
+    ApiResponse({
+      status: 201,
+      description: 'Returns the Stripe checkout session URL',
+      content: {
+        'application/json': {
+          example: {
+            statusCode: 201,
+            message: 'Success',
+            data: {
+              url: 'https://checkout.stripe.com'
+            }
+          }
+        }
+      }
+    }),
     ApiResponse({ status: 400, description: 'Invalid input' }),
     ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' }),
     ApiResponse({ status: 402, description: 'Payment Required' }),

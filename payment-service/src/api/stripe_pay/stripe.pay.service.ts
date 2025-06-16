@@ -9,10 +9,10 @@ import { Connection, Model } from 'mongoose';
 import Stripe from 'stripe';
 import { Payment, PaymentDocument, paymentHistory, paymentHistoryDocument } from './Schema/stripe.pay.schema';
 import { ConfigService } from '@nestjs/config';
-import { errorService } from 'src/error/error.service';
 import { StripeConfigService } from '../../config/stripe.config';
 import { CreatePaymentDto } from './DTO/create.payment.dto';
 import { ObjectId } from 'mongodb';
+import { ERROR } from './constant/message.constant';
 
 @Injectable()
 export class StripePayService {
@@ -30,7 +30,7 @@ export class StripePayService {
     @InjectModel(paymentHistory.name)
     private paymentHistoryModel : Model<paymentHistoryDocument>,
     private readonly configService: ConfigService,
-    private errorService: errorService,
+   
     private stripeConfig: StripeConfigService,
     @InjectConnection() private readonly connection: Connection,
   ) {
@@ -40,17 +40,23 @@ export class StripePayService {
   async createCheckoutSession(payload: CreatePaymentDto) {
     try {
       if (!payload.orderId) {
-        throw new BadRequestException('orderId is required');
+        throw new BadRequestException(ERROR.NOT_PROVIDED);
       }
       const orderId = payload.orderId;
+      if (!ObjectId.isValid(orderId)) {
+        throw new BadRequestException(ERROR.INVALID);
+      }
       const orderData = await this.connection
         .collection('orders')
         .findOne({ _id: new ObjectId(orderId) });
       if (!orderData) {
-        throw new BadRequestException('order does not exist');
+        throw new BadRequestException(ERROR.NOT_EXIST);
       }
       const total_amount = orderData?.total;
       const userId = orderData.userId;
+      if (!total_amount || isNaN(total_amount)) {
+        throw new BadRequestException('Invalid order amount');
+      }
 
       const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -67,8 +73,8 @@ export class StripePayService {
           },
         ],
         mode: 'payment',
-        success_url: 'http://localhost:3000/success',
-        cancel_url: 'http://localhost:3000/cancel',
+        success_url: 'http://localhost:5173/order-success',
+        cancel_url: 'http://localhost:5173/order-failure',
         metadata: {
           orderId: orderId,
         },
@@ -106,27 +112,31 @@ export class StripePayService {
 
       return { url: session.url };
     } catch (error) {
+      this.logger.error(`Checkout session failed for order ${payload?.orderId}:`, error.message, error.stack);
       Logger.error('Error creating checkout session:', error);
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Payment processing error: ${error.message}`);
+      }
       if (error) {
         throw error;
       }
-      throw new BadRequestException('Failed to create checkout session');
+      throw new BadRequestException(ERROR.FAILED_CHECKOUT_SESSION);
     }
   }
 
   async updatePaymentStatus(sessionId: string, status: string) {
     const payment = await this.paymentModel.findOneAndUpdate(
-      { sessionId },
-      { status },
+      { sessionId: sessionId },
+      { status: status },
       { new: true },
     );
     return payment;
   }
 
-  async updatePaymentHistory(sessionId:string,status:string){
-    const paymentHistory = await this.paymentModel.findByIdAndUpdate(
-      { sessionId },
-      { status },
+  async updatePaymentHistory(sessionId: string, status: string) {
+    const paymentHistory = await this.paymentHistoryModel.findOneAndUpdate(
+      { sessionId: sessionId },
+      { status: status },
       { new: true },
     );
     return paymentHistory;
@@ -136,7 +146,7 @@ export class StripePayService {
     const payment = await this.paymentModel.findOne({ orderId });
 
     if (!payment) {
-      throw new NotFoundException('Payment not found');
+      throw new NotFoundException(ERROR.NOT_FOUND);
     }
 
     return {
@@ -167,7 +177,13 @@ export class StripePayService {
     //   return "Payment Failed"
     // }
   }
+  
 
+
+  async fetchDetails(orderId:string){
+    const paymentHistory = await this.paymentHistoryModel.findOne({orderId:orderId});
+    return paymentHistory;
+  }
 
 
 }
