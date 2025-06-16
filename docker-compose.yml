@@ -58,10 +58,7 @@ services:
       - "15672:15672" # RabbitMQ management UI
     networks:
       - app-network
-<<<<<<< HEAD
       
-=======
->>>>>>> c77d29c (fix: added rabbit mq on main docker file)
 networks:
   app-network:
     driver: bridge
