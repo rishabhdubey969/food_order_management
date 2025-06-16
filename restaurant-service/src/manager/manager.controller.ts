@@ -90,7 +90,6 @@ logout(@Headers('authorization') authHeader: string) {
   async handleIsFoodAvailable(@Payload() cartId: Types.ObjectId){ 
     return await this.managerService.handleIsFoodAvailable(cartId);
   }
-<<<<<<< HEAD
   
 @Post('orderHandOver')
 @UseGuards(JwtAuthGuard)
@@ -98,37 +97,16 @@ logout(@Headers('authorization') authHeader: string) {
 @ApiOperation({ summary: 'Mark order as handed over' })
 @ApiBody({
   description: 'Order ID to mark as handed over',
-=======
-
-  @ApiOperation({ summary: 'Update Manager Details' })
-  @ApiBody({
->>>>>>> da0102099fccedc956909c111cf885973ba66200
   schema: {
     type: 'object',
     properties: {
       orderId: {
         type: 'string',
-<<<<<<< HEAD
         description: 'MongoDB ObjectId of the order',
         example: '507f1f77bcf86cd799439011'
       }
     },
     required: ['orderId']
-=======
-        example: '664a12ef3ff8cdbe0246823e',
-      },
-    },
-    required: ['orderId'],
-  },
-})
-  @Post('orderHandOver')
-  async handleOrderhandover(@Body('orderId') orderId: Types.ObjectId){
-    await this.managerService.handleOrderHandover(orderId);
-    return {
-      success: true,
-      message: "Order HandOvered Accepted"
-    }
->>>>>>> da0102099fccedc956909c111cf885973ba66200
   }
 })
 async handleOrderhandover(@Body('orderId', ParseObjectIdPipe) orderId: Types.ObjectId ) {

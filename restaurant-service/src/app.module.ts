@@ -5,6 +5,7 @@ import { ManagerModule } from './manager/manager.module';
 import { RestaurantModule } from './restaurant/restaurant.module';
 import { ManagerGateway } from './manager/modules/gateway/manager.gateway';
 import { KafkaModule } from './manager/kafka/kafka.module';
+import { WinstonLogger } from './logger/winston-logger.service';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { KafkaModule } from './manager/kafka/kafka.module';
     RestaurantModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [WinstonLogger],
+  exports: [WinstonLogger],
 })
 export class AppModule {
   

@@ -7,6 +7,7 @@ import { MenuItemSchema } from './schema/menuItem.schema';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CouponSchema } from './schema/copon.schema';
 import { RedisModule } from './redis/redis.module';
+import { LoggerModule } from 'src/logger/logger.module';
 
 @Module({
   imports: [MongooseModule.forFeature([
@@ -14,6 +15,7 @@ import { RedisModule } from './redis/redis.module';
     { name: 'MenuItem', schema: MenuItemSchema },
     { name: 'Coupon', schema: CouponSchema },
   ]), RedisModule,
+  LoggerModule,
   // ClientsModule.register([
   //   {
   //     name: 'MEDIA_SERVICE',

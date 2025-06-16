@@ -5,37 +5,60 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { GlobalExceptionFilter } from './manager/common/global-exception.filter';
 import { ValidationPipe } from '@nestjs/common';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './logger/winston.config'; 
 
 async function bootstrap() {
-   const app = await NestFactory.create(AppModule);
-   app.useGlobalFilters(new GlobalExceptionFilter());
-  
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true,
-    whitelist: true,      
-    forbidNonWhitelisted: true, 
-    transformOptions: {
-      enableImplicitConversion: true,
-    },
-  }),
-);
- const grpcMicroservice = app.connectMicroservice<MicroserviceOptions>({
+  const app = await NestFactory.create(AppModule, {
+    logger: WinstonModule.createLogger(winstonConfig), 
+  });
+
+  app.useGlobalFilters(new GlobalExceptionFilter());
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
+
+  // GRPC Microservice
+  const grpcMicroservice = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
       package: 'admin',
-      protoPath:  'src/manager/grpc/admin.proto',
+      protoPath: 'src/manager/grpc/admin.proto',
     },
   });
 
-   app.enableCors({
-    origin: ['http://localhost:5173', 'http://172.50.5.110'], 
+  // Kafka Microservice
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.KAFKA,
+    options: {
+      client: {
+        brokers: ['localhost:29092'],
+      },
+      consumer: {
+        groupId: 'group-email',
+      },
+    },
+  });
+
+  // CORS
+  app.enableCors({
+    origin: ['http://localhost:5173', 'http://172.50.5.110'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
+  // Swagger
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT') || 3005; 
- 
+  const port = configService.get<number>('PORT') || 3005;
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Manager and Restaurant API')
     .setDescription('API with NestJS')
@@ -44,7 +67,7 @@ async function bootstrap() {
       {
         type: 'http',
         scheme: 'bearer',
-        bearerFormat: 'JWT'
+        bearerFormat: 'JWT',
       },
       'JWT',
     )
@@ -52,23 +75,8 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
-  
-  
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.KAFKA,
-    options: {
 
-      client:{
-        brokers:["localhost:29092"]
-      },
-
-      consumer:{
-        groupId: 'group-email'
-      }
-      
-    }});
-
-  await app.startAllMicroservices(); 
+  await app.startAllMicroservices();
   await app.listen(port);
 }
 bootstrap();
