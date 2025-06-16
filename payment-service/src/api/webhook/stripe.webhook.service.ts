@@ -220,7 +220,7 @@ export class StripeWebhookService {
       const email = charge.billing_details.email
       const status= "completed"
       const mailData = {email,orderId,status}
-      this.client.emit('payment-done', mailData);
+      this.client.emit('payment_done', mailData);
     } catch (error) {
       Logger.error('Error handling charge succeeded:', error);
       throw error;
@@ -340,7 +340,7 @@ export class StripeWebhookService {
       console.log(email)
       const status= "failed"
       const mailData = {email,orderId,status}
-      this.client.emit('payment-failed', mailData);
+      this.client.emit('payment_failed', mailData);
       Logger.log(`Payment failed for order ${orderId}`);
       Logger.log(
         `Failure reason: ${paymentIntent.last_payment_error?.message}`,
