@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Webhook, WebhookDocument } from './Schema/webhook.schema';
+import { ERROR, SUCCESS } from './constant/message.constant';
 
 @Injectable()
 export class StripeWebhookService {
@@ -45,7 +46,7 @@ export class StripeWebhookService {
 
       if (!webhookEvent) {
         throw new Error(
-          `Failed to update webhook event ${eventData.stripeEventId}`,
+          ERROR.FAILED_UPDATE,
         );
       }
 
@@ -54,7 +55,7 @@ export class StripeWebhookService {
       );
       return webhookEvent;
     } catch (error) {
-      this.logger.error('Error saving webhook event:', error);
+      this.logger.error(ERROR.SAVE_FAILED, error);
       throw error;
     }
   }
@@ -109,7 +110,7 @@ export class StripeWebhookService {
           Logger.log(`Unhandled event type: ${event.type}`);
       }
     } catch (error) {
-      Logger.error('Error handling webhook event:', error);
+      Logger.error(ERROR.HANDLE_FAILED, error);
       throw error;
     }
   }
@@ -127,7 +128,7 @@ export class StripeWebhookService {
         amount: paymentIntent.amount || undefined,
       });
     } catch (error) {
-      Logger.error('Error handling payment intent created:', error);
+      Logger.error(ERROR.HANDLE_FAILED_PAYMENTINTENT, error);
       throw error;
     }
   }
@@ -136,10 +137,10 @@ export class StripeWebhookService {
     try {
       const orderId = paymentIntent.metadata?.orderId;
       if (!orderId) {
-        throw new Error('No orderId found in payment intent metadata');
+        throw new Error(ERROR.NOT_EXIST_PAYMENTINTENT);
       }
 
-      Logger.log(`Payment intent succeeded for order ${orderId}`);
+      Logger.log(SUCCESS.PAYMENTINTENT_SUCCEEDED,orderId);
 
       const session = await this.stripeConfig
         .getStripeInstance()
@@ -159,9 +160,8 @@ export class StripeWebhookService {
       });
 
       if (session.data.length === 0) {
-        throw new Error(
-          `No session found for payment intent ${paymentIntent.id}`,
-        );
+        throw new Error(ERROR.NO_SESSION_PAYMENTINTENT)
+        
       }
 
       await this.updatePaymentStatus(session.data[0].id, 'completed');
@@ -176,7 +176,7 @@ export class StripeWebhookService {
       const paymentIntentId = charge.payment_intent as string;
 
       if (!paymentIntentId) {
-        throw new Error('No payment intent found in charge');
+        throw new Error(ERROR.NO_INTENT);
       }
 
       const paymentIntent = await this.stripeConfig
@@ -185,7 +185,7 @@ export class StripeWebhookService {
 
       const orderId = paymentIntent.metadata?.orderId;
       if (!orderId) {
-        throw new Error('No orderId found in payment intent metadata');
+        throw new Error(ERROR.NO_ORDERID);
       }
 
       Logger.log(`Charge succeeded for order ${orderId}`);
@@ -199,7 +199,7 @@ export class StripeWebhookService {
 
       if (session.data.length === 0) {
         throw new Error(
-          `No session found for payment intent ${paymentIntentId}`,
+          ERROR.NO_SESSION_PAYMENTINTENT
         );
       }
 
