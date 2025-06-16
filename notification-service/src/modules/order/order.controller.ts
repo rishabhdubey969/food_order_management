@@ -12,4 +12,9 @@ export class OrderController {
    async handlePaymentSuccess(@Payload() data: any) {
      await this.orderService.handlePaymentSuccessService(data);
    }
+
+    @EventPattern('payment_failed')
+   async handlePaymentFailed(@Payload() data: any) {
+     await this.orderService.handlePaymentFailedService(data);
+   }
 }
