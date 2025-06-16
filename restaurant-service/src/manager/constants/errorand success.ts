@@ -12,12 +12,15 @@ export const SUCCESS_MESSAGES = {
   ORDER_CREATED:'Order created successfully',
   MANAGER_FOUND:'Manager found',
   LOGOUT_SUCCESS:'Manager has been logged out successfully',
+  RESET_LINK_SENT: 'If an account with that email exists, a password reset link has been sent',
+  PASSWORD_RESET_SUCCESS: 'Password has been reset successfully',
 };
 export const ERROR_MESSAGES = {
   INVALID_CREDENTIALS: 'Invalid email or password',
   MANAGER_NOT_FOUND: 'Manager not found',
   UNAUTHORIZED: 'Unauthorized access',
   INVALID_INPUT: 'Invalid input provided',
+  RESET_PASSWORD_FAILED:'Failed to reset password',
   ORDER_PROCESS_FAILED: 'Failed to process order',
     MANAGER_ALREADY_EXISTS: 'A manager with this email already exists',
     EMAIL_SEND_FAILED:'The email was unable to sent',
@@ -27,4 +30,8 @@ export const ERROR_MESSAGES = {
   ORDER_NOT_FOUND: 'Associated order not found', 
   CART_NOT_FOUND:'Cart not found.',
   INVALID_TOKEN:'Token is invalid',
+  INVALID_OR_EXPIRED_TOKEN: 'Invalid or expired password reset token',
+  REQUIRED_FIELDS_EMPTY:'Token and new password are required',
+  REGISTRATION_FAILED:'The manager registration failed',
+  EMAIL_PASSWORD_REQUIRED:'Email and password are required'
 };

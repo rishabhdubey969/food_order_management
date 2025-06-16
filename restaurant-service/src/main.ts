@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { GlobalExceptionFilter } from './manager/common/global-exception.filter';
+import { GlobalExceptionFilter } from './manager/filters/global-exception.filter';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
@@ -19,13 +19,6 @@ async function bootstrap() {
     },
   }),
 );
- const grpcMicroservice = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.GRPC,
-    options: {
-      package: 'admin',
-      protoPath:  'src/manager/grpc/admin.proto',
-    },
-  });
 
    app.enableCors({
     origin: ['http://localhost:5173', 'http://172.50.5.110'], 

@@ -9,11 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ComplaintService } from './complainservice';
-import { UpdateComplaintStatusDto } from 'src/manager/modules/auth/dto/update.complainStatusdto';
+import { UpdateComplaintStatusDto } from 'src/manager/modules/complain-service/dto/update.complainStatusdto';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { Request } from 'express';
 import {  JwtAuthGuard } from '../auth/guards/jwtauthguard'; 
-import { CreateComplaintDto } from '../auth/dto/create-complaint.dto';
+import { CreateComplaintDto } from './dto/create-complaint.dto';
 import { AdminGuard } from 'src/restaurant/guards/admin.guard';
 
 @ApiBearerAuth('access-token')

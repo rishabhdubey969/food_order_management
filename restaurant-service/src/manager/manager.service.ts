@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   InternalServerErrorException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import {Connection, Model, Types ,isValidObjectId} from 'mongoose';
@@ -17,6 +18,9 @@ import { TokenService } from 'src/manager/modules/token/token.service';
 import { ManagerGateway } from 'src/manager/modules/gateway/manager.gateway';
 import { ObjectId } from 'mongodb';
 import { KafkaService } from './kafka/kafka.service';
+import { ClientProxy } from '@nestjs/microservices';
+import { v4 as uuidv4 } from 'uuid';
+import { addHours } from 'date-fns';
 
 @Injectable()
 export class ManagerService  {
@@ -29,7 +33,8 @@ export class ManagerService  {
     @InjectConnection() private readonly connection: Connection,
     private readonly tokenService: TokenService,
     private readonly managerGateway: ManagerGateway,
-    private readonly kafkaService: KafkaService
+    private readonly kafkaService: KafkaService,
+    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   async Signup(managerSignupDto: ManagerSignupDto) {
@@ -37,7 +42,7 @@ export class ManagerService  {
     const { email, password } = managerSignupDto;
     
     if (!email || !password) {
-      throw new BadRequestException('Email and password are required');
+      throw new BadRequestException(ERROR_MESSAGES.EMAIL_PASSWORD_REQUIRED);
     }
 
     const existingManager = await this.managerModel.findOne({ email });
@@ -52,7 +57,7 @@ export class ManagerService  {
     });
 
     const savedManager = await newManager.save();
-
+     this.client.emit('user_created', savedManager);
     return {
       message: SUCCESS_MESSAGES.MANAGER_SIGNUP,
       data: {
@@ -71,14 +76,14 @@ export class ManagerService  {
       throw error;
     }
     
-    throw new InternalServerErrorException('Registration process failed');
+    throw new InternalServerErrorException(ERROR_MESSAGES.REGISTRATION_FAILED);
   }
 }
   async login(managerLoginDto: ManagerLoginDto) {
     const { email, password } = managerLoginDto;
 
     if (!email || !password) {
-      throw new BadRequestException('Email and password are required');
+      throw new BadRequestException(ERROR_MESSAGES.EMAIL_PASSWORD_REQUIRED);
     }
 
     const manager = await this.managerModel.findOne({ email });
@@ -108,6 +113,98 @@ export class ManagerService  {
         email: manager.email,
       },
     };
+  }
+
+  async initiatePasswordReset(email: string): Promise<{ message: string }> {
+    try {
+      if (!email) {
+        throw new BadRequestException('Email is required');
+      }
+
+      const manager = await this.managerModel.findOne({ email });
+      if (!manager) {
+        // For security reasons, we return a success message even if email doesn't exist
+        this.logger.warn(`Password reset requested for non-existent email: ${email}`);
+        return { message: SUCCESS_MESSAGES.RESET_LINK_SENT };
+      }
+
+      // Generate a reset token and expiry (1 hour from now)
+      const resetToken = uuidv4();
+      const resetTokenExpiry = addHours(new Date(), 1);
+
+      manager.resetToken = resetToken;
+      manager.resetTokenExpiry = resetTokenExpiry;
+      await manager.save();
+     const mailData = {
+  email: manager.email,
+  resetToken 
+};
+this.client.emit('reset_link', mailData);
+
+      // Send email with reset link 
+      await this.sendPasswordResetEmail(manager.email, resetToken);
+
+      return { message: SUCCESS_MESSAGES.RESET_LINK_SENT };
+    } catch (error) {
+      this.logger.error('Password reset initiation failed', error.stack);
+      throw new UnauthorizedException(ERROR_MESSAGES.RESET_PASSWORD_FAILED);
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    try {
+      if (!token || !newPassword) {
+        throw new BadRequestException(ERROR_MESSAGES.REQUIRED_FIELDS_EMPTY);
+      }
+
+      const manager = await this.managerModel.findOne({
+        resetToken: token,
+        resetTokenExpiry: { $gt: new Date() },
+      });
+
+      if (!manager) {
+        throw new BadRequestException(ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN);
+      }
+
+      // Update password and clear reset token
+      manager.password = await bcrypt.hash(newPassword, 10);
+      manager.resetToken = undefined;
+      manager.resetTokenExpiry = undefined;
+      await manager.save();
+
+      // Optionally send confirmation email
+      await this.sendPasswordChangedConfirmation(manager.email);
+
+      return { message: SUCCESS_MESSAGES.PASSWORD_RESET_SUCCESS };
+    } catch (error) {
+      this.logger.error('Password reset failed', error.stack);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new UnauthorizedException(ERROR_MESSAGES.RESET_PASSWORD_FAILED);
+    }
+  }
+
+  private async sendPasswordResetEmail(email: string, token: string): Promise<void> {
+    // Implement your email sending logic here
+    // This is a placeholder - you'll need to integrate with your email service
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    this.logger.log(`Password reset link for ${email}: ${resetLink}`);
+    
+    // Example using your notification service
+    this.client.emit('password_reset_requested', { 
+      email,
+      resetLink,
+      subject: 'Password Reset Request'
+    });
+  }
+
+  private async sendPasswordChangedConfirmation(email: string): Promise<void> {
+    // Implement your email sending logic here
+    this.client.emit('password_changed', { 
+      email,
+      subject: 'Your Password Has Been Changed'
+    });
   }
 
   async logout(token: string) {

@@ -7,10 +7,10 @@ import {
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection, Types, isValidObjectId } from 'mongoose';
-import { UpdateComplaintStatusDto } from 'src/manager/modules/auth/dto/update.complainStatusdto';
+import { UpdateComplaintStatusDto } from 'src/manager/modules/complain-service/dto/update.complainStatusdto';
 import { TokenService } from '../token/token.service';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from 'src/manager/constants/errorand success';
-import { CreateComplaintDto } from '../auth/dto/create-complaint.dto';
+import { CreateComplaintDto } from './dto/create-complaint.dto';
 
 
 @Injectable()

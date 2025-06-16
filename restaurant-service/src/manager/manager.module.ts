@@ -30,6 +30,17 @@ import { KafkaModule } from './kafka/kafka.module';
           }
         }
       }]),
+        ClientsModule.register([
+      {
+        name: 'NOTIFICATION_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://localhost:5672'],
+          queue: 'notification_queue',
+          queueOptions: { durable: false },
+        },
+      },
+    ]),
     TokenModule,
     ComplaintModule,
     KafkaModule
