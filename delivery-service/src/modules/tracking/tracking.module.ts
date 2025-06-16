@@ -5,6 +5,7 @@ import { DeliveryPartnerModule } from '../deliveryPartner/deliveryPartnerModule'
 import { RedisModule } from '../redis/redisModule';
 import { DeliveryModule } from '../delivery/delivery.module';
 import { MidModuleModule } from '../mid-module/mid-module.module';
+import { WebSocketGuard } from './guards/webSocketGuard';
 
 @Module({
 

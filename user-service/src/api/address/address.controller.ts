@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Param, Delete, ValidationPipe, UsePipes, UseGuards, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, ValidationPipe, UsePipes, UseGuards, Put, Req } from '@nestjs/common';
 import { AddressService } from './address.service';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { ApiTags } from '@nestjs/swagger';
-import { CreateAddressDoc, DeleteAddressByIdDoc, GetAddressAllDoc, GetAddressByIdDoc, UpdateAddressByIdDoc } from 'src/doc/address.swagger';
+import { CreateAddressDoc, DeleteAddressByIdDoc, GetAddressAllDoc, GetAddressByIdDoc, UpdateAddressByIdDoc } from 'src/swagger_doc/address.swagger';
 
 @ApiTags('address')
 @Controller('address')
@@ -36,10 +36,10 @@ export class AddressController {
    * Get a specific address by its ID.
    * @param id Address ID
    */
-  @Get(':id')
+  @Get()
   @GetAddressByIdDoc()
-  async findOne(@Param('id') id: string) {
-    return this.addressService.findOneAddressService(id);
+  async findOne(@Req() req: any) {
+    return this.addressService.findOneAddressService(req.user.payload.sub);
   }
 
   /**
@@ -47,19 +47,19 @@ export class AddressController {
    * @param id Address ID
    * @param updateAddressDto Data for updating the address
    */
-  @Put(':id')
+  @Put()
   @UpdateAddressByIdDoc()
-  async update(@Param('id') id: string, @Body() updateAddressDto: UpdateAddressDto) {
-    return this.addressService.updateAddressService(id, updateAddressDto);
+  async update(@Req() req: any, @Body() updateAddressDto: UpdateAddressDto) {
+    return this.addressService.updateAddressService(req.user.payload.sub, updateAddressDto);
   }
 
   /**
    * Delete an address by its ID.
    * @param id Address ID
    */
-  @Delete(':id')
+  @Delete()
   @DeleteAddressByIdDoc()
-  async remove(@Param('id') id: string) {
-    return this.addressService.deleteAddressService(id);
+  async remove(@Req() req: any) {
+    return this.addressService.deleteAddressService(req.user.payload.sub);
   }
 }

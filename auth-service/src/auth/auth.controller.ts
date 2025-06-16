@@ -2,12 +2,7 @@ import { Body, Controller, Post, Req, UnauthorizedException } from '@nestjs/comm
 import { AuthService } from './auth.service';
 import { LoginAuthDto } from './dto/login.dto';
 import { CONSTANTS } from 'config/constant';
-import {
-  GenerateTokenRequest,
-  TokenRequest,
-  TokenResponse,
-  ValidationResponse,
-} from 'src/grpc/interfaces/auth-interface';
+import { GenerateTokenRequest, TokenRequest } from 'src/grpc/interfaces/auth-interface';
 import { GrpcMethod } from '@nestjs/microservices';
 import { LoginSwagger, LogoutAllSwagger, LogoutSwagger, RefreshTokenSwagger } from 'src/doc/auth.swagger';
 

@@ -44,32 +44,35 @@ async function bootstrap() {
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,
-    options: {
-      client: {
-        brokers: kafkaBrokers,
-      },
-      consumer: {
-        groupId: 'groupDelivery',
-        retry:{
-          retries: 2
+      options: {
+        client: {
+          brokers: ['localhost:29092'],
+          clientId: 'deliveryConsumer',
+          retry:{
+            retries: 5
+          },
+        },
+        consumer: {
+          groupId: 'deliveryGroup',
+          allowAutoTopicCreation: true
+        },
+        producer:{
+          allowAutoTopicCreation: true
         }
-      },
-    },
-  });
+      }
+  })
 
   // Start microservices with error handling
  
-    await app.startAllMicroservices();
-    logger.log('Microservice started');
-  
+  await app.startAllMicroservices();
+  logger.log('Microservice started');
 
-  
   // Start the application
   app.enableCors();
   const port = process.env.DELIVERY_APP_PORT ?? 3003;
   
-    await app.listen(port);
-    logger.log(`Application is running on port ${port}`);
+  await app.listen(port);
+  logger.log(`Application is running on port ${port}`);
  
 }
 

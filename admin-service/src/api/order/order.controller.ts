@@ -30,10 +30,7 @@ export class OrderController {
     @Request() req,
     @Param('userId') userId: string, 
   ) {
-    // console.log(userId);
-    // if (!userId) {
-    //   throw new Error('userId is required');
-    // }
+   
     const adminId = req.user.sub;
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);

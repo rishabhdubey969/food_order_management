@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './filters/exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,12 +12,15 @@ async function bootstrap() {
     .setTitle('Food Order (User Service)')
     .setDescription('All User API is here')
     .setVersion('1.0')
-    .addBearerAuth() 
+    .addBearerAuth()
     .build();
+
+  // Apply global error filter
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  app.enableCors({ origin: '*'});
+  app.enableCors({ origin: '*' });
   await app.listen(port);
 }
 bootstrap();

@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  ForbiddenException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { SessionService } from './session.service';
 import { AuthTokenService } from './token.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -32,33 +28,22 @@ export class AuthService {
     const payload = this.tokenService.verifyRefreshToken(refreshToken);
     const session = await this.sessionService.getSession(payload.sid);
 
-    if (typeof session !== 'string')
-      throw new ForbiddenException('Invalid session data');
+    if (typeof session !== 'string') throw new ForbiddenException('Invalid session data');
 
     const sessionJson = JSON.parse(session);
-    if (
-      !sessionJson ||
-      sessionJson.used ||
-      sessionJson.userId !== payload.sub
-    ) {
+    if (!sessionJson || sessionJson.used || sessionJson.userId !== payload.sub) {
       throw new ForbiddenException('Invalid or used refresh token');
     }
 
     //  IP/UA anomaly detection
-    if (
-      sessionJson.ip !== req.ip ||
-      sessionJson.userAgent !== req.headers['user-agent']
-    ) {
+    if (sessionJson.ip !== req.ip || sessionJson.userAgent !== req.headers['user-agent']) {
       console.warn('Anomaly detected');
     }
 
     await this.sessionService.markSessionUsed(payload.sid);
 
     const newSessionId = uuidv4();
-    const newRefreshToken = this.tokenService.generateRefreshToken(
-      payload.sub,
-      newSessionId,
-    );
+    const newRefreshToken = this.tokenService.generateRefreshToken(payload.sub, newSessionId);
     const newAccessToken = this.tokenService.generateAccessToken(payload.sub);
     const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -91,49 +76,37 @@ export class AuthService {
   }
 
   async ValidateTokenService(accessToken: string) {
-    try {
-      const payloadAccessToken = this.tokenService.verifyToken(accessToken);
-      const isValid = !!payloadAccessToken;
+   try {
+      const payloadNew = this.tokenService.verifyToken(accessToken);
+      const isValid = !!payloadNew;
 
       return {
         isValid,
-        message: isValid
-          ? CONSTANTS.ERROR_MESSAGES.VALID_TOKEN
-          : CONSTANTS.ERROR_MESSAGES.INVALID_TOKEN,
+        message: isValid ? CONSTANTS.ERROR_MESSAGES.VALID_TOKEN : CONSTANTS.ERROR_MESSAGES.INVALID_TOKEN,
+         payload: payloadNew,
       };
     } catch (error) {
-      throw new UnauthorizedException(
-        CONSTANTS.ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN,
-      );
+      throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_OR_EXPIRED_TOKEN);
     }
   }
 
   async validateUser(loginDto: LoginAuthDto) {
     const { email, password } = loginDto;
-
     const collectionName = this.roleCollections.USER;
-
-    const user = await this.connection
-      .collection(collectionName)
-      .findOne({ email });
+    const user = await this.connection.collection(collectionName).findOne({ email });
 
     if (!user) {
-      throw new UnauthorizedException(
-        CONSTANTS.ERROR_MESSAGES.INVALID_CREDENTIALS,
-      );
+      throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
     if (!user.is_active) {
-      throw new UnauthorizedException(
-        CONSTANTS.ERROR_MESSAGES.ACCOUNT_INACTIVE,
-      );
+      throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.ACCOUNT_INACTIVE);
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    //console.log(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException(
-        CONSTANTS.ERROR_MESSAGES.INVALID_CREDENTIALS,
-      );
+      throw new UnauthorizedException(CONSTANTS.ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
     return user;
@@ -141,32 +114,28 @@ export class AuthService {
 
   private async generateToken(userId, req) {
     const sessionId = uuidv4();
-    const refreshToken = this.tokenService.generateRefreshToken(
-      userId,
-      sessionId,
-    );
-    const accessToken = this.tokenService.generateAccessToken(userId);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    let existing =
-      (await this.sessionService.redisGetUserCache(userId)) ??
-      (await (async () => {
-        await this.sessionService.redisUserCache(userId);
-        return this.sessionService.redisGetUserCache(userId);
-      })());
+  const userData = await this.connection
+      .collection(this.roleCollections.USER)
+      .findOne({ _id: new Object(userId) }, { projection: { username: 1, email: 1, phone: 1, role: 1 } });
+
+    const refreshToken = this.tokenService.generateRefreshToken(userId, sessionId);
+    const accessToken = this.tokenService.generateAccessToken(userData);
 
     await this.sessionService.createSession({
       userId: userId,
       sessionId,
       refreshToken,
-      userAgent:
-        (req.headers && req.headers['user-agent']) || req.userAgent || '',
+      userAgent: (req.headers && req.headers['user-agent']) || req.userAgent || '',
       ip: req.ip,
       expiresAt,
       createdAt: new Date(),
       used: false,
     });
 
-    return { accessToken, refreshToken, data: JSON.parse(existing as string) || null };
+    return { accessToken, refreshToken, message: "User login successFully " };
   }
+
+
 }

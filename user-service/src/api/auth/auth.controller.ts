@@ -4,7 +4,7 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ForgotPasswordSwagger, ResetPasswordSwagger, SendOtpSwagger, SignUpSwagger } from 'src/doc/auth.swagger';
+import { ForgotPasswordSwagger, ResetPasswordSwagger, SendOtpSwagger, SignUpSwagger } from 'src/swagger_doc/auth.swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -57,4 +57,5 @@ export class AuthController {
   async resetPassword(@Param('token') token: string, @Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(token, resetPasswordDto);
   }
+
 }

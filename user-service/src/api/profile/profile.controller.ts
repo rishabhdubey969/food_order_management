@@ -1,8 +1,8 @@
-import { Controller, Get, Body, Param, Delete, UsePipes, ValidationPipe, Patch, UseGuards } from '@nestjs/common';
+import { Controller, Get, Body, Param, Delete, UsePipes, ValidationPipe, Patch, UseGuards, Req, Post } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthGuard } from '../../guard/auth.guard';
-import { DeleteProfileSwagger, GetProfileSwagger, UpdateProfileSwagger } from 'src/doc/profile.swagger';
+import { DeleteProfileSwagger, GetProfileSwagger, UpdateProfileSwagger } from 'src/swagger_doc/profile.swagger';
 
 @Controller('profile')
 export class ProfileController {
@@ -15,12 +15,12 @@ export class ProfileController {
    * @param updateProfileDto - The data transfer object containing updated profile information.
    * @returns The updated user profile.
    */
-  @Patch(':id')
+  @Patch()
   @UpdateProfileSwagger()
   @UseGuards(AuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  profileUpdate(@Param('id') id: string, @Body() updateProfileDto: UpdateProfileDto) {
-    return this.profileService.profileUpdateService(id, updateProfileDto);
+  profileUpdate(@Req() req: any, @Body() updateProfileDto: UpdateProfileDto) {
+    return this.profileService.profileUpdateService(req.user.payload.sub, updateProfileDto);
   }
 
   /**
@@ -29,12 +29,12 @@ export class ProfileController {
    * @param id - The ID of the user whose profile is to be retrieved.
    * @returns The user profile.
    */
-  @Get(':id')
+  @Get()
   @GetProfileSwagger()
   @UseGuards(AuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  profileFindOne(@Param('id') id: string) {
-    return this.profileService.profileFindOneService(id);
+  profileFindOne(@Req() req: any) {
+    return this.profileService.profileFindOneService(req.user.payload.sub);
   }
 
   /**
@@ -43,10 +43,19 @@ export class ProfileController {
    * @param id - The ID of the user whose profile is to be removed.
    * @returns The result of the remove operation.
    */
-  @Delete(':id')
+  @Delete()
   @DeleteProfileSwagger()
   @UseGuards(AuthGuard)
-  remove(@Param('id') id: string) {
-    return this.profileService.remove(id);
+  remove(@Req() req: any) {
+    return this.profileService.remove(req.user.payload.sub);
   }
+
+
+  @Post('upload')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  @UseGuards(AuthGuard)
+  async mediaUpload(@Req() req: any) {
+    return this.profileService.mediaUploadService(req.user.payload.sub);
+  }
+
 }

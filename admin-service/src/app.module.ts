@@ -12,7 +12,6 @@ import { ManagerModule } from './api/manager/manager.module';
 import { JwtModule } from '@nestjs/jwt';
 import { OrderModule } from './api/order/order.module';
 import { RedisModule } from './redis/redis.module';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 
 
 @Module({
@@ -20,7 +19,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     MongooseModule.forRoot('mongodb+srv://FoodOrder:FoodAdmin123@cluster0.hcogxon.mongodb.net/food?retryWrites=true&w=majority&appName=Cluster0'),
     ConfigModule.forRoot({ 
       isGlobal: true, 
-      load: [jwtConfig, userConfig] // Add userConfig here
+      load: [jwtConfig, userConfig] 
     }),
     JwtModule.register({
       secret: process.env.JWT_SECRET,

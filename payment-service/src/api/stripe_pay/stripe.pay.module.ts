@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
-import { Payment, PaymentSchema } from './Schema/stripe.pay.schema';
+import { Payment, paymentHistory, paymentHistorySchema, PaymentSchema } from './Schema/stripe.pay.schema';
 import { StripePayController } from './strip.pay.controller';
 import { StripePayService } from './stripe.pay.service';
 import { errorService } from 'src/error/error.service';
@@ -15,7 +15,7 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
 @Module({
   imports: [
     ConfigModule,
-    MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
+    MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }, {name:paymentHistory.name,schema:paymentHistorySchema}]),
     WinstonModule.forRoot({
       transports: [
         new winston.transports.Console({

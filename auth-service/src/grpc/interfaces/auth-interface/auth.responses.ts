@@ -3,9 +3,15 @@ export interface TokenResponse {
   refreshToken: string;
 }
 
+export interface TokenPayload {
+  sub: string;
+  email: string;
+  phone: string;
+  role: number;
+}
 export interface ValidationResponse {
   isValid: boolean;
   message: string;
-  userId?: string;
-  role?: number;
+  payload: TokenPayload;
 }
+

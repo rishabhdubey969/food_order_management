@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards,Res } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { PaymentClient } from 'src/grpc/payment/payment.client';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
@@ -12,6 +12,9 @@ import { PrePlaceOrderDto } from 'src/dto/prePlaceOrder.dto';
 import { PlaceOrderDto } from 'src/dto/placeOrder.dto';
 import { OrderDto } from 'src/dto/order.dto';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
+import { Response } from 'express'
+
+
 
 @ApiBearerAuth()
 @ApiTags('Order')
@@ -64,7 +67,6 @@ export class OrderController {
       @ApiResponse({ status: 401, description: 'Unauthorized' })
       @ApiResponse({ status: 402, description: 'Payment Failed' })
       async placeOrder(@Body('modeOfPayment') modeOfPayment:string,@Body('orderId',ParseObjectIdPipe) orderId: ObjectId){
-        
         if(modeOfPayment=="cashOnDelivery"){
             this.handleCart({orderId:orderId});
             this.handleDelivery({orderId: orderId});
@@ -154,20 +156,22 @@ export class OrderController {
     })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     @ApiResponse({ status: 404, description: 'Order not found' })
-      async generateInvoice(@Param('orderId') orderId:string){
-        const pdfBuffer = await this.orderService.generateInvoice(orderId, { debug: true });
-        return pdfBuffer
+      async generateInvoice(@Param('orderId') orderId:string,@Res() res: Response){
+        try {
+          const pdfBuffer = await this.orderService.generateInvoice(orderId, { debug: true });
+          res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename=invoice_${orderId}.pdf`,
+            'Content-Length': pdfBuffer.length,
+          });
+    
+          return res.send(pdfBuffer);
+        } catch (err) {
+          console.error('Download failed:', err);
+          return res.status(500).json({ message: 'Failed to download invoice' });
+        }  
       }
 
-
-      @MessagePattern('deliveryPartnerResponse')
-      async handlePartnerAssigned(@Payload() data: {message: string}){
-
-        const { message } = data;
-
-        console.log('kafka notification recieved ');
-         console.log(message);
-      }
 
       async handleDelivery(payload: {orderId:ObjectId})
       {

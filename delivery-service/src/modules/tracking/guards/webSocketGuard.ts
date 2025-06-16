@@ -13,7 +13,7 @@ export class WebSocketGuard implements CanActivate {
   async canActivate(
     context: ExecutionContext,
   ){
-
+    console.log('🛡 WebSocketGuard: canActivate called');
     const client = context.switchToWs().getClient();
 
     const accessToken = client.handshake.headers.authorization?.split(' ')[1];
@@ -23,10 +23,11 @@ export class WebSocketGuard implements CanActivate {
     }
 
     try{
-
+      console.log(accessToken)
       const payload = await this.tokenService.verify(accessToken);
-      client.payload = payload;
-      
+      console.log(payload);
+      client["payload"] = payload;
+      console.log(`Client connected: ${client.id}`)
     }catch(err){
       throw new UnauthorizedException('Login Again!!')
     }

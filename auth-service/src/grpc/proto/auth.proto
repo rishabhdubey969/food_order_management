@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package auth;
-import "google/protobuf/struct.proto";
 
 service AuthService {
   rpc ValidateToken (ValidateTokenRequest) returns (TokenValidationResponse);
@@ -15,12 +14,20 @@ message ValidateTokenRequest {
 message TokenValidationResponse {
   bool isValid = 1;
   string message = 2;
+  Token payload = 3;
 }
+
+message Token {
+  string sub = 1;
+  string email = 2;
+  string phone = 3;
+  int32 role = 4;
+}
+
 
 message TokenResponse {
   string accessToken = 1;
   string refreshToken = 2;
-  google.protobuf.Struct userData = 3;
 }
 
 message GenerateTokenRequest {
@@ -28,3 +35,5 @@ message GenerateTokenRequest {
   string userAgent = 2;
   string ip = 3;
 }
+
+

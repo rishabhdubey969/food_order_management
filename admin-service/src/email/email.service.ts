@@ -11,12 +11,11 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name); // Instantiate logger
 
   constructor(
-    private configService: ConfigService,
   ) {
     try {
       const emailService = 'gmail'
-      const userEmail =  process.env.EMAIL_USER as string
-      const userPass = process.env.EMAIL_PASS as string
+      const userEmail =  process.env.SMTP_USER
+      const userPass = process.env.SMTP_PASS
 
       if (!emailService || !userEmail || !userPass) {
         this.logger.error('Missing email configuration. Please check environment variables for email.service, email.userEmail, and email.userPass.');

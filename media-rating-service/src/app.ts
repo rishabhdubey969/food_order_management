@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { connectToDatabase } from  '../src/database/db'
 //import mediaRoutesV1 from './routes/mediaRoutes';
 import ratingRoutes from './routes/ratingRoutes';
+import './grpc/clients/grpc.server';
 // import { errorHandler } from './utils/error.handler';
 
 dotenv.config(); // Load environment variables from .env file
@@ -18,6 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 // API Versioning: Mount routes under /api/v1
 // app.use('/api', mediaRoutesV1);
 app.use('/api', ratingRoutes);
+app.get('/', (req: Request, res: Response) => {
+  res.send('Media HTTP is working');
+});
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
