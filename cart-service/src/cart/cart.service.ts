@@ -63,17 +63,19 @@ export class CartService {
       this.logger.warn(`Cart not found for user ${userId}`);
       throw new NotFoundException('Cart not found');
     }
-  
+
     const itemIndex = cart.items.findIndex(item => item.itemId.toString() === itemId);
     if (itemIndex === -1) {
       this.logger.warn(`Item ${itemId} not found in cart`);
       throw new NotFoundException('Item not found in cart');
     }
-  
+
+    this.logger.verbose(`Item ${itemId} found at index ${itemIndex}`);
+
     const taxPercent = 5;
     const item = cart.items[itemIndex];
     item.quantity -= 1;
-  
+
     if (item.quantity <= 0) {
       cart.items.splice(itemIndex, 1);
       this.logger.log(`Item ${itemId} removed completely from cart`);
@@ -81,24 +83,24 @@ export class CartService {
       item.tax = (item.price * item.quantity * taxPercent) / 100;
       this.logger.log(`Item ${itemId} quantity decreased to ${item.quantity}`);
     }
-  
+
     if (cart.items.length === 0) {
       await this.cartModel.deleteOne({ _id: cart._id });
       this.logger.warn(`Cart for user ${userId} deleted because no items left`);
       return { message: 'Cart deleted because no items left' };
     }
-  
+
     const itemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const tax = (itemTotal * taxPercent) / 100;
     const total = Math.round(itemTotal + cart.deliveryCharges + cart.platformFee + tax - (cart.discount || 0));
-  
+
     Object.assign(cart, {
       itemTotal,
       subtotal: itemTotal,
       tax,
       total,
     });
-  
+
     await cart.save();
   
     this.logger.log(`Cart for user ${userId} updated successfully`);
@@ -144,10 +146,10 @@ export class CartService {
     const { latitude: userLat = 12.9715, longitude: userLon = 77.5946 } = redisValue
       ? JSON.parse(redisValue)
       : {};
-  
+
     const restLat = Number(restaurant.location.coordinates[1]);
     const restLon = Number(restaurant.location.coordinates[0]);
-  
+
     if ([userLat, userLon, restLat, restLon].some(coord => isNaN(coord))) {
       this.logger.error('Invalid location coordinates');
       throw new BadRequestException('Invalid location coordinates');
@@ -158,7 +160,7 @@ export class CartService {
     const deliveryCharges = this.calculateDeliveryCharges(distance);
     const platformFee = 9;
     const taxPercent = 5;
-  
+
     const newItem = {
       itemId: item._id as string,
       name: item.name,
@@ -172,7 +174,7 @@ export class CartService {
       const itemTotal = item.price;
       const tax = (itemTotal * taxPercent) / 100;
       const total = Math.round(itemTotal + tax + deliveryCharges + platformFee);
-  
+
       cart = new this.cartModel({
         userId,
         restaurantId,
@@ -221,7 +223,7 @@ export class CartService {
   
       this.logger.log(`Cart for user ${userId} updated`);
     }
-  
+
     await cart.save();
   
     return {
