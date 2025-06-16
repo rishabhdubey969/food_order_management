@@ -12,6 +12,9 @@ import { ManagerModule } from './api/manager/manager.module';
 import { JwtModule } from '@nestjs/jwt';
 import { OrderModule } from './api/order/order.module';
 import { RedisModule } from './redis/redis.module';
+import { LoggerModule } from './api/logger/logger.module';
+import { WinstonLogger, WinstonModule } from 'nest-winston';
+import { winstonConfig } from './api/logger/winston.config';
 
 
 @Module({
@@ -23,9 +26,9 @@ import { RedisModule } from './redis/redis.module';
     }),
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '10m' },
+      signOptions: { expiresIn: '1h' },
     }),
-   
+    WinstonModule.forRoot(winstonConfig),
     AuthModule,
     UserModule, 
     SeederModule,
@@ -34,6 +37,7 @@ import { RedisModule } from './redis/redis.module';
     RedisModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,WinstonLogger],
+  exports:[WinstonLogger]
 })
 export class AppModule {}

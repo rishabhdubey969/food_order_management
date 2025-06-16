@@ -1,6 +1,7 @@
 import { Controller, Get, Query, UseGuards, Request, Param } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { GetTotalOrdersSwagger, GetUserOrdersSwagger } from '../swagger/order.swagger';
 
 @Controller('order')
 export class OrderController {
@@ -8,6 +9,7 @@ export class OrderController {
 
   @UseGuards(AdminGuard)
   @Get('total')
+  @GetTotalOrdersSwagger()
   async getTotalOrders(
     @Query('period') period: 'month' | 'year' | 'week',
     @Query('status') status: string,
@@ -23,14 +25,13 @@ export class OrderController {
 
   @UseGuards(AdminGuard)
   @Get('user/:userId')
+  @GetUserOrdersSwagger()
   async getUserOrders(
-   
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
     @Request() req,
-    @Param('userId') userId: string, 
+    @Param('userId') userId: string,
   ) {
-   
     const adminId = req.user.sub;
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
