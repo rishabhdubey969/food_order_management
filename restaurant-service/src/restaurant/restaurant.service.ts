@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { ConsoleLogger, Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { Restaurant } from './schema/restaurant.schema';
 import { CreateRestaurantDto } from './dto/restaurant.dto';
@@ -134,10 +134,12 @@ export class RestaurantService {
         }
       },
     ]);
-    console.log(results);
+
     const restaurantIds = results.map(r => r._id);
 
     return this.restaurantModel.find({ _id: { $in: restaurantIds } }).exec();
+    console.log(results);
+    return results;
   }
   
 

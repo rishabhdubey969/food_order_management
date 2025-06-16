@@ -22,6 +22,7 @@ export class JwtAuthGuard  implements CanActivate {
     const token = authHeader.replace('Bearer ', '');
     console.log('token: ',token);
     const user = await this.tokenService.verify(token);
+    console.log('✅ Decoded JWT Payload:', user);
     request['user'] = user; 
     return true;
   }

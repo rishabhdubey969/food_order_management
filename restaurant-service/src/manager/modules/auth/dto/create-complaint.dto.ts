@@ -1,6 +1,10 @@
 import { IsNotEmpty, IsMongoId } from 'class-validator';
 
 export class CreateComplaintDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  userId: string;
+
 
   @IsNotEmpty()
   @IsMongoId()

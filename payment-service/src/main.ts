@@ -1,15 +1,43 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
 
 import { json } from 'express';
 import { PaymentModule } from './payment.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { join } from 'path';
+import {  join } from 'path';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AllExceptionsFilter } from 'middleware/filter/exception.filter';
+import { ErrorInterceptor } from 'middleware/interceptor/error.interceptor';
+import { SimpleResponseInterceptor } from 'middleware/interceptor/response.interceptor';
+import { WinstonModule } from 'nest-winston';
+import { format, transports } from 'winston';
 
 async function bootstrap() {
   const app = await NestFactory.create(PaymentModule, {
     bodyParser: false,
-  });
+    logger: WinstonModule.createLogger({
+      transports: [
+        new transports.File({
+          filename: `logs/error.log`,
+          level: 'error',
+          format: format.combine(format.timestamp(), format.json()),
+        }),
+        new transports.File({
+          filename: `logs/combined.log`,
+          format: format.combine(format.timestamp(), format.json()),
+        }),
+        new transports.Console({
+          format: format.combine(
+            format.cli(),
+            format.splat(),
+            format.timestamp(),
+            format.printf((info) => {
+              return `${info.timestamp} ${info.level}: ${info.message}`;
+            }),
+          ),
+        }),
+      ],
+    }),
+  },);
 
   app.use((req, res, next) => {
     if (req.originalUrl === '/webhook/stripe') {
@@ -33,7 +61,12 @@ async function bootstrap() {
     credentials: true,
     allowedHeaders: 'Content-Type, Authorization',
   });
-
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
+  app.useGlobalInterceptors(
+    new ErrorInterceptor(),
+    new SimpleResponseInterceptor(app.get(Reflector))
+  );
   const swaggerConfig = new DocumentBuilder()
     .setTitle('API with NestJS')
     .setDescription('API developed throughout the API with NestJS course')
@@ -68,4 +101,4 @@ async function bootstrap() {
 }
 bootstrap();
 
-//172.50.1.20:5000
+

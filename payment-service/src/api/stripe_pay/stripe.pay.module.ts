@@ -1,15 +1,16 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { Payment, paymentHistory, paymentHistorySchema, PaymentSchema } from './Schema/stripe.pay.schema';
 import { StripePayController } from './strip.pay.controller';
 import { StripePayService } from './stripe.pay.service';
-import { errorService } from 'src/error/error.service';
+
 import { StripeConfigService } from '../../config/stripe.config';
 // import { AuthModule } from '../../grpc/authentication/auth.module';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
+import { LoggerMiddleware } from 'src/logger/logger.middleware';
 
 
 @Module({
@@ -29,7 +30,8 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
     }),
   ],
   controllers: [StripePayController],
-  providers: [StripePayService, errorService, StripeConfigService, AuthClient],
+  providers: [StripePayService, StripeConfigService, AuthClient],
   exports: [StripePayService],
 })
-export class StripePayModule {}
+export class StripePayModule {
+}

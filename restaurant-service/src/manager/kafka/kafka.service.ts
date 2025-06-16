@@ -14,5 +14,6 @@ export class KafkaService implements OnModuleInit{
 
     async handleEvent(topicName: string, payload: any){
      this.kafkaClient.emit(topicName, payload);
+     console.log(`notification sent successfully!!`)
     }
 }

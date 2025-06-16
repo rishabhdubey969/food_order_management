@@ -215,8 +215,9 @@ export class ManagerService  {
       throw new InternalServerErrorException(`Failed to ${decision} order`);
     }
   }
-
+ 
   async handleOrderHandover(orderId: Types.ObjectId){
     await this.kafkaService.handleEvent('handOvered', {orderId: orderId})
+    return {message: 'Notification send to Everyone Successfully!!'}
   }
 }

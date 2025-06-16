@@ -4,7 +4,7 @@ import { Complaint, ComplaintSchema } from 'src/manager/schema/complain.schema';
 import { ComplaintService } from './complainservice';
 import { ComplaintController } from './complaincontroller';
 import { TokenModule } from '../token/token.module';
-import { JwtAuthGuard } from '../auth/guards/authguard';
+import { JwtAuthGuard } from '../auth/guards/jwtauthguard';
 import { Order, OrderSchema } from '../../schema/order.schema';
 import { MailerModule } from '@nestjs-modules/mailer';
 

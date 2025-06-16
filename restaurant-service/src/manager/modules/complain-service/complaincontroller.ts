@@ -12,8 +12,9 @@ import { ComplaintService } from './complainservice';
 import { UpdateComplaintStatusDto } from 'src/manager/modules/auth/dto/update.complainStatusdto';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 import { Request } from 'express';
-import {  JwtAuthGuard } from '../auth/guards/authguard'; 
+import {  JwtAuthGuard } from '../auth/guards/jwtauthguard'; 
 import { CreateComplaintDto } from '../auth/dto/create-complaint.dto';
+import { AdminGuard } from 'src/restaurant/guards/admin.guard';
 
 @ApiBearerAuth('access-token')
 @ApiTags('Complaints')
@@ -42,6 +43,7 @@ export class ComplaintController {
     },
   })
   async create(@Body() dto: CreateComplaintDto, @Req() req: any, @Param('managerId') managerId : string) {
+    console.log(req.user.userId);
     return this.complaintService.createComplaint(dto, req.user.userId, managerId);
   }
 
@@ -64,5 +66,15 @@ export class ComplaintController {
   @ApiOperation({ summary: 'Get all complaints for this manager (Manager only)' })
   async getManagerComplaints(@Param('managerId') managerId: string) {
     return this.complaintService.getComplaintsForManager(managerId);
+  }
+  
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth('JWT')
+  @ApiOperation({ summary: 'Get all complaints with manager and restaurant info (Admin only)' })
+  async getAllComplaints(@Req() req: Request) {
+    const user = req['user'];
+    console.log("Controller", user);
+    return this.complaintService.getAllComplaints(user);
   }
 }

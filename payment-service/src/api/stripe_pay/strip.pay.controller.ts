@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Body,
-  
   UseGuards,
 } from '@nestjs/common';
 
@@ -12,15 +11,12 @@ import { StripeConfigService } from '../../config/stripe.config';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
   ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { PaymmentDoc, RetryDoc } from 'src/swagger/stripe_pay.swagger';
 
-@ApiBearerAuth()
+@ApiBearerAuth('JWT')
 @ApiTags('Order')
 @Controller('payment')
 export class StripePayController {

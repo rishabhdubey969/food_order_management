@@ -1,4 +1,4 @@
-import { Controller, Get, Headers, Param, Patch, Query, UnauthorizedException, UseGuards,Request } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Query,  UseGuards,Request } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
@@ -34,7 +34,7 @@ export class UserController {
   @UseGuards(AdminGuard)
   @Patch('block/:id')
   @ApiOperation({ summary: 'Block a user by ID' })
-  @ApiBearerAuth('JWT') // Indicates Bearer token is required
+  @ApiBearerAuth('JWT') 
   @ApiParam({ name: 'id', type: String, description: 'User ID to block', example: '12345' })
   @ApiResponse({ status: 200, description: 'User successfully blocked' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token, or non-admin role' })

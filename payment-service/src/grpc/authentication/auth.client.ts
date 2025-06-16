@@ -1,8 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientGrpc, Client, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { lastValueFrom } from 'rxjs';
-import * as path from 'path';
 import {
   accessTokenRequest,
   AUTH_PACKAGE_NAME,
@@ -10,6 +8,8 @@ import {
   generateTokenData,
   GrpcAuthService,
 } from './auth.interface';
+import { lastValueFrom } from 'rxjs';
+import * as path from 'path';
 
 @Injectable()
 export class AuthClient implements OnModuleInit {
@@ -29,13 +29,17 @@ export class AuthClient implements OnModuleInit {
     console.log('grpc started');
   }
 
+  async getSignUpAccess(id: string, ip: string, userAgent: string) {
+    const generateRequest: generateTokenData = { id, userAgent, ip };
+    const SignupResponse = await lastValueFrom(this.grpcAuthService.GenerateToken(generateRequest));
+    console.log(SignupResponse);
+    return SignupResponse;
+  }
+
   async ValidateTokenAuthService(accessToken: string) {
     const request: accessTokenRequest = { accessToken };
-
-    const response = await lastValueFrom(
-      this.grpcAuthService.ValidateToken(request),
-    );
-    console.log(response);
+    const response = await lastValueFrom(this.grpcAuthService.ValidateToken(request));
+    console.log(response, 'new');
     return response;
   }
 }

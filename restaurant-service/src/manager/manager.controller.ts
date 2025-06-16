@@ -20,8 +20,10 @@ import ManagerLoginDto from 'src/manager/modules/auth/dto/managerLogindto';
 import ManagerSignupDto from 'src/manager/modules/auth/dto/managerSignuodto';
 import { ManagerService } from './manager.service';
 import {GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
-import { JwtAuthGuard } from './modules/auth/guards/authguard';
+import { JwtAuthGuard } from './modules/auth/guards/jwtauthguard';
 import { Types } from 'mongoose';
+import { OrderHandoverDto } from './modules/auth/dto/orderHandOver.dto';
+import { ParseObjectIdPipe } from '@nestjs/mongoose';
 
 @ApiTags('Manager')
 @ApiBearerAuth('access-token')
@@ -88,14 +90,31 @@ logout(@Headers('authorization') authHeader: string) {
   async handleIsFoodAvailable(@Payload() cartId: Types.ObjectId){ 
     return await this.managerService.handleIsFoodAvailable(cartId);
   }
+<<<<<<< HEAD
+  
+@Post('orderHandOver')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth('JWT') 
+@ApiOperation({ summary: 'Mark order as handed over' })
+@ApiBody({
+  description: 'Order ID to mark as handed over',
+=======
 
   @ApiOperation({ summary: 'Update Manager Details' })
   @ApiBody({
+>>>>>>> da0102099fccedc956909c111cf885973ba66200
   schema: {
     type: 'object',
     properties: {
       orderId: {
         type: 'string',
+<<<<<<< HEAD
+        description: 'MongoDB ObjectId of the order',
+        example: '507f1f77bcf86cd799439011'
+      }
+    },
+    required: ['orderId']
+=======
         example: '664a12ef3ff8cdbe0246823e',
       },
     },
@@ -109,5 +128,10 @@ logout(@Headers('authorization') authHeader: string) {
       success: true,
       message: "Order HandOvered Accepted"
     }
+>>>>>>> da0102099fccedc956909c111cf885973ba66200
   }
+})
+async handleOrderhandover(@Body('orderId', ParseObjectIdPipe) orderId: Types.ObjectId ) {
+  return this.managerService.handleOrderHandover(orderId);
+}
 }

@@ -6,25 +6,32 @@ export const AUTH_SERVICE_NAME = 'AuthService';
 export interface generateTokenData {
   id: string;
   userAgent: string;
-  ip: string;
+  ip : string;
 }
 
 export interface accessTokenRequest {
   accessToken: string;
 }
 
+export interface TokenPayload {
+  sub: string;
+  email: string;
+  phone: string;
+  role: number;
+}
+
 export interface accessTokenResponse {
   isValid: boolean;
   message: string;
+  payload: TokenPayload; 
 }
 
 export interface generateTokenResponse {
   accessToken: string;
   refreshToken: string;
-  userData: Record<string, any>;
 }
 
 export interface GrpcAuthService {
-  GenerateToken(data: generateTokenData): Observable<generateTokenResponse>;
-  ValidateToken(data: accessTokenRequest): Observable<accessTokenResponse>;
+ GenerateToken( data:generateTokenData): Observable<generateTokenResponse>;
+ ValidateToken(data: accessTokenRequest): Observable<accessTokenResponse>;
 }
