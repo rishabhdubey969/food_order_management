@@ -32,10 +32,18 @@ async function bootstrap() {
     options: {
       client: {
         brokers: ['localhost:29092'],
+        clientId:'managerConsumer',
+        retry:{
+          retries:5
+        },
       },
       consumer: {
-        groupId: 'group-email',
+        groupId: 'managergroup',
+        allowAutoTopicCreation:true
       },
+      producer:{
+        allowAutoTopicCreation:true
+      }
     },
   });
 

@@ -88,7 +88,7 @@ export class ComplaintService {
 
       this.logger.log(`Complaint ${complaintId} updated to status "${dto.status}" by user ${userId}`);
 
-      await this.emitComplaintNotification(complaint.managerId, userId);
+      await this.emitComplaintNotification(complaint.managerId, userId,dto.status);
 
   return {
   message: SUCCESS_MESSAGES.COMPLAINT_STATUS_UPDATED,
@@ -101,9 +101,9 @@ export class ComplaintService {
         : new InternalServerErrorException('Failed to update complaint status');
     }
   }
-    async emitComplaintNotification(managerId: string, userId: string) {
+    async emitComplaintNotification(managerId: string, userId: string, status: string) {
     try {
-      // 1. Get Manager Info
+     
       const manager = await this.connection
         .collection('managers')
         .findOne({ _id: new Types.ObjectId(managerId) });
@@ -113,7 +113,6 @@ export class ComplaintService {
         return;
       }
   
-      // 2. Get Restaurant Info using manager.restaurantId
       const restaurant = await this.connection
         .collection('restaurants')
         .findOne({ _id: new Types.ObjectId(manager.restaurantId) });
@@ -123,7 +122,6 @@ export class ComplaintService {
         return;
       }
   
-      // 3. Get User Info
       const user = await this.connection
         .collection('users')
         .findOne({ _id: new Types.ObjectId(userId) });
@@ -133,18 +131,17 @@ export class ComplaintService {
         return;
       }
   
-      // 4. Construct payload
       const payload = {
         restaurantName: restaurant.name,
         restaurantEmail: restaurant.email,
         managerEmail: manager.email,
         userName: user.name,
         userEmail: user.email,
+        complaintStatus: status,
       };
   
       this.logger.log(`Emitting complaint notification: ${JSON.stringify(payload)}`);
   
-      // 5. Emit event to RabbitMQ
       this.rabbitMQService.emit('complaint_notification', payload);
     } catch (error) {
       this.logger.error('Error while emitting complaint notification', error.stack);

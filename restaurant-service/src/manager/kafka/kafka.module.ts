@@ -12,11 +12,17 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
               options: {
       
                 client: {
-                  brokers: ['localhost:29092', 'kafka:9092', 'host.docker.internal:9092']
+                  brokers: ['localhost:29092', 'kafka:9092', 'host.docker.internal:9092'],
+                  clientId:'managerProducer',
                 },
                 
                 producer: {
                   allowAutoTopicCreation: true
+                },
+                consumer:{
+                  groupId:"managerGroup",
+                  allowAutoTopicCreation: true
+
                 }
                 
               }

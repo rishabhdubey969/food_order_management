@@ -9,8 +9,8 @@ import { RabbitMQService } from './rabbitmq.service';
         name: 'RABBITMQ_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://localhost:5672'], // 🔁 Replace with your RabbitMQ URL
-          queue: 'notification_queue',     // 🔁 Replace with actual queue name
+          urls: ['amqp://localhost:5672'], 
+          queue: 'notification_queue',     
           queueOptions: { durable: false },
         },
       },

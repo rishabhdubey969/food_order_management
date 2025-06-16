@@ -5,11 +5,8 @@ import { ManagerModule } from './manager/manager.module';
 import { RestaurantModule } from './restaurant/restaurant.module';
 import { ManagerGateway } from './manager/modules/gateway/manager.gateway';
 import { KafkaModule } from './manager/kafka/kafka.module';
-<<<<<<< HEAD
-import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
-=======
-import { WinstonLogger } from './logger/winston-logger.service';
->>>>>>> 1f04d7ceaf3ecdcfbc637cd8f636407ee7380b35
+import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
+import { WinstonLogger } from 'nest-winston';
 
 @Module({
   imports: [
@@ -26,7 +23,7 @@ import { WinstonLogger } from './logger/winston-logger.service';
       inject: [ConfigService],
     }),
     ManagerModule, 
-    RestaurantModule, RabbitmqModule,
+    RestaurantModule, RabbitMQModule,
   ],
   controllers: [],
   providers: [WinstonLogger],
