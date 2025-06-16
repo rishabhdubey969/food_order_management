@@ -6,7 +6,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger as WinstonLogger } from 'winston';
 import { AuthenticationDocument, Auth } from './entities/auth.entity';
 import { Model, Types } from 'mongoose';
-import { Auth as AuthConst } from 'constants/auth.const';
+import { AUTH as AUTH_CONST, RABBIT_MQ, WINSTON_LOGGER_CONST } from 'constants/auth.const';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
 import { TokenService } from './token.service';
@@ -21,7 +21,7 @@ export class AuthService {
     private readonly logger: WinstonLogger,
     private authClient: AuthClient,
     private tokenService: TokenService,
-    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
+    @Inject(RABBIT_MQ.NOTIFICATION_SERVICE) private readonly client: ClientProxy,
   ) {}
 
   /**
@@ -31,16 +31,18 @@ export class AuthService {
    */
   async sendOtpService(email: string) {
     try {
-      this.logger.info('Sending OTP to user');
+      this.logger.info(WINSTON_LOGGER_CONST.SEND_OTP);
+      const user = await this.authenticationModel.findOne({ email }).lean();
+      if (user) throw new NotFoundException(AUTH_CONST.USER_MATCH);
+
       const otp = await this.tokenService.signupOtp(email);
       const mailData = { otp, email };
 
-      console.log(mailData);
-      this.client.emit('signup_otp', mailData);
-      return { message: 'OTP sent successfully' };
+      this.client.emit(WINSTON_LOGGER_CONST.SIGNUP_OTP, mailData);
+      return { message: AUTH_CONST.OTP_SENT };
     } catch (error) {
-      this.logger.error('Error sending OTP', error);
-      throw new BadRequestException('Failed to send OTP');
+      this.logger.error(WINSTON_LOGGER_CONST.ERROR_SEND_OTP, error);
+      throw new BadRequestException(error.message || AUTH_CONST.OTP_FAILED);
     }
   }
 
@@ -51,7 +53,7 @@ export class AuthService {
    * @returns
    */
   async signUpService(createAuthDto: CreateAuthDto, req: any) {
-    this.logger.info('user store start');
+    this.logger.info(WINSTON_LOGGER_CONST.SIGNUP_START);
     const { email, password, phone, otp } = createAuthDto;
     let id: string | null = null;
 
@@ -64,7 +66,7 @@ export class AuthService {
         })
         .exec();
 
-      if (existingAuthenticationLogin) throw new HttpException(AuthConst.USER_MATCH, HttpStatus.FORBIDDEN);
+      if (existingAuthenticationLogin) throw new HttpException(AUTH_CONST.USER_MATCH, HttpStatus.FORBIDDEN);
 
       // Hash the password before saving the user
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -76,16 +78,16 @@ export class AuthService {
       await createdAuthentication.save();
       id = (createdAuthentication._id as Types.ObjectId).toString();
 
-      this.client.emit('user_created', createdAuthentication);
-      this.logger.info('user store success');
+      this.client.emit(RABBIT_MQ.USER_CREATED, createdAuthentication);
+      this.logger.info(WINSTON_LOGGER_CONST.SIGNUP_SUCCESS);
       const tokensData = await this.authClient.getSignUpAccess(id, req.ip, req.headers['user-agent']);
 
       return {
-        message: 'Congratulations, you’ve successfully signed up!',
+        message: AUTH_CONST.SUCCESS_SIGNUP,
         data: tokensData,
       };
     } catch (error) {
-      this.logger.error('User signup error', error);
+      this.logger.error(WINSTON_LOGGER_CONST.SIGNUP_ERROR, error);
       await this.authenticationModel.findByIdAndDelete(id);
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -99,16 +101,16 @@ export class AuthService {
   async forgotPassword(email: string) {
     try {
       const user = await this.authenticationModel.findOne({ email }).lean();
-      if (!user) throw new NotFoundException('User not found');
+      if (!user) throw new NotFoundException(AUTH_CONST.USER_NOT_FOUND);
 
       const userId = user._id.toString();
       const token = await this.tokenService.generate(userId);
       const mailData = { email, token };
-      this.client.emit('reset_link', mailData);
-      return { message: 'Reset link sent', token: token };
+      this.client.emit(RABBIT_MQ.REST_LINK, mailData);
+      return { message: AUTH_CONST.SENT_REST_LINK, token: token };
     } catch (error) {
-      this.logger.error('Error in forgotPassword', error);
-      throw new BadRequestException('Failed to send reset link');
+      this.logger.error(WINSTON_LOGGER_CONST.FORGET_PASSWORD_ERROR, error);
+      throw new BadRequestException(AUTH_CONST.Failed_RESET_LINK);
     }
   }
 
@@ -121,15 +123,15 @@ export class AuthService {
   async resetPassword(token: string, resetPasswordDto: ResetPasswordDto) {
     try {
       const resetTokenValidate = await this.tokenService.validate(token);
-      if (!resetTokenValidate) throw new BadRequestException('Invalid or expired token');
+      if (!resetTokenValidate) throw new BadRequestException(WINSTON_LOGGER_CONST.EXPIRE_INVALID);
 
       await this.updatePassword(resetTokenValidate, resetPasswordDto.password);
       await this.tokenService.remove(token);
 
-      return { message: 'Password updated' };
+      return { message: AUTH_CONST.PASSWORD_SUCCESS };
     } catch (error) {
-      this.logger.error('Error in resetPassword', error);
-      throw new BadRequestException('Failed to reset password');
+      this.logger.error(WINSTON_LOGGER_CONST.RESET_PASSWORD, error);
+      throw new BadRequestException(AUTH_CONST.FAILED_REST_PASSWORD);
     }
   }
 
@@ -143,9 +145,8 @@ export class AuthService {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       await this.authenticationModel.updateOne({ _id: userId }, { $set: { password: hashedPassword } }).exec();
     } catch (error) {
-      this.logger.error('Error updating password', error);
+      this.logger.error(WINSTON_LOGGER_CONST.UPDATE_PASSWORD_ERROR, error);
       throw new BadRequestException(error);
     }
   }
-
 }
