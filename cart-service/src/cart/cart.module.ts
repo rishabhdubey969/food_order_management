@@ -9,7 +9,8 @@ import { RestaurantSchema } from './schema/restaurant.schema';
 import { MenuItemSchema } from './schema/menu-item.schema';
 import { RedisModule } from 'src/redis/redis.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
+import { WinstonLogger } from '../logger/winston-logger.service';
+
 
 @Module({
   imports: [
@@ -34,6 +35,6 @@ import { join } from 'path';
     ]),
   ],
   controllers: [CartController],
-  providers: [CartService],
+  providers: [CartService, WinstonLogger],
 })
 export class CartModule {}
