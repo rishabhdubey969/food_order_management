@@ -256,7 +256,7 @@ export class OrderService {
     }
 
   }
-  async getUserId(orderId: ObjectId) {
+  async getUserId(orderId: string) {
     logger.debug('Fetching user ID from order', { orderId });
     try {
       const userId = await this.OrderSchema.findById(orderId);
@@ -275,6 +275,7 @@ export class OrderService {
       throw err;
     }
   }
+
   async generateInvoice(orderId: string, options: any = {}): Promise<Buffer> {
     const startTime=Date.now();
     logger.info('Generating invoice', { orderId });
@@ -502,8 +503,6 @@ export class OrderService {
               </div>
             </div>
           </body>
-          </html>
-
-      `;
+          </html>`;
   }
 }

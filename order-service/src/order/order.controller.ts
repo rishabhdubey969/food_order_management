@@ -66,22 +66,23 @@ export class OrderController {
       @ApiResponse({ status: 400, description: 'Bad Request' })
       @ApiResponse({ status: 401, description: 'Unauthorized' })
       @ApiResponse({ status: 402, description: 'Payment Failed' })
-      async placeOrder(@Body('modeOfPayment') modeOfPayment:string,@Body('orderId',ParseObjectIdPipe) orderId: ObjectId){
-        if(modeOfPayment=="cashOnDelivery"){
-            this.handleCart({orderId:orderId});
-            this.handleDelivery({orderId: orderId});
-            return await this.orderService.updateOrder(orderId,"NILL",PaymentStatus.PENDING,PaymentMethod.CASH_ON_DELIVERY,OrderStatus.PREPARING);
+      async placeOrder(@Body() data:PlaceOrderDto){
+        if(data.modeOfPayment=="cashOnDelivery"){
+            this.handleCart({orderId:data.orderId})
+            this.handleCart({orderId:data.orderId});
+            this.handleDelivery({orderId: data.orderId});
+            return await this.orderService.updateOrder(data.orderId,"NILL",PaymentStatus.PENDING,PaymentMethod.CASH_ON_DELIVERY,OrderStatus.PREPARING);
         }
-        else if(modeOfPayment=="online"){
-              const paymentData= await this.paymentClient.getPayStatus(orderId.toString());
+        else if(data.modeOfPayment=="online"){
+              const paymentData= await this.paymentClient.getPayStatus(data.orderId.toString());
               if(paymentData.paymentStatus=="Failed"){
-                const orderCancelled=this.orderService.updateOrder(orderId,paymentData.paymentID,PaymentStatus.FAILED,PaymentMethod.UPI,OrderStatus.CANCELLED);
+                const orderCancelled=this.orderService.updateOrder(data.orderId,paymentData.paymentID,PaymentStatus.FAILED,PaymentMethod.UPI,OrderStatus.CANCELLED);
                 return orderCancelled;
               }
               else if(paymentData.paymentStatus=="completed"){
-                this.handleCart({orderId:orderId});
-                this.handleDelivery({orderId: orderId});
-                const orderConfirmed=this.orderService.updateOrder(orderId,paymentData.paymentID,PaymentStatus.COMPLETED,PaymentMethod.UPI,OrderStatus.CONFIRMED);
+                this.handleCart({orderId:data.orderId});
+                this.handleDelivery({orderId:data.orderId});
+                const orderConfirmed=this.orderService.updateOrder(data.orderId,paymentData.paymentID,PaymentStatus.COMPLETED,PaymentMethod.UPI,OrderStatus.CONFIRMED);
                 return orderConfirmed;
               }
         }
@@ -175,18 +176,20 @@ export class OrderController {
       }
 
 
-      async handleDelivery(payload: {orderId:ObjectId})
+      async handleDelivery(payload: {orderId:string})
       {
         await this.kafkaService.handleEvent('newOrder', payload);
       }
-      async handleCart(payload:{orderId:ObjectId}){
+      async handleCart(payload:{orderId:string}){
         const userId=await this.orderService.getUserId(payload.orderId);
         await this.kafkaService.handleEvent('orderCreated',userId);
       }
-
+      async handleKitchen(payload:{orderId:string}){
+        await this.kafkaService.handleEvent('isFoodAvailable',payload);
+      }
       @EventPattern('deliveryPatenerResponse')
       async deliveryAssigned(payload:{})
       {
-
+           console.log("recieved message");
       }
 }
