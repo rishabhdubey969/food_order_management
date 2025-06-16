@@ -1,10 +1,13 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
 
 import { json } from 'express';
 import { PaymentModule } from './payment.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AllExceptionsFilter } from 'middleware/filter/exception.filter';
+import { ErrorInterceptor } from 'middleware/interceptor/error.interceptor';
+import { SimpleResponseInterceptor } from 'middleware/interceptor/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(PaymentModule, {
@@ -33,7 +36,12 @@ async function bootstrap() {
     credentials: true,
     allowedHeaders: 'Content-Type, Authorization',
   });
-
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
+  app.useGlobalInterceptors(
+    new ErrorInterceptor(),
+    new SimpleResponseInterceptor(app.get(Reflector))
+  );
   const swaggerConfig = new DocumentBuilder()
     .setTitle('API with NestJS')
     .setDescription('API developed throughout the API with NestJS course')

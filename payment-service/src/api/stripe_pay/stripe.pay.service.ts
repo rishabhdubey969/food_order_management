@@ -9,10 +9,10 @@ import { Connection, Model } from 'mongoose';
 import Stripe from 'stripe';
 import { Payment, PaymentDocument, paymentHistory, paymentHistoryDocument } from './Schema/stripe.pay.schema';
 import { ConfigService } from '@nestjs/config';
-import { errorService } from 'src/error/error.service';
 import { StripeConfigService } from '../../config/stripe.config';
 import { CreatePaymentDto } from './DTO/create.payment.dto';
 import { ObjectId } from 'mongodb';
+import { ERROR } from './constant/message.constant';
 
 @Injectable()
 export class StripePayService {
@@ -30,7 +30,7 @@ export class StripePayService {
     @InjectModel(paymentHistory.name)
     private paymentHistoryModel : Model<paymentHistoryDocument>,
     private readonly configService: ConfigService,
-    private errorService: errorService,
+   
     private stripeConfig: StripeConfigService,
     @InjectConnection() private readonly connection: Connection,
   ) {
@@ -40,14 +40,14 @@ export class StripePayService {
   async createCheckoutSession(payload: CreatePaymentDto) {
     try {
       if (!payload.orderId) {
-        throw new BadRequestException('orderId is required');
+        throw new BadRequestException(ERROR.NOT_EXIST);
       }
       const orderId = payload.orderId;
       const orderData = await this.connection
         .collection('orders')
         .findOne({ _id: new ObjectId(orderId) });
       if (!orderData) {
-        throw new BadRequestException('order does not exist');
+        throw new BadRequestException(ERROR.NOT_EXIST);
       }
       const total_amount = orderData?.total;
       const userId = orderData.userId;
@@ -110,11 +110,12 @@ export class StripePayService {
       if (error) {
         throw error;
       }
-      throw new BadRequestException('Failed to create checkout session');
+      throw new BadRequestException(ERROR.FAILED_CHECKOUT_SESSION);
     }
   }
 
   async updatePaymentStatus(sessionId: string, status: string) {
+    
     const payment = await this.paymentModel.findOneAndUpdate(
       { sessionId },
       { status },
@@ -136,7 +137,7 @@ export class StripePayService {
     const payment = await this.paymentModel.findOne({ orderId });
 
     if (!payment) {
-      throw new NotFoundException('Payment not found');
+      throw new NotFoundException(ERROR.NOT_FOUND);
     }
 
     return {
@@ -167,7 +168,13 @@ export class StripePayService {
     //   return "Payment Failed"
     // }
   }
+  
 
+
+  async fetchDetails(orderId:string){
+    const paymentHistory = await this.paymentHistoryModel.findOne({orderId:orderId});
+    return paymentHistory;
+  }
 
 
 }
