@@ -120,6 +120,7 @@ export class AuthService {
       .collection(this.roleCollections.USER)
       .findOne({ _id: new Object(userId) }, { projection: { username: 1, email: 1, phone: 1, role: 1 } });
 
+      console.log(userData);
     const refreshToken = this.tokenService.generateRefreshToken(userId, sessionId);
     const accessToken = this.tokenService.generateAccessToken(userData);
 

@@ -8,6 +8,7 @@ export interface TokenPayload {
   email: string;
   phone: string;
   role: number;
+  name: string; 
 }
 export interface ValidationResponse {
   isValid: boolean;

@@ -68,6 +68,7 @@ export class AuthService {
 
       // Hash the password before saving the user
       const hashedPassword = await bcrypt.hash(password, 10);
+      console.log(createAuthDto, "checking");
       const createdAuthentication = new this.authenticationModel({
         ...createAuthDto,
         password: hashedPassword,
@@ -75,7 +76,7 @@ export class AuthService {
 
       await createdAuthentication.save();
       id = (createdAuthentication._id as Types.ObjectId).toString();
-
+console.log(createdAuthentication, "save Done");
       this.client.emit('user_created', createdAuthentication);
       this.logger.info('user store success');
       const tokensData = await this.authClient.getSignUpAccess(id, req.ip, req.headers['user-agent']);

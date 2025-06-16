@@ -11,6 +11,8 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const cartPort = configService.get<number>('CART_PORT') as number;
 
+  app.enableCors();
+  
   const config = new DocumentBuilder()
     .setTitle('Cart API')
     .setDescription('Cart module APIs for food ordering app')

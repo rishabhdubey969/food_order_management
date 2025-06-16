@@ -26,7 +26,7 @@ export class AuthClient implements OnModuleInit {
 
   onModuleInit() {
     this.grpcAuthService = this.client.getService(AUTH_SERVICE_NAME);
-    console.log('grpc started');
+    console.log('grpc started1');
   }
 
   async getSignUpAccess(id: string, ip: string, userAgent: string) {
