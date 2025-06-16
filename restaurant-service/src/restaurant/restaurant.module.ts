@@ -25,6 +25,17 @@ import { RedisModule } from './redis/redis.module';
   //     },
   //   },
   // ]),
+  ClientsModule.register([
+    {
+      name: 'AUTH_SERVICE',
+      transport: Transport.GRPC,
+      options: {
+        package: 'auth', 
+        protoPath: "src/grpc/proto/auth.proto", // adjust path to your actual proto
+        url: 'localhost:50051', // adjust to your auth service host/port
+      },
+    },
+  ]),
 
   ],
   providers: [RestaurantService],

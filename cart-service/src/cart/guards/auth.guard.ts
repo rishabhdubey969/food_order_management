@@ -12,8 +12,8 @@ import {
   import { Observable } from 'rxjs';
   import { catchError, map } from 'rxjs/operators';
   import { Request } from 'express';
-  import { ROLES_KEY } from '../decorators/roles.decorator';
- 
+  import { ROLES_KEY } from '../decorator/role.decorator';
+  
   interface Token {
     sub: number;
     email: string;
