@@ -24,43 +24,50 @@
 - [Contributing](#-contributing)
 
 ## 🔍 Overview
-
-The User Service is a critical component of our Food Order Management system, handling all user-related operations including authentication, registration, and profile management.
+The Manager and Restaurant Service is the backbone of the Food Order Management system, handling:
+- Restaurant management and operations
+- Manager authentication and authorization
+- Menu and coupon management
+- Order processing and status updates
+- Complaint resolution system
 
 ## ✨ Features
 
-- 🔐 User Authentication
-- 📝 User Registration with OTP Verification
-- 🔄 Password Reset Functionality
-- 👤 User Profile Management
-- 📧 Email Notifications
-- 🛡️ JWT Based Authorization
+### Manager Module
+- 🔐 JWT-based authentication (signup/login/logout)
+- 👤 Manager profile management
+- 🚦 Order handover processing
+- 📝 Complaint management system
+
+### Restaurant Module
+- 🏢 Restaurant CRUD operations
+- 📍 Nearby restaurant discovery
+- 🍔 Menu item management
+- 🏷️ Tag-based restaurant filtering
+- 🎟️ Coupon creation and management
+- 🔍 Advanced search functionality
 
 ## 🛠 Tech Stack
-
 - **Framework:** NestJS
 - **Language:** TypeScript
 - **Database:** MongoDB
-- **Authentication:** JWT
-- **Email Service:** Nodemailer
-- **Validation:** class-validator
-- **Documentation:** Swagger/OpenAPI
+- **Authentication:** JWT with role-based guards
+- **API Documentation:** Swagger/OpenAPI
+- **Inter-service Communication:** gRPC
+- **File Storage:** AWS S3 (via signed URLs)
 
 ## 📋 Prerequisites
-
-- Node.js (v14+)
-- MongoDB (v4+)
+- Node.js (v16+)
+- MongoDB (v4.4+)
 - npm/yarn
-- Git
+- AWS S3 bucket (for media storage)
 
 ## 🚀 Installation
 
 1. **Clone the repository**
-
    ```bash
    git clone https://github.com/your-username/food_order_management.git
-   cd food_order_management/user-service
-
+   cd food_order_management/manager-restaurant-service
    ```
 
 2. **Install dependencies**
@@ -100,7 +107,7 @@ Create a .env file in the root directory:
 # Application
 
 ```bash
-PORT=3000
+PORT=3005
 NODE_ENV=development
 
 ```
@@ -120,41 +127,32 @@ JWT_EXPIRES_IN=24h
 
 ```
 
-# Email Configuration
-
-```bash
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-email-password
-EMAIL_FROM=noreply@yourapp.com
-
-```
-
-# OTP Configuration
-
-```bash
-OTP_EXPIRY=5 # minutes
-
-```
-
 ## 📚 API Documentation
 
 Authentication Endpoints
 
-1. Send OTP
-
-2. **User Registration**
+1. **Manager Registration**
 
 ```bash
-POST /auth/signup
+ POST /manager/signup
+Content-Type: application/json
+
+{
+  "email": "manager@example.com",
+  "password": "SecurePass123!",
+  "name": "John Doe",
+  "restaurantId": "507f1f77bcf86cd799439011"
+}
+
+2. **Manager Login**
+
+```bash
+POST /manager/login
 Content-Type: application/json
 
 {
 "email": "user@example.com",
 "password": "SecurePass123!",
-"name": "John Doe",
-"otp": "123456"
 }
 
 ```
@@ -170,19 +168,87 @@ Content-Type: application/json
 }
 
 ```
-
-4. **Reset Password**
+3.. **Manager Logout**
 
 ```bash
-   POST /auth/reset-password/:token
-   Content-Type: application/json
+POST /manager/logout
+Content-Type: application/json
 
 {
-"password": "NewSecurePass123!"
+"email": "user@example.com",
+"password": "SecurePass123!",
 }
 
 ```
 
+4. **Get Manager by id**
+
+```bash
+   POST /manager/:id
+   Content-Type: application/json
+
+{
+"id": "684aaacfe5cb70eafaf11754"
+}
+
+```
+5.**Update Manager by id**
+
+```bash
+PUT /manager/update/:id
+Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
+
+{
+  "name": "Updated Name",
+  "email": "updated@example.com"
+}
+```
+6.**Order HandOver**
+```bash
+POST /manager/orderHandOver
+Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
+
+{
+  "orderId": "507f1f77bcf86cd799439011"
+}
+```
+7.**Create Complain**
+```bash
+### 1. Create Complaint
+`POST /:managerId`
+
+**Description**: Create a new complaint (User only)
+
+**Request Body**:
+```json
+{
+  "userId": "682adb9df49146b3a410e478",
+  "orderId": "683d8e4d15f9ab39583eef4f",
+  "description": "The food was delivered late and was cold."
+}
+```
+8.**Update complain status by manageer**
+```bash
+PATCH /complaints/status/507f1f77bcf86cd799439012
+Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
+
+{
+  "status": "IN_PROGRESS"
+}
+```
+9.**Get all Complains for specific manager**
+```bash
+GET /complaints/manager/507f1f77bcf86cd799439011
+Authorization: Bearer <JWT_TOKEN>
+```
+10.**Get all complain by admin**
+```bash
+GET /complaints/admin
+Authorization: Bearer <ADMIN_JWT_TOKEN>
+```
 ## 💻 Development
 
 # Run in development mode
@@ -260,7 +326,6 @@ The service implements a global error handling mechanism with standardized error
 
 Password hashing using bcrypt
 JWT token-based authentication
-Rate limiting on sensitive endpoints
 Input validation and sanitization
 CORS protection
 
@@ -292,4 +357,4 @@ Error Response:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-<p align="center">Made with ❤️ by Your Rishabh Dubey</p>
+<p align="center">Made with ❤️ by Your Adrisha Gupta and Kushagra</p>

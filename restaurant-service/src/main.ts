@@ -19,6 +19,13 @@ async function bootstrap() {
     },
   }),
 );
+ const grpcMicroservice = app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.GRPC,
+    options: {
+      package: 'admin',
+      protoPath:  'src/manager/grpc/admin.proto',
+    },
+  });
 
    app.enableCors({
     origin: ['http://localhost:5173', 'http://172.50.5.110'], 

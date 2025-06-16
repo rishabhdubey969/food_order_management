@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   InternalServerErrorException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection, Types, isValidObjectId } from 'mongoose';
@@ -22,9 +23,9 @@ export class ComplaintService {
 
   async createComplaint(dto: CreateComplaintDto, userId: string, managerId: string) {
     
+    console.log(userId);
       const complaint = {
         ...dto,
-        userId,
         managerId,
         status: 'pending',
         createdAt: new Date(),
@@ -102,6 +103,29 @@ export class ComplaintService {
       throw error instanceof NotFoundException || error instanceof BadRequestException
         ? error
         : new InternalServerErrorException('Failed to fetch complaints for manager');
+    }
+  }
+    async getAllComplaints(token: string) {
+    try {
+      const user = await this.tokenService.verify(token);
+      if (user.role !== 'admin') {
+        throw new ForbiddenException(ERROR_MESSAGES.ADMIN_ONLY);
+      }
+
+      const complaints = await this.connection
+        .collection('complaints')
+        .find()
+        .project({ __v: 0 })
+        .toArray();
+
+      return {
+        message: SUCCESS_MESSAGES.COMPLAINTS_FETCHED,
+        data: complaints,
+      };
+    } catch (error) {
+      throw error instanceof ForbiddenException
+        ? error
+        : new InternalServerErrorException('Failed to fetch all complaints');
     }
   }
 }
