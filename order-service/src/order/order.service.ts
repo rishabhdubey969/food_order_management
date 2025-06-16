@@ -199,20 +199,6 @@ export class OrderService {
     }
 
   }
-  async getUserId(orderId: string) {
-   try{ 
-    const order = await this.OrderSchema.findById(orderId);
-     console.log(order);
-     if (!order) {
-      throw new Error('Order not found');
-    }
-  
-    return { userId: order.userId };
-    }
-    catch(err){
-      throw new InternalServerErrorException('Failed to find user');
-    }
-  }
 
   async generateInvoice(orderId: string, options: any = {}): Promise<Buffer> {
     const startTime=Date.now();

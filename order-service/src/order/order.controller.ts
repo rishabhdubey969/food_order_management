@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards,Res, BadRequestException, Inject, InternalServerErrorException } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards,Res, BadRequestException, Inject, InternalServerErrorException, Req } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { PaymentClient } from 'src/grpc/payment/payment.client';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
@@ -16,9 +16,9 @@ import { Response } from 'express'
 
 
 
-// @ApiBearerAuth('JWT')
+@ApiBearerAuth('JWT')
 @ApiTags('Order')
-// @UseGuards(jwtGuard)
+@UseGuards(jwtGuard)
 @Controller('order')
 export class OrderController {
 
@@ -68,11 +68,11 @@ export class OrderController {
       @ApiResponse({ status: 400, description: 'Bad Request' })
       @ApiResponse({ status: 401, description: 'Unauthorized' })
       @ApiResponse({ status: 402, description: 'Payment Failed' })
-      async placeOrder(@Body() data:PlaceOrderDto){
+      async placeOrder(@Body() data:PlaceOrderDto,@Req() request:any){
         if(data.modeOfPayment=="cashOnDelivery"){
-             await this.handleCart({orderId:data.orderId});
+             await this.handleCart({userId:request.user._id});
             await this.handleDelivery({orderId: data.orderId});
-            await this.client.emit('orderConfirmed',{orderId:data.orderId,modeofPayment:data.modeOfPayment,message:"order Confirmed"});
+            await this.client.emit('orderConfirmed',{email:request.user.email,modeofPayment:data.modeOfPayment,message:"order Confirmed"});
             return await this.orderService.updateOrder(data.orderId,"NILL",PaymentStatus.PENDING,PaymentMethod.CASH_ON_DELIVERY,OrderStatus.PREPARING);
         }
         else if(data.modeOfPayment=="online"){
@@ -82,7 +82,7 @@ export class OrderController {
                 return orderCancelled;
               }
               else if(paymentData.paymentStatus=="completed"){
-                await this.handleCart({orderId:data.orderId});
+                await this.handleCart({userId:request.user._id});
                 await  this.handleDelivery({orderId:data.orderId});
                 const orderConfirmed=await this.orderService.updateOrder(data.orderId,paymentData.paymentID,PaymentStatus.COMPLETED,PaymentMethod.UPI,OrderStatus.CONFIRMED);
                 return orderConfirmed;
@@ -181,9 +181,8 @@ export class OrderController {
       {
         await this.kafkaService.handleEvent('newOrder', payload);
       }
-      async handleCart(payload:{orderId:string}){
-          const userId=await this.orderService.getUserId(payload.orderId);
-          await this.kafkaService.handleEvent('orderCreated',userId);
+      async handleCart(payload:{userId:string}){
+          await this.kafkaService.handleEvent('orderCreated',payload);
       
       }
       async handleKitchen(payload:{cartId:ObjectId}){
