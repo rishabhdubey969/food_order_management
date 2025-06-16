@@ -34,13 +34,13 @@ import {
   
   @ApiTags('Restaurants')
   @ApiBearerAuth()
-  @UseGuards(GrpcAuthGuard)
   @Controller('restaurant')
   export class RestaurantController {
     private  readonly mediaService: MediaService;
   
     constructor(private readonly restaurantService: RestaurantService) {}
   
+    @UseGuards(GrpcAuthGuard)
     @Post('create/:managerId')
     @Roles(Role.ADMIN)
     @ApiOperation({ summary: 'Create a restaurant' })
@@ -53,7 +53,6 @@ import {
     }
   
     @Get('nearby')
-    @Roles(Role.USER)
     @ApiOperation({ summary: 'Get nearby restaurants' })
     @ApiQuery({ name: 'latitude', required: true })
     @ApiQuery({ name: 'longitude', required: true })
@@ -70,6 +69,7 @@ import {
       return this.restaurantService.getNearbyRestaurants(latitude, longitude, +limit, +offset, user);
     }
   
+    @UseGuards(GrpcAuthGuard)
     @Get('all')
     @Roles(Role.ADMIN)
     @ApiOperation({ summary: 'Get all restaurants' })
@@ -80,6 +80,7 @@ import {
       return this.restaurantService.getAllRestaurants(+limit, +offset);
     }
   
+    @UseGuards(GrpcAuthGuard)
     @Put(':id')
     @Roles(Role.ADMIN, Role.MANAGER)
     @ApiOperation({ summary: 'Update a restaurant' })
@@ -90,6 +91,7 @@ import {
       return this.restaurantService.updateRestaurant(id, dto);
     }
   
+    @UseGuards(GrpcAuthGuard)
     @Get('manager/:managerId')
     @Roles(Role.ADMIN, Role.MANAGER)
     @ApiOperation({ summary: 'Get restaurant by manager ID' })
@@ -97,6 +99,7 @@ import {
       return this.restaurantService.getRestaurantByManagerId(managerId);
     }
   
+    @UseGuards(GrpcAuthGuard)
     @Get('tags')
     @Roles(Role.ADMIN)
     @ApiOperation({ summary: 'Get restaurants by tags' })
@@ -128,6 +131,7 @@ import {
       return { signedUrl };
     }
   
+    @UseGuards(GrpcAuthGuard)
     @Post(':restaurantId/menu')
     @Roles(Role.ADMIN, Role.MANAGER)
     @ApiOperation({ summary: 'Create menu item' })
@@ -149,6 +153,7 @@ import {
       return this.restaurantService.getItemById(restaurantId, itemId);
     }
   
+
     @Get(':restaurantId/menu')
     @ApiOperation({ summary: 'Get all menu items' })
     async getMenuItems(@Param('restaurantId') restaurantId: string) {
