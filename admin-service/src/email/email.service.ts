@@ -1,5 +1,3 @@
-
-
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
@@ -14,8 +12,8 @@ export class EmailService {
   ) {
     try {
       const emailService = 'gmail'
-      const userEmail =  process.env.SMTP_USER
-      const userPass = process.env.SMTP_PASS
+      const userEmail =  process.env.EMAIL_USER
+      const userPass = process.env.EMAIL_PASS
 
       if (!emailService || !userEmail || !userPass) {
         this.logger.error('Missing email configuration. Please check environment variables for email.service, email.userEmail, and email.userPass.');
