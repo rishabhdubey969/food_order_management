@@ -25,6 +25,9 @@ export class Auth {
   @Prop({ required: false })
   otp: string;
 
+  @Prop({ required: true })
+  username: string;
+
   @Prop({ default: true })
   is_verified: boolean;
 

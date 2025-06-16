@@ -78,6 +78,18 @@ export class ProfileService {
   }
 
   async mediaUploadService(id: string){
-return this.mediaClient.GeneratePresignedUrlClient('user', 'profile', id, 'jpg', 'image/jpg');
+return this.mediaClient.GeneratePresignedUrlClient(
+ 'user',
+   'profile',
+   id,
+   [
+    { fileExtension: 'jpg', contentType: 'image/jpg' },
+    { fileExtension: 'jpg', contentType: 'image/jpg' },
+  ],
+);
+  }
+
+  async confirmUploadService(id: string){
+    return this.mediaClient.ConfirmUploadClient('media/user/profile/684d51abab85e4eea0294410/1b66654f-1163-4260-862b-595fa0ece4bf.jpg','profile', id);
   }
 }

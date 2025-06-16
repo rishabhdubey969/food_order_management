@@ -4,29 +4,28 @@ import {
   BadRequestException,
   ConflictException,
   Inject,
-  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Cart, CartDocument } from './schema/cart.schema';
 import { Address, AddressDocument } from './schema/address.schema';
-import {  CouponDocument } from './schema/coupon.schema';
+import { CouponDocument } from './schema/coupon.schema';
 import { Restaurant } from './schema/restaurant.schema';
 import Redis from 'ioredis';
 import { MenuItem } from './schema/menu-item.schema';
 import { EventPattern } from '@nestjs/microservices';
+import { WinstonLogger } from '../logger/winston-logger.service';
 
 @Injectable()
 export class CartService {
-  private readonly logger = new Logger(CartService.name);
-
   constructor(
     @InjectModel(Cart.name) private readonly cartModel: Model<CartDocument>,
     @InjectModel('Coupons') private readonly couponModel: Model<CouponDocument>,
     @InjectModel(Address.name) private readonly addressModel: Model<AddressDocument>,
     @InjectModel('Restaurant') private readonly restaurantModel: Model<Restaurant>,
-    @InjectModel("MenuItem") private readonly menuItemModel: Model<MenuItem>,
+    @InjectModel('MenuItem') private readonly menuItemModel: Model<MenuItem>,
     @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
+    private readonly logger: WinstonLogger, 
   ) {}
 
   private toRad(value: number): number {
@@ -56,21 +55,21 @@ export class CartService {
   }
 
   async removeItemService(userId: string, itemId: string) {
-    this.logger.log(`Attempting to remove item ${itemId} from user ${userId}'s cart`);
-    
+    this.logger.log(`Attempting to remove item ${itemId} from user ${userId}'s cart`, CartService.name);
+
     const cart = await this.cartModel.findOne({ userId });
     if (!cart) {
-      this.logger.warn(`Cart not found for user ${userId}`);
+      this.logger.warn(`Cart not found for user ${userId}`, CartService.name);
       throw new NotFoundException('Cart not found');
     }
 
     const itemIndex = cart.items.findIndex(item => item.itemId.toString() === itemId);
     if (itemIndex === -1) {
-      this.logger.warn(`Item ${itemId} not found in cart`);
+      this.logger.warn(`Item ${itemId} not found in cart`, CartService.name);
       throw new NotFoundException('Item not found in cart');
     }
 
-    this.logger.verbose(`Item ${itemId} found at index ${itemIndex}`);
+    this.logger.verbose(`Item ${itemId} found at index ${itemIndex}`, CartService.name);
 
     const taxPercent = 5;
     const item = cart.items[itemIndex];
@@ -78,15 +77,15 @@ export class CartService {
 
     if (item.quantity <= 0) {
       cart.items.splice(itemIndex, 1);
-      this.logger.log(`Item ${itemId} removed completely from cart`);
+      this.logger.log(`Item ${itemId} removed completely from cart`, CartService.name);
     } else {
       item.tax = (item.price * item.quantity * taxPercent) / 100;
-      this.logger.log(`Item ${itemId} quantity decreased to ${item.quantity}`);
+      this.logger.log(`Item ${itemId} quantity decreased to ${item.quantity}`, CartService.name);
     }
 
     if (cart.items.length === 0) {
       await this.cartModel.deleteOne({ _id: cart._id });
-      this.logger.warn(`Cart for user ${userId} deleted because no items left`);
+      this.logger.warn(`Cart for user ${userId} deleted because no items left`, CartService.name);
       return { message: 'Cart deleted because no items left' };
     }
 
@@ -102,45 +101,47 @@ export class CartService {
     });
 
     await cart.save();
-  
-    this.logger.log(`Cart for user ${userId} updated successfully`);
+
+    this.logger.log(`Cart for user ${userId} updated successfully`, CartService.name);
     return {
       message: 'Item quantity updated',
       updatedCart: cart,
     };
   }
-  
-
 
   async addToCartService(userId: string, restaurantId: string, itemId: string) {
-    this.logger.log(`Adding item ${itemId} to cart for user ${userId}`);
-  
+    this.logger.log(`Adding item ${itemId} to cart for user ${userId}`, CartService.name);
+
     let cart = await this.cartModel.findOne({ userId });
-  
+
     const restaurant = await this.restaurantModel.findById(restaurantId);
     if (!restaurant) {
-      this.logger.warn(`Restaurant ${restaurantId} not found`);
+      this.logger.warn(`Restaurant ${restaurantId} not found`, CartService.name);
       throw new NotFoundException('Restaurant not found');
     }
-  
+
     const item = await this.menuItemModel.findById(itemId);
     if (!item) {
-      this.logger.warn(`Item ${itemId} not found`);
+      this.logger.warn(`Item ${itemId} not found`, CartService.name);
       throw new NotFoundException('Item not found');
     }
-  
+
+    console.log("Item ", item);
+
     if (cart) {
-      if (cart.restaurantId.toString() !== restaurantId.toString()) {
-        this.logger.warn(`User ${userId} has a cart for another restaurant`);
+      if (String(cart.restaurantId) !== String(restaurantId)) {
+        this.logger.warn(`User ${userId} has a cart for another restaurant`, CartService.name);
         throw new ConflictException('You already have a cart for another restaurant. Please clear it first.');
       }
-  
-      if (item.restaurantId.toString() !== restaurantId.toString()) {
-        this.logger.warn(`Item ${itemId} does not belong to restaurant ${restaurantId}`);
+
+      console.log(item.restaurantId, restaurantId);
+      if (!item.restaurantId || String(item.restaurantId) !== String(restaurantId)) {
+        this.logger.warn(`Item ${itemId} does not belong to restaurant ${restaurantId}`, CartService.name);
         throw new ConflictException('This item does not belong to the restaurant in your cart');
       }
+      
     }
-  
+
     const redisKey = `address:${userId}:coordinates`;
     const redisValue = await this.redisClient.get(redisKey);
     const { latitude: userLat = 12.9715, longitude: userLon = 77.5946 } = redisValue
@@ -151,11 +152,10 @@ export class CartService {
     const restLon = Number(restaurant.location.coordinates[0]);
 
     if ([userLat, userLon, restLat, restLon].some(coord => isNaN(coord))) {
-      this.logger.error('Invalid location coordinates');
+      this.logger.error('Invalid location coordinates', undefined, CartService.name);
       throw new BadRequestException('Invalid location coordinates');
     }
-  
-  
+
     const distance = this.calculateDistance(userLat, userLon, restLat, restLon);
     const deliveryCharges = this.calculateDeliveryCharges(distance);
     const platformFee = 9;
@@ -168,8 +168,7 @@ export class CartService {
       price: item.price,
       tax: (item.price * taxPercent) / 100,
     };
-  
-   
+
     if (!cart) {
       const itemTotal = item.price;
       const tax = (itemTotal * taxPercent) / 100;
@@ -190,10 +189,9 @@ export class CartService {
         couponCode: null,
         couponId: null,
       });
-  
-      this.logger.log(`New cart created for user ${userId}`);
+
+      this.logger.log(`New cart created for user ${userId}`, CartService.name);
     } else {
-      
       const existingItemIndex = cart.items.findIndex(i => i.itemId === itemId);
       if (existingItemIndex !== -1) {
         cart.items[existingItemIndex].quantity += 1;
@@ -201,16 +199,16 @@ export class CartService {
           (cart.items[existingItemIndex].price *
             cart.items[existingItemIndex].quantity *
             taxPercent) / 100;
-        this.logger.verbose(`Increased quantity of item ${itemId}`);
+        this.logger.verbose(`Increased quantity of item ${itemId}`, CartService.name);
       } else {
         cart.items.push(newItem);
-        this.logger.verbose(`Added item ${itemId} to existing cart`);
+        this.logger.verbose(`Added item ${itemId} to existing cart`, CartService.name);
       }
-  
+
       const itemTotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
       const tax = (itemTotal * taxPercent) / 100;
       const total = Math.round(itemTotal + tax + deliveryCharges + platformFee - (cart.discount || 0));
-  
+
       Object.assign(cart, {
         itemTotal,
         subtotal: itemTotal,
@@ -220,74 +218,74 @@ export class CartService {
         platformFee,
         distanceInKm: parseFloat(distance.toFixed(2)),
       });
-  
-      this.logger.log(`Cart for user ${userId} updated`);
+
+      this.logger.log(`Cart for user ${userId} updated`, CartService.name);
     }
 
     await cart.save();
-  
+
     return {
       message: 'Item added to cart',
       cart,
     };
   }
-  
+
   @EventPattern('orderCreated')
   async deleteCartService(userId: string) {
-    this.logger.warn(`Deleting cart for user ${userId}`);
+    this.logger.warn(`Deleting cart for user ${userId}`, CartService.name);
     const cart = await this.cartModel.findOne({ userId });
     if (!cart) {
-      this.logger.warn(`Cart not found for user ${userId}`);
+      this.logger.warn(`Cart not found for user ${userId}`, CartService.name);
       throw new NotFoundException('Cart not found');
     }
 
     await this.cartModel.deleteOne({ _id: cart._id });
-    this.logger.log(`Cart deleted for user ${userId}`);
+    this.logger.log(`Cart deleted for user ${userId}`, CartService.name);
     return { message: 'Cart deleted successfully' };
   }
 
   async getCartService(userId: string) {
-    this.logger.verbose(`Fetching cart for user ${userId}`);
+    this.logger.verbose(`Fetching cart for user ${userId}`, CartService.name);
     const cart = await this.cartModel.findOne({ userId });
     if (!cart) {
-      this.logger.warn(`No cart found for user ${userId}`);
+      this.logger.warn(`No cart found for user ${userId}`, CartService.name);
       throw new NotFoundException('No active cart found');
     }
     return cart;
   }
 
   async viewCouponsService(restaurantId: string) {
-    this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`);
+    this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`, CartService.name);
     return this.couponModel.find({ restaurantId });
   }
 
   async applyCouponService(userId: string, couponId: string) {
-    this.logger.log(`Applying coupon ${couponId} to cart of user ${userId}`);
+    this.logger.log(`Applying coupon ${couponId} to cart of user ${userId}`, CartService.name);
     const cart = await this.cartModel.findOne({ userId });
     if (!cart) {
-      this.logger.warn(`Cart not found for user ${userId}`);
+      this.logger.warn(`Cart not found for user ${userId}`, CartService.name);
       throw new NotFoundException('Cart not found');
     }
 
     const coupon = await this.couponModel.findById(couponId);
     if (!coupon) {
-      this.logger.warn(`Coupon ${couponId} not found`);
+      this.logger.warn(`Coupon ${couponId} not found`, CartService.name);
       throw new NotFoundException('Coupon not found');
     }
 
     if (coupon.restaurantId && coupon.restaurantId.toString() !== cart.restaurantId.toString()) {
-      this.logger.warn(`Coupon ${couponId} is not valid for restaurant ${cart.restaurantId}`);
+      this.logger.warn(`Coupon ${couponId} is not valid for restaurant ${cart.restaurantId}`, CartService.name);
       throw new BadRequestException('This coupon is not valid for this restaurant');
     }
 
     const now = new Date();
     if (!coupon.isActive || coupon.expiryDate < now) {
-      this.logger.warn(`Coupon ${couponId} is expired or inactive`);
+      this.logger.warn(`Coupon ${couponId} is expired or inactive`, CartService.name);
       throw new BadRequestException('Coupon is expired or inactive');
     }
 
     if (cart.total < coupon.minOrderAmount) {
-      this.logger.warn(`Cart total is less than coupon minimum amount`);
+      this.logger.warn(`Cart total is less than coupon minimum amount`, CartService.name);
       throw new BadRequestException(`Minimum order amount should be ₹${coupon.minOrderAmount}`);
     }
 
@@ -301,7 +299,7 @@ export class CartService {
 
     await cart.save();
 
-    this.logger.log(`Coupon ${coupon.code} applied to user ${userId}'s cart`);
+    this.logger.log(`Coupon ${coupon.code} applied to user ${userId}'s cart`, CartService.name);
 
     return {
       message: 'Coupon applied successfully',

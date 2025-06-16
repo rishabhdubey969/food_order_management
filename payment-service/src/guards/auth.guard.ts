@@ -49,7 +49,7 @@ export class AuthGuard implements CanActivate {
       }
 
       request.user = user;
-      console.log(user);
+      
       return true;
     } catch (error) {
       this.logger.info(`Authentication header have some issues: ${error}`);

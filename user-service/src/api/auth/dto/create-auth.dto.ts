@@ -26,4 +26,9 @@ export class CreateAuthDto {
   @IsNotEmpty()
   @IsString()
   readonly otp: string;
+
+  @ApiProperty({ example: 'user', description: 'User name' })
+  @IsNotEmpty()
+  @IsString()
+  readonly username: string;
 }

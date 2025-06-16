@@ -39,7 +39,7 @@ export class AuthClient implements OnModuleInit {
   async ValidateTokenAuthService(accessToken: string) {
     const request: accessTokenRequest = { accessToken };
     const response = await lastValueFrom(this.grpcAuthService.ValidateToken(request));
-    console.log(response, 'new');
+    
     return response;
   }
 }

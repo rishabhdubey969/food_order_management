@@ -4,6 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CartModule } from './cart/cart.module';
 import { RedisModule } from './redis/redis.module';
+import { WinstonModule } from 'nest-winston';
+import { winstonLoggerConfig } from './logger/logger.config';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { RedisModule } from './redis/redis.module';
       },
       inject: [ConfigService],
     }),
+    WinstonModule.forRoot(winstonLoggerConfig),
+
     
     CartModule,
     
