@@ -8,5 +8,5 @@ export const s3 = new S3Client({
     secretAccessKey: env.S3_SECRET_KEY,
   },
 });
-
-export const S3_BUCKET = env.S3_BUCKET;
+console.log(env);
+export const S3_BUCKET = process.env.S3_BUCKET_NAME;

@@ -123,7 +123,6 @@ export class AuthService {
       const resetTokenValidate = await this.tokenService.validate(token);
       if (!resetTokenValidate) throw new BadRequestException('Invalid or expired token');
 
-      console.log(resetTokenValidate);
       await this.updatePassword(resetTokenValidate, resetPasswordDto.password);
       await this.tokenService.remove(token);
 
@@ -148,4 +147,5 @@ export class AuthService {
       throw new BadRequestException(error);
     }
   }
+
 }

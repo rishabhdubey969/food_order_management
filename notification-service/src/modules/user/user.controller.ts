@@ -15,7 +15,6 @@ export class UserController {
 
  @EventPattern('signup_otp')
   async handleSignupOtp(@Payload() data: any) {
-    console.log("check");
     await this.userService.signupOtp(data);
   }
 

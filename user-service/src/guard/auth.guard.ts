@@ -37,7 +37,6 @@ export class AuthGuard implements CanActivate {
     }
 
     const parts = authorizationHeader.split(' ');
-
     // Validate the format of the Authorization header (should be "Bearer <token>")
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
       throw new UnauthorizedException(Auth.TOKEN_REQUIRED);

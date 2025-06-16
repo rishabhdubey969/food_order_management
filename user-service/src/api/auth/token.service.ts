@@ -18,12 +18,11 @@ export class TokenService {
     const ttl = this.configService.get<number>('REDIS_TIMEOUT') || 3600;
 
     await this.redisService.set(`reset:${hashed}`, userId, ttl); // store hash only
-    return token; // send this via email to the user
+    return hashed; // send this via email to the user
   }
 
   async validate(token: string): Promise<string | null> {
-    const hashed = createHash('sha256').update(token).digest('hex'); // Hash incoming token
-  return await this.redisService.get(`reset:${hashed}`); 
+  return await this.redisService.get(`reset:${token}`); 
   }
 
   async remove(token: string): Promise<void> {

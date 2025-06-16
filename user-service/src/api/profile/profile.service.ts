@@ -6,6 +6,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Profile as ProfileConst } from 'constants/profile.const';
+import { MediaClient } from 'src/grpc/media/media.client';
 
 @Injectable()
 export class ProfileService {
@@ -13,6 +14,7 @@ export class ProfileService {
     @InjectModel(Profile.name)
     private profileModel: Model<ProfileDocument>,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: WinstonLogger,
+     private readonly mediaClient: MediaClient,
   ) {}
 
   /**
@@ -73,5 +75,9 @@ export class ProfileService {
       { isDeleted: true, deletedAt: new Date() },
       { new: true },
     );
+  }
+
+  async mediaUploadService(id: string){
+return this.mediaClient.GeneratePresignedUrlClient('user', 'profile', id, 'jpg', 'image/jpg');
   }
 }

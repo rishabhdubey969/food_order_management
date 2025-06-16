@@ -9,7 +9,8 @@ export interface TokenPayload {
 export interface ValidationResponse {
   isValid: boolean;
   message: string;
-  userId?: string;
-  role?: number;
+  payload: Record<string, any>;
 }
+
+
 

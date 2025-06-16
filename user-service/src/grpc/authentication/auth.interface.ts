@@ -13,19 +13,25 @@ export interface accessTokenRequest {
   accessToken: string;
 }
 
+export interface TokenPayload {
+  sub: string;
+  email: string;
+  phone: string;
+  role: number;
+}
+
 export interface accessTokenResponse {
   isValid: boolean;
   message: string;
+  payload: TokenPayload; // Struct is deserialized to JS object
 }
 
 export interface generateTokenResponse {
   accessToken: string;
   refreshToken: string;
-  userData: Record<string, any>; // Struct is deserialized to JS object
-
 }
 
 export interface GrpcAuthService {
  GenerateToken( data:generateTokenData): Observable<generateTokenResponse>;
-ValidateToken(data: accessTokenRequest): Observable<accessTokenResponse>;
+ ValidateToken(data: accessTokenRequest): Observable<accessTokenResponse>;
 }
