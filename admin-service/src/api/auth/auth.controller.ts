@@ -5,35 +5,15 @@ import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/ reset-password.dto';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiProperty, ApiResponse } from '@nestjs/swagger';
 import { AdminGuard } from './guards/admin.guard';
+import { LoginSwagger, VerifyOtpSwagger, RefreshTokenSwagger, LogoutSwagger, ForgotPasswordSwagger, ResetPasswordSwagger } from '../swagger/auth.swagger';
 
 @Controller('auth/admin')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // @Post('login')
-  // async login(@Body() loginDto: LoginDto, @Req() req: Request) {
-  //   try {
-  //     const deviceId = req.headers['x-device-id']?.toString().split(',')[0]?.trim();
-  //      if (!deviceId) {
-  //       throw new HttpException('Device ID is required', HttpStatus.BAD_REQUEST);
-  //     }
-  //     return await this.authService.login(loginDto, deviceId);
-  //   } catch (error) {
-  //     throw new HttpException(
-  //       error.message || 'Login failed',
-  //       error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-  //     );
-  //   }
-  // }
-
   @Post('login')
-  @ApiOperation({ summary: 'Login an admin user' })
-  @ApiBody({ type: LoginDto }) // Document the request body
-  @ApiResponse({ status: 200, description: 'Successfully logged in', type: Object }) // Define success response
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 500, description: 'Internal Server Error' })
+  @LoginSwagger()
   async login(@Body() loginDto: LoginDto) {
     try {
       return await this.authService.login(loginDto);
@@ -46,11 +26,7 @@ export class AuthController {
   }
 
   @Post('verify-otp')
-  @ApiOperation({ summary: 'Verify OTP for admin login' })
-  @ApiBody({ type: VerifyOtpDto })
-  @ApiResponse({ status: 200, description: 'OTP verified successfully', type: Object })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 500, description: 'Internal Server Error' })
+  @VerifyOtpSwagger()
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
     try {
       return await this.authService.verifyOtp(verifyOtpDto);
@@ -63,9 +39,7 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @ApiResponse({ status: 200, description: 'Token refreshed successfully', type: Object })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 500, description: 'Internal Server Error' })
+  @RefreshTokenSwagger()
   async refresh(@Body('refreshToken') refreshToken: string) {
     try {
       return await this.authService.refreshToken(refreshToken);
@@ -76,31 +50,10 @@ export class AuthController {
       );
     }
   }
-@UseGuards(AdminGuard)
+
+  @UseGuards(AdminGuard)
   @Post('logout')
-  @ApiBearerAuth('JWT')
-  @ApiOperation({ summary: 'Logout an admin user' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        adminId: {
-          type: 'string',
-          description: 'The ID of the admin to logout',
-          example: '12345',
-        },
-      },
-      required: ['adminId'],
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Successfully logged out',
-    type: Object,
-  })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 500, description: 'Internal Server Error' })
+  @LogoutSwagger()
   async logout(@Body('adminId') adminId: string) {
     try {
       return await this.authService.logout(adminId);
@@ -113,11 +66,7 @@ export class AuthController {
   }
 
   @Post('forgot-password')
-  @ApiOperation({ summary: 'Request a password reset for an admin' })
-  @ApiBody({ type: ForgotPasswordDto })
-  @ApiResponse({ status: 200, description: 'Password reset request successful', type: Object })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 500, description: 'Internal Server Error' })
+  @ForgotPasswordSwagger()
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     try {
       return await this.authService.forgotPassword(forgotPasswordDto);
@@ -130,11 +79,7 @@ export class AuthController {
   }
 
   @Post('reset-password')
-  @ApiOperation({ summary: 'Reset admin password using a token' })
-  @ApiBody({ type: ResetPasswordDto })
-  @ApiResponse({ status: 200, description: 'Password reset successful', type: Object })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 500, description: 'Internal Server Error' })
+  @ResetPasswordSwagger()
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     try {
       return await this.authService.resetPassword(resetPasswordDto);

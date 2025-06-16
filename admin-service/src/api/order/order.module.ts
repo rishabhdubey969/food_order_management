@@ -9,10 +9,11 @@ import { AuthService } from '../auth/auth.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
 import { EmailModule } from 'src/email/email.module';
+import { LoggerModule } from '../logger/logger.module';
 
 @Module({
   imports: [
-   
+   LoggerModule,
     EmailModule,
     JwtModule.register({
           secret: process.env.JWT_SECRET || 'yourSecretKey',

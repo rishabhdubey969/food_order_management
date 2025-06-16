@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { StripeConfigService } from '../../config/stripe.config';
 import { StripePayService } from '../stripe_pay/stripe.pay.service';
 import Stripe from 'stripe';
@@ -6,6 +6,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Webhook, WebhookDocument } from './Schema/webhook.schema';
 import { ERROR, SUCCESS } from './constant/message.constant';
+import { ClientProxy } from '@nestjs/microservices';
+import { log } from 'console';
 
 @Injectable()
 export class StripeWebhookService {
@@ -17,6 +19,7 @@ export class StripeWebhookService {
 
     private readonly stripeConfig: StripeConfigService,
     private readonly paymentService: StripePayService,
+    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy
   ) {}
 
   private async saveOrUpdateWebhookEvent(eventData: {
@@ -212,8 +215,12 @@ export class StripeWebhookService {
         status: 'COMPLETED',
         orderId: orderId,
       });
-
+     
       await this.updatePaymentStatus(session.data[0].id, 'completed');
+      const email = charge.billing_details.email
+      const status= "completed"
+      const mailData = {email,orderId,status}
+      this.client.emit('payment_done', mailData);
     } catch (error) {
       Logger.error('Error handling charge succeeded:', error);
       throw error;
@@ -303,6 +310,7 @@ export class StripeWebhookService {
         errormessage: 'EXPIRED',
         orderId: orderId,
       });
+
       Logger.log(`Payment session expired for order ${orderId}`);
     } catch (error) {
       Logger.error('Error handling expired payment:', error);
@@ -327,7 +335,12 @@ export class StripeWebhookService {
         errormessage: 'FAILED',
         orderId: orderId,
       });
-
+      
+      const email = paymentIntent.receipt_email;
+      console.log(email)
+      const status= "failed"
+      const mailData = {email,orderId,status}
+      this.client.emit('payment_failed', mailData);
       Logger.log(`Payment failed for order ${orderId}`);
       Logger.log(
         `Failure reason: ${paymentIntent.last_payment_error?.message}`,
@@ -390,7 +403,7 @@ export class StripeWebhookService {
         sessionId,
         status
       );
-
+      
       if (!payment) {
         this.logger.warn(`Payment not found for session ID: ${sessionId}`);
         throw new NotFoundException(

@@ -14,7 +14,7 @@ export class UserService {
    
     @InjectConnection() private readonly connection: Connection,
     private readonly authService: AuthService,
-    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
+    // @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   async blockUser(userId: string) {
@@ -126,7 +126,7 @@ export class UserService {
     this.logger.log(`Fetching list of users with pagination - page: ${page}, limit: ${limit}`);
     try {
       let payload = await this.authService.verifyJwtToken(token);
-      console.log(payload);
+      // console.log(payload);
 
       if (payload.role !== 'admin') {
         this.logger.warn(`Unauthorized access attempt by role: ${payload.role}`);
