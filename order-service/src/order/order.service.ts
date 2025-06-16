@@ -284,6 +284,7 @@ export class OrderService {
     }
   }
 
+
   private generateInvoiceHTML(order: any): string {
     return `
         <!DOCTYPE html>
@@ -387,15 +388,8 @@ export class OrderService {
                 </div>
                 <div class="invoice-title">Invoice</div>
               </div>
-
               <div class="section">
-                <div><strong>Account:</strong> 12345678910</div>
-                <div><strong>A/C Name:</strong> Add Your Account</div>
-                <div><strong>Bank Detail:</strong> Add Your Detail</div>
-              </div>
-
-              <div class="section">
-                <div><strong>Bill To:</strong> Mr. Client</div>
+                <div><strong>Bill To:</strong>${order.deliveryAddress.address.toString()}</div>
                 <div><strong>Date:</strong> ${new Date().toLocaleDateString()}</div>
                 <div><strong>Receipt No:</strong> ${order._id.toString()}</div>
               </div>
