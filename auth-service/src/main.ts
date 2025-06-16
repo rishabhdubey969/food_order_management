@@ -10,7 +10,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // HTTP Configuration
-  const port = configService.get<number>('PORT') || 3001;
+  const port = configService.get<number>('PORT') || 3000;
 
   // Swagger Configuration
   const config = new DocumentBuilder()
