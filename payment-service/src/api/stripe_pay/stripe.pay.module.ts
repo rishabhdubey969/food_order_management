@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { Payment, paymentHistory, paymentHistorySchema, PaymentSchema } from './Schema/stripe.pay.schema';
@@ -10,6 +10,7 @@ import { StripeConfigService } from '../../config/stripe.config';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
+import { LoggerMiddleware } from 'src/logger/logger.middleware';
 
 
 @Module({
@@ -32,4 +33,5 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
   providers: [StripePayService, StripeConfigService, AuthClient],
   exports: [StripePayService],
 })
-export class StripePayModule {}
+export class StripePayModule {
+}

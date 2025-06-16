@@ -40,9 +40,12 @@ export class StripePayService {
   async createCheckoutSession(payload: CreatePaymentDto) {
     try {
       if (!payload.orderId) {
-        throw new BadRequestException(ERROR.NOT_EXIST);
+        throw new BadRequestException(ERROR.NOT_PROVIDED);
       }
       const orderId = payload.orderId;
+      if (!ObjectId.isValid(orderId)) {
+        throw new BadRequestException(ERROR.INVALID);
+      }
       const orderData = await this.connection
         .collection('orders')
         .findOne({ _id: new ObjectId(orderId) });
@@ -51,6 +54,9 @@ export class StripePayService {
       }
       const total_amount = orderData?.total;
       const userId = orderData.userId;
+      if (!total_amount || isNaN(total_amount)) {
+        throw new BadRequestException('Invalid order amount');
+      }
 
       const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -67,8 +73,8 @@ export class StripePayService {
           },
         ],
         mode: 'payment',
-        success_url: 'http://localhost:3000/success',
-        cancel_url: 'http://localhost:3000/cancel',
+        success_url: 'http://localhost:5173/order-success',
+        cancel_url: 'http://localhost:5173/order-failure',
         metadata: {
           orderId: orderId,
         },
@@ -106,7 +112,11 @@ export class StripePayService {
 
       return { url: session.url };
     } catch (error) {
+      this.logger.error(`Checkout session failed for order ${payload?.orderId}:`, error.message, error.stack);
       Logger.error('Error creating checkout session:', error);
+      if (error instanceof Stripe.errors.StripeError) {
+        throw new BadRequestException(`Payment processing error: ${error.message}`);
+      }
       if (error) {
         throw error;
       }
@@ -115,19 +125,18 @@ export class StripePayService {
   }
 
   async updatePaymentStatus(sessionId: string, status: string) {
-    
     const payment = await this.paymentModel.findOneAndUpdate(
-      { sessionId },
-      { status },
+      { sessionId: sessionId },
+      { status: status },
       { new: true },
     );
     return payment;
   }
 
-  async updatePaymentHistory(sessionId:string,status:string){
-    const paymentHistory = await this.paymentModel.findByIdAndUpdate(
-      { sessionId },
-      { status },
+  async updatePaymentHistory(sessionId: string, status: string) {
+    const paymentHistory = await this.paymentHistoryModel.findOneAndUpdate(
+      { sessionId: sessionId },
+      { status: status },
       { new: true },
     );
     return paymentHistory;
