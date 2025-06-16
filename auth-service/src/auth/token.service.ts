@@ -14,7 +14,7 @@ export class AuthTokenService {
   private readonly jwtRefreshSecret = process.env.REFRESH_TOKEN_SECRET as string;
 
   generateAccessToken(userData: any): string {
-    return jwt.sign({ sub: userData._id, email:userData.email, phone:userData.phone, role:userData.role }, this.jwtSecret, { expiresIn: '15m' });
+    return jwt.sign({ sub: userData._id, email:userData.email, phone:userData.phone, role:userData.role, name:userData.username }, this.jwtSecret, { expiresIn: '15m' });
   }
 
   generateRefreshToken(userId: string, sessionId: string): string {

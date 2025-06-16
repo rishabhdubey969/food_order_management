@@ -7,17 +7,25 @@ service MediaService {
   rpc ConfirmUpload (ConfirmRequest) returns (ConfirmResponse);
 }
 
+message FileMeta {
+  string fileExtension = 1;
+  string contentType = 2;
+}
+
 message PresignRequest {
   string service = 1;
   string resourceType = 2;
   string resourceId = 3;
-  string fileExtension = 4;
-  string contentType = 5;
+  repeated FileMeta files = 4;
+}
+
+message PresignedUrl {
+  string presignedUrl = 1;
+  string key = 2;
 }
 
 message PresignResponse {
-  string presignedUrl = 1;
-  string key = 2;
+  repeated PresignedUrl urls = 1;
 }
 
 message ConfirmRequest {
