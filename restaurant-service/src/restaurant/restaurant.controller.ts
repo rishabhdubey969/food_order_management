@@ -102,9 +102,7 @@ export class RestaurantController {
   /**
    * Get restaurants matching provided tags (Admin only)
    */
-  @UseGuards(GrpcAuthGuard)
   @Get('tags')
-  @Roles(Role.ADMIN)
   async getByTags(@Query('tags') tags?: string) {
     const tagArray = tags ? tags.split(',') : [];
     return this.restaurantService.findByTags(tagArray);
