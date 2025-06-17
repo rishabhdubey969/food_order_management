@@ -3,9 +3,11 @@ export const DELIVERY_PARTNER_CONSTANTS = {
     DELIVERY_PARTNERS_BASE: 'deliveryPartners',
     PROFILE: 'getProfile',
     PARTNER_BY_ID: ':partnerId',
+    GET_ALL_PARTNERS: 'getAllPartners',
     STATUS: 'status',
-    EARNINGS: ':period',
-    DELIVERIES_HISTORY: 'history',
+    EARNINGS: 'earnings/:period',
+    DELIVERIES_HISTORY: 'deliveryHistory',
+    DELETE_USER: 'delete/:partnerId'
   },
   MESSAGES: {
     SUCCESS: {
