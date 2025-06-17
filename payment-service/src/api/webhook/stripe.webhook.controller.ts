@@ -11,6 +11,8 @@ import {
 import { Request, Response } from 'express';
 import { StripeWebhookService } from './stripe.webhook.service';
 import { StripeConfigService } from '../../config/stripe.config';
+import { ERROR, SUCCESS } from './constant/message.constant';
+import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 
 @Controller('webhook')
 export class StripeWebhookController {
@@ -22,6 +24,7 @@ export class StripeWebhookController {
   ) {}
 
   @Post('stripe')
+  @ResponseMessage(SUCCESS.WEBHOOOK_SUCCES)
   @HttpCode(200)
   async handleWebhook(
     @Req() req: RawBodyRequest<Request>,
@@ -31,11 +34,11 @@ export class StripeWebhookController {
 
     try {
       if (!req.rawBody) {
-        throw new BadRequestException('No raw body found in request');
+        throw new BadRequestException(ERROR.NO_RAW_BODY);
       }
 
       if (!sig) {
-        throw new BadRequestException('No stripe-signature header found');
+        throw new BadRequestException();
       }
 
       const event = this.stripeConfig
