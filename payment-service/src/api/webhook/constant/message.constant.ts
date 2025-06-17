@@ -15,3 +15,10 @@ export const ERROR = {
     PAYMENTINTENT_SUCCEEDED:'Payment intent succeeded for order:',
     WEBHOOOK_SUCCES:'Webhook event received successfully'
   };
+
+
+  export const ROUTES ={
+    WEBHOOK:'webhook',
+    STRIPE:'stripe'
+
+  }

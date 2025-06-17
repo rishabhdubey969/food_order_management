@@ -11,10 +11,10 @@ import {
 import { Request, Response } from 'express';
 import { StripeWebhookService } from './stripe.webhook.service';
 import { StripeConfigService } from '../../config/stripe.config';
-import { ERROR, SUCCESS } from './constant/message.constant';
+import { ERROR, ROUTES, SUCCESS } from './constant/message.constant';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 
-@Controller('webhook')
+@Controller(ROUTES.WEBHOOK)
 export class StripeWebhookController {
   private readonly logger = new Logger(StripeWebhookController.name);
 
@@ -23,9 +23,9 @@ export class StripeWebhookController {
     private readonly stripeConfig: StripeConfigService,
   ) {}
 
-  @Post('stripe')
+  @Post(ROUTES.WEBHOOK)
   @ResponseMessage(SUCCESS.WEBHOOOK_SUCCES)
-  @HttpCode(200)
+  // @HttpCode(200)
   async handleWebhook(
     @Req() req: RawBodyRequest<Request>,
     @Res() res: Response,

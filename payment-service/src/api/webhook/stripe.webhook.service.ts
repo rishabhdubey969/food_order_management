@@ -34,7 +34,7 @@ export class StripeWebhookService {
     status?: string;
   }) {
     try {
-      const filter = { stripeEventId: eventData.stripeEventId };
+      const eventDetails = { stripeEventId: eventData.stripeEventId };
       const update = {
         ...eventData,
         receivedAt: Date.now(),
@@ -42,7 +42,7 @@ export class StripeWebhookService {
       const options = { upsert: true, new: true };
 
       const webhookEvent = await this.webhookModel.findOneAndUpdate(
-        filter,
+        eventDetails,
         update,
         options,
       );
