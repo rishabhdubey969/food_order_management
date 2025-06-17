@@ -18,12 +18,12 @@ export interface TokenPayload {
   email: string;
   phone: string;
   role: number;
+  name: string;
 }
 
 export interface accessTokenResponse {
   isValid: boolean;
   message: string;
-  payload: TokenPayload; 
 }
 
 export interface generateTokenResponse {

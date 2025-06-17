@@ -6,9 +6,11 @@ import { UserController } from './user.controller';
 import { AuthModule } from '../auth/auth.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { EmailModule } from 'src/email/email.module';
+import { LoggerModule } from '../logger/logger.module';
 
 @Module({
   imports: [
+    LoggerModule,
    EmailModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'yourSecretKey',

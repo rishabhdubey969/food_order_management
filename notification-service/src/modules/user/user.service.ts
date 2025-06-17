@@ -20,6 +20,6 @@ export class UserService {
   }
 
   async resetLink(data: any){
- return this.notificationHelperService.resetEmail(data, 'Reset Password', 'reset-link');
+   return this.notificationHelperService.resetEmail(data, 'Reset Password', 'reset-link');
   }
 }

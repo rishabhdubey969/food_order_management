@@ -5,7 +5,7 @@ import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Profile as ProfileConst } from 'constants/profile.const';
+import { PROFILE as ProfileConst, WINSTON_LOGGER_PROFILE } from 'constants/profile.const';
 import { MediaClient } from 'src/grpc/media/media.client';
 
 @Injectable()
@@ -22,18 +22,18 @@ export class ProfileService {
    * Logs the operation and throws if not found.
    */
   async profileFindOneService(id: string) {
-    this.logger.info(`Finding profile with id: ${id}`);
+    this.logger.info(`${WINSTON_LOGGER_PROFILE.FIND_PROFILE}: ${id}`);
     const existingProfileCheck = await this.profileModel
       .findOne({ _id: id })
       .select('-password') // exclude password from result
       .lean();
 
     if (!existingProfileCheck) {
-      this.logger.warn(`Profile not found for id: ${id}`);
+      this.logger.warn(`${WINSTON_LOGGER_PROFILE.NOT_FOUND_PROFILE}: ${id}`);
       throw new HttpException(ProfileConst.NOT_FOUND, HttpStatus.FORBIDDEN);
     }
 
-    this.logger.info(`Profile found for id: ${id}`);
+    this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_FOUND}: ${id}`);
     return existingProfileCheck;
   }
 
@@ -42,7 +42,7 @@ export class ProfileService {
    * Logs the operation and throws if update fails.
    */
   async profileUpdateService(id: string, updateProfileDto: UpdateProfileDto) {
-    this.logger.info(`Updating profile with id: ${id}`);
+    this.logger.info(`${WINSTON_LOGGER_PROFILE.UPDATE_PROFILE}: ${id}`);
     const updatedProfile = await this.profileModel
       .findOneAndUpdate(
         { _id: id }, // Find the profile by userId
@@ -53,14 +53,14 @@ export class ProfileService {
       .exec();
 
     if (!updatedProfile) {
-      this.logger.error(`Profile update failed for id: ${id}`);
+      this.logger.error(`${WINSTON_LOGGER_PROFILE.PROFILE_UPDATE_FAILED}: ${id}`);
       throw new HttpException(
         ProfileConst.UPDATE_FAILED,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
 
-    this.logger.info(`Profile updated for id: ${id}`);
+    this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_UPDATE_SUCCESS}: ${id}`);
     return updatedProfile;
   }
 
@@ -69,7 +69,7 @@ export class ProfileService {
    * Logs the operation.
    */
   async remove(id: string) {
-    this.logger.info(`Soft deleting profile with id: ${id}`);
+    this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_SOFT_DELETE}: ${id}`);
     return this.profileModel.findByIdAndUpdate(
       { _id: id },
       { isDeleted: true, deletedAt: new Date() },
@@ -78,6 +78,18 @@ export class ProfileService {
   }
 
   async mediaUploadService(id: string){
-return this.mediaClient.GeneratePresignedUrlClient('user', 'profile', id, 'jpg', 'image/jpg');
+return this.mediaClient.GeneratePresignedUrlClient(
+ 'user',
+   'profile',
+   id,
+   [
+    { fileExtension: 'jpg', contentType: 'image/jpg' },
+    { fileExtension: 'jpg', contentType: 'image/jpg' },
+  ],
+);
+  }
+
+  async confirmUploadService(id: string){
+    return this.mediaClient.ConfirmUploadClient('media/user/profile/684d51abab85e4eea0294410/1b66654f-1163-4260-862b-595fa0ece4bf.jpg','profile', id);
   }
 }

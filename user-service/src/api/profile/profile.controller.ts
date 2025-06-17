@@ -51,11 +51,18 @@ export class ProfileController {
   }
 
 
-  @Post('upload')
+  @Get('upload')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @UseGuards(AuthGuard)
   async mediaUpload(@Req() req: any) {
     return this.profileService.mediaUploadService(req.user.payload.sub);
+  }
+
+   @Get('confirm-upload')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  @UseGuards(AuthGuard)
+  async confirmUpload(@Req() req: any) {
+    return this.profileService.confirmUploadService(req.user.payload.sub);
   }
 
 }

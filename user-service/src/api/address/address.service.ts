@@ -6,6 +6,7 @@ import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { ADDRESS, WINSTON_LOGGER_ADDRESS } from 'constants/address.const';
 
 @Injectable()
 export class AddressService {
@@ -26,7 +27,7 @@ export class AddressService {
    * @returns The newly created address document.
    */
   async addressCreateService(createAddressDto: CreateAddressDto) {
-    this.logger.error(`Address create start: ${createAddressDto}`);
+    this.logger.info(`${WINSTON_LOGGER_ADDRESS.ADDRESS_CREATE}: ${createAddressDto}`);
     const exists = await this.addressModel.findOne({
       user_id: createAddressDto.user_id,
       latitude: createAddressDto.latitude,
@@ -34,7 +35,7 @@ export class AddressService {
     });
 
     if (exists) {
-      throw new ConflictException('This address already exists for the user');
+      throw new ConflictException(ADDRESS.ADDRESS_EXIST);
     }
     const createdAddress = new this.addressModel(createAddressDto);
     return await createdAddress.save();
@@ -67,7 +68,7 @@ export class AddressService {
    * @throws {HttpException} If the address ID is not provided or the update operation fails.
    */
   async updateAddressService(id: string, updateAddressDto: UpdateAddressDto) {
-    if (!id) throw new HttpException('Address Id not found', HttpStatus.FORBIDDEN);
+    if (!id) throw new HttpException(ADDRESS.ID_NOT_FOUND, HttpStatus.FORBIDDEN);
 
     const updatedAddress = await this.addressModel
       .findOneAndUpdate(
@@ -78,12 +79,11 @@ export class AddressService {
       .exec();
 
     if (!updatedAddress) {
-      this.logger.error(`Address update failed for id: ${id}`);
-      throw new HttpException('Address update failed', HttpStatus.INTERNAL_SERVER_ERROR);
+      this.logger.error(`${WINSTON_LOGGER_ADDRESS.ADDRESS_UPDATE_FAILED}: ${id}`);
+      throw new HttpException(ADDRESS.ADDRESS_UPDATE_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return updatedAddress;
   }
-
 
   /**
    * Deletes an address by its ID.
@@ -97,13 +97,12 @@ export class AddressService {
    * @throws {HttpException} If the address ID is not provided or the address is not found.
    */
   async deleteAddressService(id: string) {
-    this.logger.info(`Deleting address with id: ${id}`);
-    if (!id) throw new HttpException('Address Id not found', HttpStatus.FORBIDDEN);
+    this.logger.info(`${WINSTON_LOGGER_ADDRESS.DELETE_ADDRESS}: ${id}`);
+    if (!id) throw new HttpException(ADDRESS.ID_NOT_FOUND, HttpStatus.FORBIDDEN);
 
     const deletedData = await this.addressModel.findByIdAndDelete(id);
-    if (!deletedData) throw new HttpException('Address not found', HttpStatus.FORBIDDEN);
+    if (!deletedData) throw new HttpException(ADDRESS.NOT_FOUND, HttpStatus.FORBIDDEN);
 
-    return { message: 'Address deleted successfully', data: deletedData };
+    return { message: ADDRESS.DELETE_SUCCESS, data: deletedData };
   }
-
 }

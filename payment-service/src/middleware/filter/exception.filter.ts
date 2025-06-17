@@ -16,7 +16,6 @@ import {
   
     catch(exception: unknown, host: ArgumentsHost) {
       
-      // this.logger.error(exception);
       const ctx = host.switchToHttp();
       let status =
         exception instanceof HttpException
@@ -40,9 +39,9 @@ import {
           } else if (type) {
             const lang = i18n.lang;
             msgType = type;
-            // if translateMsgType is undefined i.e(en.undefined) then set msgType
+           
             const translateMsgType = `${lang}.${msgType}`;
-            // console.log({ translateMsgType });
+            
             const translatedMsg = i18n.t(translateMsgType);
             const message =
               translatedMsg !== translateMsgType ? translatedMsg : msgType;

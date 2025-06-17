@@ -14,7 +14,7 @@ import { KafkaModule } from './kafka/kafka.module';
     isGlobal: true,
     envFilePath:'.env', 
     load:[configuration]
-  }),DatabaseModule,OrderModule, KafkaModule, ],
+  }),DatabaseModule,OrderModule, KafkaModule,],
   controllers: [AppController],
   providers: [AppService],
 })

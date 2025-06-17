@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -6,11 +6,17 @@ import { ValidationPipe } from '@nestjs/common';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston'; 
 import { format, transports } from 'winston';
+import { AllExceptionsFilter } from './middleware/filters/exception.filter';
+import { ErrorInterceptor } from './middleware/intercepter/error.intercepter';
+import { SimpleResponseInterceptor } from './middleware/intercepter/response.intercepter';
+
+
 const { combine, timestamp, printf } = winston.format;
 
 async function bootstrap() {
 
-  const app = await NestFactory.create(AppModule,{
+  const app = await NestFactory.create(AppModule
+    ,{
     logger: WinstonModule.createLogger({
       transports: [
         new winston.transports.File({
@@ -63,6 +69,12 @@ async function bootstrap() {
       }
       
     }});
+    const httpAdapterHost = app.get(HttpAdapterHost);
+    app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
+    app.useGlobalInterceptors(
+      new ErrorInterceptor(),
+      new SimpleResponseInterceptor(app.get(Reflector))
+    );
 
     // connecting swagger
     const swaggerConfig = new DocumentBuilder()
@@ -79,6 +91,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
+ 
   await app.listen(process.env.PORT ?? 3006);
 
 }

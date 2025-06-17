@@ -19,20 +19,23 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { ObjectId } from 'mongodb';
 import { EmailService } from 'src/email/email.service';
+import { WinstonLogger } from '../logger/winston-logger.service'
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
+  // private readonly logger = new Logger(AuthService.name);
   private readonly redis: Redis;
   @Inject('REDIS_CLIENT') private readonly redisClient: Redis;
 
   constructor(
     @InjectConnection() private readonly connection: Connection,
-
+  //  @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+private readonly logger: WinstonLogger,
     private readonly emailService: EmailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
+//    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
+
   ) {
     this.redis = new Redis({
       host: this.configService.get<string>('REDIS_HOST', 'localhost'),
@@ -40,13 +43,13 @@ export class AuthService {
     });
     this.redis.on('connect', () => this.logger.log('Connected to Redis'));
     this.redis.on('error', (err) =>
-      this.logger.error(`Redis error: ${err.message}`),
+      this.logger.warn(`Redis error: ${err.message}`),
     );
   }
 
   async verifyJwtToken(token: string) {
     try {
-      console.log(token);
+      // console.log(token);
       const payload = await this.jwtService.verify(token);
       const redisToken = await this.redis.get(
         `access_token:${payload.sub}:${token}`,

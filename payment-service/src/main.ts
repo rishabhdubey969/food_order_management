@@ -5,9 +5,9 @@ import { PaymentModule } from './payment.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import {  join } from 'path';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AllExceptionsFilter } from 'middleware/filter/exception.filter';
-import { ErrorInterceptor } from 'middleware/interceptor/error.interceptor';
-import { SimpleResponseInterceptor } from 'middleware/interceptor/response.interceptor';
+import { AllExceptionsFilter } from 'src/middleware/filter/exception.filter';
+import { ErrorInterceptor } from 'src/middleware/interceptor/error.interceptor';
+import { SimpleResponseInterceptor } from 'src/middleware/interceptor/response.interceptor';
 import { WinstonModule } from 'nest-winston';
 import { format, transports } from 'winston';
 

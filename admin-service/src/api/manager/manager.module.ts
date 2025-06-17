@@ -8,9 +8,11 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
 
 import path, { join } from 'path';
+import { LoggerModule } from '../logger/logger.module';
 
 @Module({
   imports: [
+    LoggerModule,
    
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'yourSecretKey',
@@ -19,17 +21,17 @@ import path, { join } from 'path';
     AuthModule,
 
     ClientsModule.register([
-      {
-        name: 'NOTIFICATION_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
-          queue: 'notification_queue',
-          queueOptions: {
-            durable: false,
-          },
-        },
-      },
+      // {
+      //   name: 'NOTIFICATION_SERVICE',
+      //   transport: Transport.RMQ,
+      //   options: {
+      //     urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+      //     queue: 'notification_queue',
+      //     queueOptions: {
+      //       durable: false,
+      //     },
+      //   },
+      // },
       {
         name: 'MANAGER_PACKAGE',
         transport: Transport.GRPC,

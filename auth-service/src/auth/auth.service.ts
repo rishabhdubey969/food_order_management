@@ -29,11 +29,11 @@ export class AuthService {
     const session = await this.sessionService.getSession(payload.sid);
 
     if (typeof session !== 'string') throw new ForbiddenException('Invalid session data');
-
     const sessionJson = JSON.parse(session);
-    if (!sessionJson || sessionJson.used || sessionJson.userId !== payload.sub) {
-      throw new ForbiddenException('Invalid or used refresh token');
-    }
+    
+    // if (!sessionJson || sessionJson.used || sessionJson.userId !== payload.sub) {
+    //   throw new ForbiddenException('Invalid or used refresh token');
+    // }
 
     //  IP/UA anomaly detection
     if (sessionJson.ip !== req.ip || sessionJson.userAgent !== req.headers['user-agent']) {

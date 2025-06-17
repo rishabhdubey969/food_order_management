@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards,Res, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards,Res, BadRequestException, Inject, InternalServerErrorException, Req } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { PaymentClient } from 'src/grpc/payment/payment.client';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
 import {ObjectId} from 'mongodb';
 import { OrderStatus, PaymentMethod, PaymentStatus } from 'src/schema/order.schema';
 import { KafkaService } from 'src/kafka/kafka.service';
-import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
+import { ClientProxy, Ctx, EventPattern, KafkaContext, MessagePattern, Payload } from '@nestjs/microservices';
 import { jwtGuard } from 'src/guards/jwt-guard';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PrePlaceOrderDto } from 'src/dto/prePlaceOrder.dto';
@@ -25,7 +25,8 @@ export class OrderController {
     constructor(private readonly orderService: OrderService,
         private authClient:AuthClient,
         private paymentClient:PaymentClient,
-        private readonly kafkaService: KafkaService
+        private readonly kafkaService: KafkaService,
+        @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy
       ) {}
       
 
@@ -48,7 +49,8 @@ export class OrderController {
       @ApiResponse({ status: 400, description: 'Bad Request' })
       @ApiResponse({ status: 401, description: 'Unauthorized' })
       async prePlaceOrder(@Body('cartId',ParseObjectIdPipe) cartId: ObjectId){
-          console.log(cartId);
+          // console.log(cartId);
+          await this.handleKitchen({cartId:cartId});
           return await this.orderService.createOrder(cartId);   
       }   
 
@@ -66,22 +68,23 @@ export class OrderController {
       @ApiResponse({ status: 400, description: 'Bad Request' })
       @ApiResponse({ status: 401, description: 'Unauthorized' })
       @ApiResponse({ status: 402, description: 'Payment Failed' })
-      async placeOrder(@Body('modeOfPayment') modeOfPayment:string,@Body('orderId',ParseObjectIdPipe) orderId: ObjectId){
-        if(modeOfPayment=="cashOnDelivery"){
-            this.handleCart({orderId:orderId});
-            this.handleDelivery({orderId: orderId});
-            return await this.orderService.updateOrder(orderId,"NILL",PaymentStatus.PENDING,PaymentMethod.CASH_ON_DELIVERY,OrderStatus.PREPARING);
+      async placeOrder(@Body() data:PlaceOrderDto,@Req() request:any){
+        if(data.modeOfPayment=="cashOnDelivery"){
+             await this.handleCart({userId:request.user._id});
+            await this.handleDelivery({orderId: data.orderId});
+            await this.client.emit('orderConfirmed',{email:request.user.email,modeofPayment:data.modeOfPayment,message:"order Confirmed"});
+            return await this.orderService.updateOrder(data.orderId,"NILL",PaymentStatus.PENDING,PaymentMethod.CASH_ON_DELIVERY,OrderStatus.PREPARING);
         }
-        else if(modeOfPayment=="online"){
-              const paymentData= await this.paymentClient.getPayStatus(orderId.toString());
+        else if(data.modeOfPayment=="online"){
+              const paymentData= await this.paymentClient.getPayStatus(data.orderId.toString());
               if(paymentData.paymentStatus=="Failed"){
-                const orderCancelled=this.orderService.updateOrder(orderId,paymentData.paymentID,PaymentStatus.FAILED,PaymentMethod.UPI,OrderStatus.CANCELLED);
+                const orderCancelled=await this.orderService.updateOrder(data.orderId,paymentData.paymentID,PaymentStatus.FAILED,PaymentMethod.UPI,OrderStatus.CANCELLED);
                 return orderCancelled;
               }
               else if(paymentData.paymentStatus=="completed"){
-                this.handleCart({orderId:orderId});
-                this.handleDelivery({orderId: orderId});
-                const orderConfirmed=this.orderService.updateOrder(orderId,paymentData.paymentID,PaymentStatus.COMPLETED,PaymentMethod.UPI,OrderStatus.CONFIRMED);
+                await this.handleCart({userId:request.user._id});
+                await  this.handleDelivery({orderId:data.orderId});
+                const orderConfirmed=await this.orderService.updateOrder(data.orderId,paymentData.paymentID,PaymentStatus.COMPLETED,PaymentMethod.UPI,OrderStatus.CONFIRMED);
                 return orderConfirmed;
               }
         }
@@ -169,24 +172,38 @@ export class OrderController {
     
           return res.send(pdfBuffer);
         } catch (err) {
-          console.error('Download failed:', err);
-          return res.status(500).json({ message: 'Failed to download invoice' });
+          throw new InternalServerErrorException('Failed to download');
         }  
       }
 
 
-      async handleDelivery(payload: {orderId:ObjectId})
+      async handleDelivery(payload: {orderId:string})
       {
         await this.kafkaService.handleEvent('newOrder', payload);
       }
-      async handleCart(payload:{orderId:ObjectId}){
-        const userId=await this.orderService.getUserId(payload.orderId);
-        await this.kafkaService.handleEvent('orderCreated',userId);
+      async handleCart(payload:{userId:string}){
+          await this.kafkaService.handleEvent('orderCreated',payload);
+      
       }
-
+      async handleKitchen(payload:{cartId:ObjectId}){
+        await this.kafkaService.handleEvent('isFoodAvailable',payload);
+      }
       @EventPattern('deliveryPatenerResponse')
-      async deliveryAssigned(payload:{})
-      {
+      async deliveryAssigned(@Payload() payload:any, @Ctx() context: KafkaContext)
+      {    
+           console.log("recieved message");
+           const consumer = context.getConsumer();
+           const topic = context.getTopic();
+           const partition = context.getPartition();
+           const offset = context.getMessage().offset;
 
+           await consumer.commitOffsets([
+            {
+              topic,
+              partition,
+              offset: (parseInt(offset) + 1).toString()
+            }
+           ]);
+           console.log(payload);
       }
 }

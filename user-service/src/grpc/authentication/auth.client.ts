@@ -26,20 +26,18 @@ export class AuthClient implements OnModuleInit {
 
   onModuleInit() {
     this.grpcAuthService = this.client.getService(AUTH_SERVICE_NAME);
-    console.log('grpc started');
+    console.log('grpc started1');
   }
 
   async getSignUpAccess(id: string, ip: string, userAgent: string) {
     const generateRequest: generateTokenData = { id, userAgent, ip };
     const SignupResponse = await lastValueFrom(this.grpcAuthService.GenerateToken(generateRequest));
-    console.log(SignupResponse);
     return SignupResponse;
   }
 
   async ValidateTokenAuthService(accessToken: string) {
     const request: accessTokenRequest = { accessToken };
     const response = await lastValueFrom(this.grpcAuthService.ValidateToken(request));
-    console.log(response, 'new');
     return response;
   }
 }
