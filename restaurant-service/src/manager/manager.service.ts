@@ -101,13 +101,15 @@ export class ManagerService {
       }
 
       const payload = { sub: manager._id, email: manager.email, role: 'manager' };
-      const token = this.tokenService.sign(payload);
+      const accessToken = this.tokenService.signAccessToken(payload);
+      const refreshToken = this.tokenService.signRefreshToken(payload);
 
       this.logger.log(`Manager logged in successfully: ${email}`);
 
       return {
         message: SUCCESS_MESSAGES.MANAGER_LOGIN,
-        token,
+        accessToken,
+        refreshToken,
         data: {
           id: manager._id,
           name: manager.name,
@@ -196,7 +198,7 @@ export class ManagerService {
 
   async logout(token: string) {
     try {
-      await this.tokenService.verify(token);
+      await this.tokenService.verifyToken(token, 'access');
       this.logger.log('Manager logged out successfully');
       return { message: SUCCESS_MESSAGES.LOGOUT_SUCCESS };
     } catch (error) {

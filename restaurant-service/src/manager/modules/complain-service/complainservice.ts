@@ -177,7 +177,7 @@ export class ComplaintService {
 
   async getAllComplaints(token: string) {
     try {
-      const user = await this.tokenService.verify(token);
+      const user = await this.tokenService.verifyToken(token, 'access');
 
       if (user.role !== 'admin') {
         this.logger.warn(`Unauthorized access attempt by ${user.email || 'unknown'} to fetch all complaints`);

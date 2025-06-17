@@ -1,12 +1,11 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { ERROR_MESSAGES } from 'src/manager/constants/errorand success';
 
 @Injectable()
 export class TokenService {
-  blacklistToken(token: string) {
-    throw new Error('Method not implemented.');
-  }
+  logger: any;
   constructor(private readonly jwtService: JwtService) {}
 
   async hash(data: any) {
@@ -18,21 +17,53 @@ export class TokenService {
     return await bcrypt.compare(data1, data2);
   }
 
-  sign(payload: any): string {
+  signAccessToken(payload: any): string {
     return this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET || 'your_jwt_secret',
-      expiresIn: '1d',
+      secret: process.env.JWT_SECRET || 'access_secret',
+      expiresIn: '25m',
     });
   }
 
-  async verify(accessToken: string) {
+  signRefreshToken(payload: any): string {
+    return this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET || 'refresh_secret',
+      expiresIn: '7d',
+    });
+  }
+
+  async verifyToken(token: string, type: 'access' | 'refresh') {
     try {
-      return await this.jwtService.verifyAsync(accessToken, {
-        secret: process.env.JWT_SECRET || 'your_jwt_secret',
-      });
-    
+      const secret =
+        type === 'access'
+          ? process.env.JWT_SECRET || 'access_secret'
+          : process.env.JWT_REFRESH_SECRET || 'refresh_secret';
+
+      return await this.jwtService.verifyAsync(token, { secret });
     } catch (err) {
-      throw new UnauthorizedException('Invalid Credentials: Login Again!');
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
     }
   }
+  async validateTokenFlow(accessToken: string, refreshToken: string) {
+  try {
+    return await this.verifyToken(accessToken, 'access'); 
+  } catch (accessErr) {
+  // Handle or log the access token failure
+  this.logger.warn(`Access token verification failed: ${accessErr.message}`);
+
+  try {
+    const payload = await this.verifyToken(refreshToken, 'refresh');
+    const newAccessToken = this.signAccessToken({
+      id: payload.id,
+      role: payload.role,
+    });
+
+    return { payload, newAccessToken };
+  } catch (refreshErr) {
+    this.logger.error(`Refresh token verification failed: ${refreshErr.message}`);
+    throw new UnauthorizedException('Both tokens are invalid or expired');
+  }
 }
+}
+}
+
+
