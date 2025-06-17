@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as handlebars from 'handlebars';
 
 const baseDir = path.join(__dirname, '../templates');
-
+console.log(path.join(__dirname, '../templates'));
 const PARTIALS_DIR = path.join(baseDir, 'email');
 const LAYOUT_PATH = path.join(baseDir, 'layouts', 'main-layout.hbs');
 const STYLE_PATH = path.join(baseDir, 'styles', 'email-style.css');
