@@ -17,10 +17,10 @@ export default class ManagerSignupDto {
   @IsNotEmpty()
   password: string;
 
-  @ApiProperty({ example: 'restaurant123' })
-  @IsString()
-  @IsNotEmpty()
-  restaurantId: string;
+  // @ApiProperty({ example: 'restaurant123' })
+  // @IsString()
+  // @IsNotEmpty()
+  // restaurantId: string;
 
   @ApiProperty({ example: '123456789012' })
   @IsString()
