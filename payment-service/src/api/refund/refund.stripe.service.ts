@@ -5,6 +5,7 @@ import { StripePayService } from '../stripe_pay/stripe.pay.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Refund, RefundDocument } from './Schema/refund.stripe.schema';
 import { Model } from 'mongoose';
+import { CreateRefundDto } from './DTO/create.refund.dto';
 
 @Injectable()
 export class RefundStripeService {
@@ -28,7 +29,8 @@ export class RefundStripeService {
     });
   }
 
-  async createRefund(orderId): Promise<Stripe.Response<Stripe.Refund>> {
+  async createRefund(payload:CreateRefundDto): Promise<Stripe.Response<Stripe.Refund>> {
+    const orderId = payload.orderId;
     const paymentdetails =
       await this.stripePayService.extractPaymentDetails(orderId);
     const session = await this.stripe.checkout.sessions.retrieve(
