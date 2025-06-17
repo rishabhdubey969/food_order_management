@@ -5,7 +5,7 @@ import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { PROFILE as ProfileConst, WINSTON_LOGGER_PROFILE } from 'constants/profile.const';
+import { PROFILE, PROFILE as ProfileConst, WINSTON_LOGGER_PROFILE } from 'constants/profile.const';
 import { MediaClient } from 'src/grpc/media/media.client';
 
 @Injectable()
@@ -71,10 +71,11 @@ export class ProfileService {
   }
 
   async mediaUploadService(id: string, uploadMediaDto) {
-    return this.mediaClient.GeneratePresignedUrlClient('user', 'profile', id, [
-      { fileExtension: 'jpg', contentType: 'image/jpg' },
-      { fileExtension: 'jpg', contentType: 'image/jpg' },
-    ]);
+    try {
+      return this.mediaClient.GeneratePresignedUrlClient(PROFILE.USER, PROFILE.PROFILE_NAME, id, uploadMediaDto);
+    } catch (error) {
+      throw new HttpException(error.message || PROFILE.Media_PROFILE, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async confirmUploadService(id: string) {

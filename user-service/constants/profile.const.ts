@@ -3,8 +3,13 @@ export const PROFILE = {
   NOT_FOUND: 'Profile Data not found',
   UPDATE_FAILED: 'Profile update failed',
   PROFILE_CREATED: 'Profile already exits in our database',
+
+  PROFILE_NAME: 'profile',
+  USER: 'user',
+  Media_PROFILE: 'Media profile given error'
 };
 
+// Logger Constant Method
 export const WINSTON_LOGGER_PROFILE = {
   FIND_PROFILE: 'Finding profile with id',
   NOT_FOUND_PROFILE: 'Profile not found for id',
