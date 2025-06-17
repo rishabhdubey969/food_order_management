@@ -14,7 +14,7 @@ export class ProfileService {
     @InjectModel(Profile.name)
     private profileModel: Model<ProfileDocument>,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: WinstonLogger,
-     private readonly mediaClient: MediaClient,
+    private readonly mediaClient: MediaClient,
   ) {}
 
   /**
@@ -54,10 +54,7 @@ export class ProfileService {
 
     if (!updatedProfile) {
       this.logger.error(`${WINSTON_LOGGER_PROFILE.PROFILE_UPDATE_FAILED}: ${id}`);
-      throw new HttpException(
-        ProfileConst.UPDATE_FAILED,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(ProfileConst.UPDATE_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_UPDATE_SUCCESS}: ${id}`);
@@ -70,26 +67,21 @@ export class ProfileService {
    */
   async remove(id: string) {
     this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_SOFT_DELETE}: ${id}`);
-    return this.profileModel.findByIdAndUpdate(
-      { _id: id },
-      { isDeleted: true, deletedAt: new Date() },
-      { new: true },
+    return this.profileModel.findByIdAndUpdate({ _id: id }, { isDeleted: true, deletedAt: new Date() }, { new: true });
+  }
+
+  async mediaUploadService(id: string, uploadMediaDto) {
+    return this.mediaClient.GeneratePresignedUrlClient('user', 'profile', id, [
+      { fileExtension: 'jpg', contentType: 'image/jpg' },
+      { fileExtension: 'jpg', contentType: 'image/jpg' },
+    ]);
+  }
+
+  async confirmUploadService(id: string) {
+    return this.mediaClient.ConfirmUploadClient(
+      'media/user/profile/684d51abab85e4eea0294410/7390b6b0-08d8-4670-b544-6ce4aa28c4c1.jpg',
+      'profile',
+      id,
     );
-  }
-
-  async mediaUploadService(id: string){
-return this.mediaClient.GeneratePresignedUrlClient(
- 'user',
-   'profile',
-   id,
-   [
-    { fileExtension: 'jpg', contentType: 'image/jpg' },
-    { fileExtension: 'jpg', contentType: 'image/jpg' },
-  ],
-);
-  }
-
-  async confirmUploadService(id: string){
-    return this.mediaClient.ConfirmUploadClient('media/user/profile/684d51abab85e4eea0294410/1b66654f-1163-4260-862b-595fa0ece4bf.jpg','profile', id);
   }
 }
