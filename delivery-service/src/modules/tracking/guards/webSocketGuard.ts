@@ -31,7 +31,7 @@ export class WebSocketGuard implements CanActivate {
     }catch(err){
       throw new UnauthorizedException('Login Again!!')
     }
-
+    console.log('hii')
     return true;
   } 
 }
