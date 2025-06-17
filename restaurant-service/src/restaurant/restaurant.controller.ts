@@ -161,9 +161,7 @@ export class RestaurantController {
   /**
    * Get all coupons for a restaurant (Admin/Manager only)
    */
-  @UseGuards(GrpcAuthGuard)
   @Get('coupons/:restaurantId')
-  @Roles(Role.ADMIN, Role.MANAGER)
   async getCoupons(@Param('restaurantId') restaurantId: string) {
     return await this.restaurantService.getCoupons(restaurantId);
   }

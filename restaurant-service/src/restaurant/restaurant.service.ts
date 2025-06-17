@@ -194,7 +194,7 @@ export class RestaurantService implements OnModuleInit {
   // Get list of coupon IDs attached to a restaurant
   async getCoupons(restaurantId: string) {
     this.logger.log(`Fetching coupons for restaurant ID: ${restaurantId}`);
-    const coupons = await this.couponModel.findById(restaurantId).exec();
+    const coupons = await this.couponModel.find({restaurantId}).exec();
     if(!coupons){
       throwNotFound(MESSAGES.COUPON_NOT_FOUND);
     }
