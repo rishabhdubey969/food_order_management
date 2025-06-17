@@ -32,34 +32,32 @@ interface MediaService {
   getSignedUrl(fileName: string, fileType: string, folderName: string): Promise<string>;
 }
 
+@Controller('restaurant')
 @ApiTags('Restaurants')
 @ApiBearerAuth()
-@Controller('restaurant')
 export class RestaurantController {
+
+  // Media service to get signed URLs from external gRPC service
   private readonly mediaService: MediaService;
 
   constructor(private readonly restaurantService: RestaurantService) {}
 
+  /**
+   * Create a restaurant and assign it to a manager (Admin only)
+   */
   @UseGuards(GrpcAuthGuard)
   @Post('create/:managerId')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create a restaurant and assign to manager' })
-  @ApiResponse({ status: 201, description: 'Restaurant created successfully' })
-  @ApiBody({ type: CreateRestaurantDto })
-  async createRestaurant(
-    @Param('managerId') managerId: string,
-    @Body() dto: CreateRestaurantDto,
-  ) {
+  async createRestaurant(@Param('managerId') managerId: string, @Body() dto: CreateRestaurantDto) {
     return this.restaurantService.createRestaurant(dto, managerId);
   }
 
+  /**
+   * Get restaurants nearby based on user coordinates (open to all users)
+   */
   @Get('nearby')
   @ApiOperation({ summary: 'Get restaurants nearby based on coordinates' })
-  @ApiQuery({ name: 'latitude', required: true, type: Number })
-  @ApiQuery({ name: 'longitude', required: true, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'offset', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'Nearby restaurants fetched successfully' })
   async getNearbyRestaurants(
     @Query('latitude') latitude: number,
     @Query('longitude') longitude: number,
@@ -71,152 +69,139 @@ export class RestaurantController {
     return this.restaurantService.getNearbyRestaurants(latitude, longitude, +limit, +offset, user);
   }
 
+  /**
+   * Admin-only route to get a paginated list of all restaurants
+   */
   @UseGuards(GrpcAuthGuard)
   @Get('all')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Get all restaurants (Admin only)' })
-  @ApiResponse({ status: 200, description: 'Restaurants retrieved successfully' })
-  async getAllRestaurants(
-    @Query('limit') limit = 10,
-    @Query('offset') offset = 0,
-  ) {
+  async getAllRestaurants(@Query('limit') limit = 10, @Query('offset') offset = 0) {
     return this.restaurantService.getAllRestaurants(+limit, +offset);
   }
 
+  /**
+   * Update an existing restaurant (Admin or assigned Manager only)
+   */
   @UseGuards(GrpcAuthGuard)
   @Put(':id')
   @Roles(Role.ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Update restaurant by ID' })
-  @ApiBody({ type: UpdateRestaurantDto })
-  async updateRestaurant(
-    @Param('id') id: string,
-    @Body() dto: UpdateRestaurantDto,
-  ) {
+  async updateRestaurant(@Param('id') id: string, @Body() dto: UpdateRestaurantDto) {
     return this.restaurantService.updateRestaurant(id, dto);
   }
 
+  /**
+   * Get restaurant managed by a specific manager (Admin or that Manager)
+   */
   @UseGuards(GrpcAuthGuard)
   @Get('manager/:managerId')
   @Roles(Role.ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Get restaurant managed by specific manager' })
   async getByManager(@Param('managerId') managerId: string) {
     return this.restaurantService.getRestaurantByManagerId(managerId);
   }
 
+  /**
+   * Get restaurants matching provided tags (Admin only)
+   */
   @UseGuards(GrpcAuthGuard)
   @Get('tags')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Get restaurants by tags (comma-separated)' })
-  @ApiQuery({ name: 'tags', required: false, type: String })
   async getByTags(@Query('tags') tags?: string) {
     const tagArray = tags ? tags.split(',') : [];
     return this.restaurantService.findByTags(tagArray);
   }
 
+  /**
+   * Generate signed URL for uploading a restaurant image (Admin/Manager)
+   */
   @Post('signed-url')
   @Roles(Role.ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Generate signed URL for uploading restaurant image' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        fileName: { type: 'string' },
-        fileType: { type: 'string' },
-      },
-    },
-  })
   async getRestaurantImageSignedUrl(@Body() body: { fileName: string; fileType: string }) {
     const { fileName, fileType } = body;
     const signedUrl = await this.mediaService.getSignedUrl(fileName, fileType, 'restaurant');
     return { signedUrl };
   }
 
+  /**
+   * Generate signed URL for uploading a menu image (Admin/Manager)
+   */
   @Post('menu/signed-url')
   @Roles(Role.ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Generate signed URL for uploading menu image' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        fileName: { type: 'string' },
-        fileType: { type: 'string' },
-      },
-    },
-  })
   async getMenuImageSignedUrl(@Body() body: { fileName: string; fileType: string }) {
     const { fileName, fileType } = body;
     const signedUrl = await this.mediaService.getSignedUrl(fileName, fileType, 'menu');
     return { signedUrl };
   }
 
+  /**
+   * Add a new menu item to a restaurant (Admin/Manager only)
+   */
   @UseGuards(GrpcAuthGuard)
   @Post(':restaurantId/menu')
   @Roles(Role.ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Add a new menu item to a restaurant' })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: CreateMenuItemDto })
-  async createMenu(
-    @Param('restaurantId') restaurantId: string,
-    @Body() dto: CreateMenuItemDto,
-  ) {
+  async createMenu(@Param('restaurantId') restaurantId: string, @Body() dto: CreateMenuItemDto) {
     return this.restaurantService.createMenuItem(restaurantId, dto);
   }
 
+  /**
+   * Get a specific menu item by restaurant ID and item ID
+   */
   @Get(':restaurantId/menu/:itemId')
-  @ApiOperation({ summary: 'Get menu item by its ID' })
-  async getMenuItemById(
-    @Param('restaurantId') restaurantId: string,
-    @Param('itemId') itemId: string,
-  ) {
+  async getMenuItemById(@Param('restaurantId') restaurantId: string, @Param('itemId') itemId: string) {
     return this.restaurantService.getItemById(restaurantId, itemId);
   }
 
+  /**
+   * Get all menu items for a given restaurant
+   */
   @Get(':restaurantId/menu')
-  @ApiOperation({ summary: 'Get all menu items of a restaurant' })
   async getMenuItems(@Param('restaurantId') restaurantId: string) {
     return this.restaurantService.getMenuItems(restaurantId);
   }
 
+  /**
+   * Get all coupons for a restaurant (Admin/Manager only)
+   */
+  @UseGuards(GrpcAuthGuard)
   @Get('coupons/:restaurantId')
   @Roles(Role.ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Get all coupons of a restaurant' })
   async getCoupons(@Param('restaurantId') restaurantId: string) {
-    return this.restaurantService.getCoupons(restaurantId);
+    return await this.restaurantService.getCoupons(restaurantId);
   }
 
+  /**
+   * Create a new coupon for a restaurant (Admin/Manager only)
+   */
+  @UseGuards(GrpcAuthGuard)
   @Post('coupons/:restaurantId')
   @Roles(Role.ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Create a new coupon for a restaurant' })
-  @ApiBody({ type: CouponDto })
-  async createCoupon(
-    @Param('restaurantId') restaurantId: string,
-    @Body() dto: CouponDto,
-  ) {
+  async createCoupon(@Param('restaurantId') restaurantId: string, @Body() dto: CouponDto) {
     return this.restaurantService.createCoupon(restaurantId, dto);
   }
 
+  /**
+   * Update an existing coupon (Admin/Manager only)
+   */
+  @UseGuards(GrpcAuthGuard)
   @Put('coupons/:couponId')
   @Roles(Role.ADMIN, Role.MANAGER)
-  @ApiOperation({ summary: 'Update a coupon by ID' })
-  @ApiBody({ type: UpdateCoponDto })
-  async updateCoupon(
-    @Param('couponId') couponId: string,
-    @Body() dto: UpdateCoponDto,
-  ) {
+  async updateCoupon(@Param('couponId') couponId: string, @Body() dto: UpdateCoponDto) {
     return this.restaurantService.updateCoupon(couponId, dto);
   }
 
+  /**
+   * Search restaurants by food item name (User role)
+   */
+  @UseGuards(GrpcAuthGuard)
   @Get('search/food')
   @Roles(Role.USER)
-  @ApiOperation({ summary: 'Search restaurants by food name' })
-  @ApiQuery({ name: 'q', required: true, type: String, description: 'Food name query' })
   async searchByFood(@Query('q') query: string) {
     return this.restaurantService.searchRestaurantsByFood(query);
   }
 
+  /**
+   * Get a restaurant by its ID
+   */
   @Get(':id')
-  @ApiOperation({ summary: 'Get restaurant by ID' })
-  @ApiResponse({ status: 200, description: 'Restaurant fetched successfully' })
   async getRestaurantById(@Param('id') id: string) {
     return this.restaurantService.getRestaurantById(id);
   }

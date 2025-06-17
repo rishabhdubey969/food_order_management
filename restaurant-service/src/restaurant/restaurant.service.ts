@@ -198,6 +198,7 @@ export class RestaurantService implements OnModuleInit {
     if(!coupons){
       throwNotFound(MESSAGES.COUPON_NOT_FOUND);
     }
+    return coupons;
   }
 
   // Create a coupon for a specific restaurant
