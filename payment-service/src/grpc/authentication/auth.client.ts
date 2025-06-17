@@ -10,6 +10,7 @@ import {
 } from './auth.interface';
 import { lastValueFrom } from 'rxjs';
 import * as path from 'path';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthClient implements OnModuleInit {
