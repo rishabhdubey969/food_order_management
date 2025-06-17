@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { Profile, ProfileDocument } from './entities/profile.entity';
+import { AuthenticationDocument, Auth } from '../auth/entities/auth.entity';
 import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { InjectModel } from '@nestjs/mongoose';
@@ -11,8 +11,8 @@ import { MediaClient } from 'src/grpc/media/media.client';
 @Injectable()
 export class ProfileService {
   constructor(
-    @InjectModel(Profile.name)
-    private profileModel: Model<ProfileDocument>,
+    @InjectModel(Auth.name)
+    private profileModel: Model<AuthenticationDocument>,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: WinstonLogger,
     private readonly mediaClient: MediaClient,
   ) {}
@@ -66,9 +66,15 @@ export class ProfileService {
    * Logs the operation.
    */
   async remove(id: string) {
-    this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_SOFT_DELETE}: ${id}`);
-    return this.profileModel.findByIdAndUpdate({ _id: id }, { isDeleted: true, deletedAt: new Date() }, { new: true });
-  }
+  this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_SOFT_DELETE}: ${id}`);
+  
+  const result = await this.profileModel.findByIdAndUpdate(
+    id,
+    { is_deleted: true, deleted_at: new Date() },
+    { new: true }
+  );
+  return result;
+}
 
   async mediaUploadService(id: string, uploadMediaDto) {
     try {
