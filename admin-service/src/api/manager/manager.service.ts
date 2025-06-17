@@ -15,14 +15,14 @@ import { ClientGrpc, ClientProxy, RpcException } from '@nestjs/microservices';
 
 import { ObjectId } from 'mongodb';
 import { lastValueFrom, Observable } from 'rxjs';
+import { WinstonLogger } from '../logger/winston-logger.service';
 
 interface ManagerServiceGrpc {
   Signup(data: GetSignUpRequest): Observable<GetSignUpResponse>;
-  
 }
 
 export interface GetSignUpRequest {
-  name: string; 
+  name: string;
   email: string;
   phone: string;
   password: string;
@@ -35,8 +35,6 @@ export interface GetSignUpResponse {
   message: String;
   data: ManagerData;
 }
-
-
 
 export interface ManagerData {
   id: String;
@@ -52,23 +50,22 @@ export interface ManagerData {
 
 @Injectable()
 export class ManagerService implements OnModuleInit {
-  private readonly logger = new Logger(ManagerService.name);
+  // private readonly logger = new Logger(ManagerService.name);
   private managerServiceGrpc: ManagerServiceGrpc;
 
   constructor(
-    
     @InjectConnection() private readonly connection: Connection,
     private readonly authService: AuthService,
-    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
+    // @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
     @Inject('MANAGER_PACKAGE') private managerClient: ClientGrpc,
+    private readonly logger: WinstonLogger,
   ) {}
 
   onModuleInit() {
     this.managerServiceGrpc =
       this.managerClient.getService<ManagerServiceGrpc>('ManagerService');
     this.logger.log(
-      'gRPC Client Initialized with Methods:',
-      Object.keys(this.managerServiceGrpc),
+      `gRPC Client Initialized with Methods: ${Object.keys(this.managerServiceGrpc).join(', ')}`,
     );
   }
 
@@ -84,12 +81,9 @@ export class ManagerService implements OnModuleInit {
     }
   }
 
- 
-
   async blockRestaurant(restaurantId: string) {
     this.logger.log(`Attempting to block restaurant ${restaurantId}`);
 
-   
     const restaurant = await this.connection
       .collection('restaurants')
       .findOne({ _id: new ObjectId(restaurantId) });
@@ -99,7 +93,6 @@ export class ManagerService implements OnModuleInit {
       throw new HttpException('Restaurant not found ', HttpStatus.NOT_FOUND);
     }
 
-    
     const updates: Promise<any>[] = [];
     const messages: string[] = [];
 
@@ -126,7 +119,6 @@ export class ManagerService implements OnModuleInit {
         HttpStatus.BAD_REQUEST,
       );
     }
-
 
     await Promise.all(updates);
 
@@ -183,7 +175,6 @@ export class ManagerService implements OnModuleInit {
         .skip(skip)
         .limit(limitNum)
         .toArray();
-      console.log(managers);
 
       let total;
       total = await this.connection
@@ -217,7 +208,6 @@ export class ManagerService implements OnModuleInit {
   async softDeleteRestaurant(restaurantId: string) {
     this.logger.log(`Attempting to soft delete restaurant ${restaurantId}`);
 
-   
     const restaurant = await this.connection
       .collection('restaurants')
       .findOne({ _id: new ObjectId(restaurantId) });
@@ -227,7 +217,6 @@ export class ManagerService implements OnModuleInit {
       throw new HttpException('Restaurant not found ', HttpStatus.NOT_FOUND);
     }
 
-   
     const updates: Promise<any>[] = [];
     const messages: string[] = [];
 
@@ -258,7 +247,6 @@ export class ManagerService implements OnModuleInit {
       );
     }
 
-    
     await Promise.all(updates);
 
     const message = `${messages.join(' and ')} have been soft deleted`;
@@ -283,5 +271,92 @@ export class ManagerService implements OnModuleInit {
     //     error.status || HttpStatus.INTERNAL_SERVER_ERROR,
     //   );
     // }
+  }
+
+  async ValidateManager(managerId: string) {
+    this.logger.log(`Attempting to Validate  MAnager ${managerId}`);
+
+    const manager = await this.connection
+      .collection('managers')
+      .findOne({ _id: new ObjectId(managerId) });
+
+    if (!manager) {
+      this.logger.warn(`Manager ${managerId} not found `);
+      throw new HttpException('Manager not found ', HttpStatus.NOT_FOUND);
+    }
+
+    const updates: Promise<any>[] = [];
+    const messages: string[] = [];
+
+    if (!manager.isActiveManager) {
+      updates.push(
+        this.connection
+          .collection('managers')
+          .updateOne(
+            { _id: new ObjectId(managerId) },
+            { $set: { isActiveManager: true } },
+          ),
+      );
+      messages.push(`restaurant ${managerId}`);
+    } else {
+      this.logger.log(`Manager ${managerId} is Validated`);
+    }
+
+    if (updates.length === 0) {
+      this.logger.warn(`manager ${managerId} are validated`);
+      throw new HttpException(
+        'Manager are already validated',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await Promise.all(updates);
+     const message = `${messages.join(' and ')} have been validated`;
+    this.logger.log(message);
+     return { message };
+  } 
+  
+  
+  async InValidateManager(managerId: string) {
+    this.logger.log(`Attempting to INValidate  MAnager ${managerId}`);
+
+    const manager = await this.connection
+      .collection('managers')
+      .findOne({ _id: new ObjectId(managerId) });
+
+    if (!manager) {
+      this.logger.warn(`Manager ${managerId} not found `);
+      throw new HttpException('Manager not found ', HttpStatus.NOT_FOUND);
+    }
+
+    const updates: Promise<any>[] = [];
+    const messages: string[] = [];
+
+    if (manager.isActiveManager) {
+      updates.push(
+        this.connection
+          .collection('managers')
+          .updateOne(
+            { _id: new ObjectId(managerId) },
+            { $set: { isActiveManager:false } },
+          ),
+      );
+      messages.push(`restaurant ${managerId}`);
+    } else {
+      this.logger.log(`Manager ${managerId} is Invalidated`);
+    }
+
+    if (updates.length === 0) {
+      this.logger.warn(`manager ${managerId} are already Invalidated`);
+      throw new HttpException(
+        'Manager are already Invalidated',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await Promise.all(updates);
+    const message = `${messages.join(' and ')} have been invalidated`;
+    this.logger.log(message);
+     return { message };
   }
 }

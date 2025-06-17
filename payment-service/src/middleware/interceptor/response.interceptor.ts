@@ -8,7 +8,7 @@ import {
   import { Observable } from 'rxjs';
   import { map } from 'rxjs/operators';
   import { Reflector } from '@nestjs/core';
-import { ResponseMessageKey } from 'common/decorators/response-message.decorator';
+import { ResponseMessageKey } from 'src/common/decorators/response-message.decorator';
   
   
   export interface Response<T> {

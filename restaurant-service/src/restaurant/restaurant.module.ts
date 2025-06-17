@@ -8,12 +8,15 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CouponSchema } from './schema/copon.schema';
 import { RedisModule } from './redis/redis.module';
 import { LoggerModule } from 'src/logger/logger.module';
+import { ManagerSchema } from 'src/manager/schema/manager.schema';
+import { Manager } from './schema/manager.schema';
 
 @Module({
   imports: [MongooseModule.forFeature([
     { name: 'Restaurant', schema: RestaurantSchema },
     { name: 'MenuItem', schema: MenuItemSchema },
     { name: 'Coupon', schema: CouponSchema },
+    {  name: Manager.name, schema: ManagerSchema},
   ]), RedisModule,
   LoggerModule,
   // ClientsModule.register([

@@ -10,3 +10,11 @@ export const ERROR = {
   export const SUCCESS = {
     SUCCESS:"Payment done succesfully"
   };
+
+
+  export const ROUTE={
+    CHECKOUT:'checkout',
+    PAYMENT:'payment',
+    RETRY:'retry',
+    REQUEST:'request'
+  }

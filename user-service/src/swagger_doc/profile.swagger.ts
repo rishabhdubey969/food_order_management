@@ -9,7 +9,6 @@ export const UpdateProfileSwagger = () =>
       description: 'Updates the profile information of an existing user',
     }),
     ApiBearerAuth(),
-    ApiParam({ name: 'id', description: 'User ID to update' }),
     ApiBody({ type: UpdateProfileDto }),
     ApiResponse({ 
       status: 200, 
@@ -28,7 +27,6 @@ export const GetProfileSwagger = () =>
       description: 'Retrieves detailed profile information for a specific user',
     }),
     ApiBearerAuth(),
-    ApiParam({ name: 'id', description: 'User ID to fetch' }),
     ApiResponse({ 
       status: 200, 
       description: 'Profile retrieved successfully',
@@ -44,7 +42,6 @@ export const DeleteProfileSwagger = () =>
       description: 'Deletes a user profile by ID',
     }),
     ApiBearerAuth(),
-    ApiParam({ name: 'id', description: 'User ID to delete' }),
     ApiResponse({ 
       status: 200, 
       description: 'Profile deleted successfully',

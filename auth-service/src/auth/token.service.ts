@@ -1,25 +1,19 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
-
-interface JwtPayload {
-  sub: string;
-  email: string;
-  phone: string;
-  role: number;
-}
+import { JWT_ACCESS_CONSTANT, JWT_REFRESH_CONSTANT } from 'jwt_security/jwt.const'
 
 @Injectable()
 export class AuthTokenService {
-  private readonly jwtSecret = process.env.JWT_SECRET as string;
-  private readonly jwtRefreshSecret = process.env.REFRESH_TOKEN_SECRET as string;
+  private readonly jwtSecret = JWT_ACCESS_CONSTANT.SECRET as string;
+  private readonly jwtRefreshSecret = JWT_REFRESH_CONSTANT.SECRET as string;
 
   generateAccessToken(userData: any): string {
-    return jwt.sign({ sub: userData._id, email:userData.email, phone:userData.phone, role:userData.role, name:userData.username }, this.jwtSecret, { expiresIn: '15m' });
+    return jwt.sign({ sub: userData._id, email:userData.email, phone:userData.phone, role:userData.role, name:userData.username }, this.jwtSecret, { expiresIn: JWT_ACCESS_CONSTANT.EXPIRE_TIME });
   }
 
   generateRefreshToken(userId: string, sessionId: string): string {
-    return jwt.sign({ sub: userId, sid: sessionId }, this.jwtSecret, {
-      expiresIn: '7d',
+    return jwt.sign({ sub: userId, sid: sessionId }, this.jwtRefreshSecret, {
+      expiresIn: JWT_REFRESH_CONSTANT.EXPIRE_TIME,
     });
   }
 
@@ -32,7 +26,7 @@ export class AuthTokenService {
   }
 
   verifyRefreshToken(token: string): any {
-    try {
+     try {
       return jwt.verify(token, this.jwtRefreshSecret);
     } catch (error) {
       throw new UnauthorizedException('Invalid or expired refresh token');

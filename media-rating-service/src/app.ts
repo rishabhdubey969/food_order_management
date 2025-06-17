@@ -1,7 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import { connectToDatabase } from  '../src/database/db'
-//import mediaRoutesV1 from './routes/mediaRoutes';
 import ratingRoutes from './routes/ratingRoutes';
 import './grpc/clients/grpc.server';
 // import { errorHandler } from './utils/error.handler';

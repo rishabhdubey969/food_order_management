@@ -6,6 +6,8 @@ import {
   Post,
   Req,
   UseGuards,
+  Put,
+  Body,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import {
@@ -18,6 +20,10 @@ import { Roles } from './decorator/role.decorator';
 import { GrpcAuthGuard } from './guards/auth.guard';
 import { Role } from './common/role.enum';
 import { WinstonLogger } from '../logger/winston-logger.service';
+import { AddCartDto } from './dto/addCart.dto';
+import { UpdateCartDto } from './dto/updateCart.dto';
+
+
 
 @ApiTags('Cart')
 @Controller('cart')
@@ -26,7 +32,7 @@ export class CartController {
 
   constructor(
     private readonly cartService: CartService,
-    private readonly logger: WinstonLogger, // <-- using custom WinstonLogger
+    private readonly logger: WinstonLogger, 
   ) {}
 
   @UseGuards(GrpcAuthGuard)
@@ -193,4 +199,17 @@ export class CartController {
     this.logger.log(`Applying coupon ${couponId} to user ${userId}'s cart`, this.context);
     return this.cartService.applyCouponService(userId, couponId);
   }
+
+  @Post('add2')
+  addToCartt(@Body() body: AddCartDto, @Req() req) {
+    return this.cartService.createCart(req.user._id, body);
+  }
+  
+  @Put('update2')
+  updateCart(@Body() body: UpdateCartDto, @Req() req) {
+    return this.cartService.updateCart(req.user._id, body);
+  }
+  
+
+
 }

@@ -4,8 +4,12 @@ import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from '../src/api/config/global-exception.filter';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './api/logger/winston.config'
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule,{
+    logger: WinstonModule.createLogger(winstonConfig), 
+  });
   
     app.enableCors();
   app.useGlobalPipes(

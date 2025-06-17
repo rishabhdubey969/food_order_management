@@ -8,8 +8,8 @@ export class PlaceOrderDto {
     example: 'cashOnDelivery/online',
     enum: Object.values(PaymentMethod),
   })
-  @IsIn(Object.values(PaymentMethod), {
-    message: `modeOfPayment must be one of: ${Object.values(PaymentMethod).join(', ')}`
+  @IsIn(["cashOnDelivery","online"], {
+    message: `modeOfPayment must be one of: cashOnDelivery or online`
   })
   @IsNotEmpty()
   modeOfPayment: string;

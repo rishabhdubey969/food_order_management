@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
   Inject,
 } from '@nestjs/common';
-import { Auth } from 'constants/auth.const';
+import { GUARD } from 'constants/guard.const';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
 import { Request } from 'express';
 import { Logger as WinstonLogger } from 'winston';
@@ -33,13 +33,13 @@ export class AuthGuard implements CanActivate {
 
     // Check if the Authorization header is present
     if (!authorizationHeader) {
-      throw new HttpException(Auth.AUTH_HEADER_MISSING, HttpStatus.FORBIDDEN);
+      throw new HttpException(GUARD.AUTH_HEADER_MISSING, HttpStatus.FORBIDDEN);
     }
 
     const parts = authorizationHeader.split(' ');
     // Validate the format of the Authorization header (should be "Bearer <token>")
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      throw new UnauthorizedException(Auth.TOKEN_REQUIRED);
+      throw new UnauthorizedException(GUARD.TOKEN_REQUIRED);
     }
 
     const token = parts[1];
@@ -51,9 +51,15 @@ export class AuthGuard implements CanActivate {
         // If token is invalid, throw UnauthorizedException
         throw new UnauthorizedException(user?.message || 'Invalid token');
       }
-      // Attach user info to the request object for downstream use
-      request.user = user;
-      return true;
+
+      if (user.payload.role === 1) {
+        // 1 is user role
+        // Attach user info to the request object for downstream use
+        request.user = user;
+        return true;
+      } else {
+        throw new UnauthorizedException('Invalid Role');
+      }
     } catch (error) {
       // Log the error and throw UnauthorizedException for any issues during validation
       this.logger.info(`Authentication header have some issues: ${error}`);

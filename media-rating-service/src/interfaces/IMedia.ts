@@ -1,11 +1,3 @@
-// export interface PresignRequest {
-//   service: string;
-//   resourceType: string;
-//   resourceId: string;
-//   fileExtension: string;
-//   contentType: string;
-// }
-
 export interface FileMeta {
   fileExtension: string;
   contentType: string;

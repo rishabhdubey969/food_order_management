@@ -12,5 +12,14 @@ export class NotificationHelperService {
     const resetLink = `http://localhost:9000/auth/reset-password/${data.token}`
     return sendMail(data.email, subject, data.name||null, template, resetLink||null);
   }
+
+  paymentSuccess(data: any, subject : string, template){
+    console.log(data.email, subject, data.name||null, template) ;
+   return sendMail(data.email, subject, data.name||null, template, null);
+  }
+
+  paymentFailed(data: any, subject : string, template){
+   return sendMail(data.email, subject, data.name||null, template, null);
+  }
   
 }

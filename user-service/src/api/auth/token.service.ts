@@ -39,7 +39,6 @@ export class TokenService {
       await this.redisService.del(`otp:attempts:${email}`); // reset if previously sent
       return otp; // return OTP for testing purposes, in production you would send this via email
     } catch (error) {
-      console.error('Error in signupOtp:', error);
       throw new Error('Failed to send OTP');
     }
   }

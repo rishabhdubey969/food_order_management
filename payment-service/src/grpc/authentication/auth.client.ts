@@ -32,7 +32,7 @@ export class AuthClient implements OnModuleInit {
   async getSignUpAccess(id: string, ip: string, userAgent: string) {
     const generateRequest: generateTokenData = { id, userAgent, ip };
     const SignupResponse = await lastValueFrom(this.grpcAuthService.GenerateToken(generateRequest));
-    console.log(SignupResponse);
+    
     return SignupResponse;
   }
 

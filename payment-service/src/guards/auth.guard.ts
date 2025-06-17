@@ -11,7 +11,7 @@ import { Request } from 'express';
 import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
-import { Auth } from 'constants/auth.constant';
+import { Auth } from 'src/constants/auth.constant';
 
 declare module 'express-serve-static-core' {
   interface Request {

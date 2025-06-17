@@ -26,7 +26,7 @@ export class AddressController {
   /**
    * Get all addresses for the authenticated user.
    */
-  @Get()
+  @Get('all')
   @GetAddressAllDoc()
   async findAll() {
     return this.addressService.getUserAddressService();
@@ -36,7 +36,7 @@ export class AddressController {
    * Get a specific address by its ID.
    * @param id Address ID
    */
-  @Get()
+  @Get('user')
   @GetAddressByIdDoc()
   async findOne(@Req() req: any) {
     return this.addressService.findOneAddressService(req.user.payload.sub);

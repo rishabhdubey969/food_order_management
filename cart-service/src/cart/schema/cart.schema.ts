@@ -54,7 +54,7 @@ export class Cart {
   @Prop({ default: null })
   couponCode: string;
 
-
+  @Prop({ default: null }) 
   couponId: string;
 
 }

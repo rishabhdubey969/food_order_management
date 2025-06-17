@@ -1,26 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { NotificationHelperService } from 'src/utils/helper';
 
 @Injectable()
 export class OrderService {
-  create(createOrderDto: CreateOrderDto) {
-    return 'This action adds a new order';
+  constructor(readonly notificationHelperService: NotificationHelperService) {}
+
+  async handlePaymentSuccessService(data) {
+    console.log(data);
+    return this.notificationHelperService.paymentSuccess(
+      data,
+      'Payment Success FoodApp!',
+      'payment-success',
+    );
   }
 
-  findAll() {
-    return `This action returns all order`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} order`;
-  }
-
-  update(id: number, updateOrderDto: UpdateOrderDto) {
-    return `This action updates a #${id} order`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} order`;
+  async handlePaymentFailedService(data) {
+    return this.notificationHelperService.paymentFailed(
+      data,
+      'Payment Failed FoodApp!',
+      'payment-failed',
+    );
   }
 }
