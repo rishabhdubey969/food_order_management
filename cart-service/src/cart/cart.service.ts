@@ -186,6 +186,8 @@ export class CartService {
     }
   }
 
+
+  // Get user’s cart
   async getCartService(userId: string) {
     try {
       this.logger.verbose(`Fetching cart for user ${userId}`, CartService.name);
@@ -200,38 +202,57 @@ export class CartService {
     }
   }
 
+
+  //applying coupon on user's cart
   async applyCouponService(userId: string, couponId: string) {
     try {
       this.logger.log(`Applying coupon ${couponId} to user ${userId}`, CartService.name);
-
+  
       const userObjId = new ObjectId(userId);
       const cart = await this.carts.findOne({ userId: userObjId });
+  
       if (!cart) throw new NotFoundException(ResponseMessages.CART.CART_NOT_FOUND);
-
+  
+      // Check if a coupon is already applied
+      if (cart.couponId) {
+        throw new BadRequestException('A coupon has already been applied to this cart.');
+      }
+  
       const coupon = await this.coupons.findOne({ _id: new ObjectId(couponId) });
       if (!coupon) throw new NotFoundException(ResponseMessages.COUPON.COUPON_NOT_FOUND);
+  
       if (coupon.restaurantId && coupon.restaurantId.toString() !== cart.restaurantId.toString()) {
         throw new BadRequestException(ResponseMessages.COUPON.INVALID_COUPON);
       }
+  
       if (!coupon.isActive || coupon.expiryDate < new Date()) {
         throw new BadRequestException(ResponseMessages.COUPON.COUPON_EXPIRED);
       }
+  
       if (cart.total < coupon.minOrderAmount) {
         throw new BadRequestException(
           ResponseMessages.COUPON.COUPON_MIN_AMOUNT(coupon.minOrderAmount),
         );
       }
-
+  
       const percentageDiscount = (cart.total * coupon.discountPercent) / 100;
       const discount = Math.min(percentageDiscount, coupon.maxDiscount);
       const newTotal = Math.round(cart.total - discount);
-
+  
       await this.carts.updateOne(
         { _id: cart._id },
-        { $set: { total: newTotal, discount, couponCode: coupon.code, couponId: coupon._id } },
+        {
+          $set: {
+            total: newTotal,
+            discount,
+            couponCode: coupon.code,
+            couponId: coupon._id,
+          },
+        },
       );
-
+  
       this.logger.log(`Coupon applied for user ${userId}`, CartService.name);
+  
       return {
         message: 'Coupon applied successfully',
         newTotal,
@@ -243,7 +264,10 @@ export class CartService {
       throw error;
     }
   }
+  
 
+
+  //viewing coupon
   async viewCouponsService(restaurantId: string) {
     try {
       this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`, CartService.name);
@@ -261,6 +285,8 @@ export class CartService {
     }
   }
 
+
+//deleting cart
   @EventPattern('orderCreated')
   async deleteCartService(userId: string) {
     try {
@@ -276,6 +302,55 @@ export class CartService {
       throw error;
     }
   }
+
+
+
+  //removing coupon from the cart
+  async removeCouponService(userId: string) {
+    try {
+      this.logger.log(`Removing coupon for user ${userId}`, CartService.name);
+  
+      const userObjId = new ObjectId(userId);
+      const cart = await this.carts.findOne({ userId: userObjId });
+  
+      if (!cart) {
+        throw new NotFoundException(ResponseMessages.CART.CART_NOT_FOUND);
+      }
+  
+      if (!cart.couponId) {
+        throw new BadRequestException('No coupon is currently applied to the cart.');
+      }
+  
+      // Restore original total
+      const originalTotal = cart.total + cart.discount;
+  
+      await this.carts.updateOne(
+        { _id: cart._id },
+        {
+          $set: {
+            total: originalTotal,
+            discount: 0,
+            couponId: null,
+            couponCode: null,
+          },
+        },
+      );
+  
+      this.logger.log(`Coupon removed from cart for user ${userId}`, CartService.name);
+  
+      return {
+        message: 'Coupon removed successfully',
+        newTotal: originalTotal,
+        discountRemoved: cart.discount,
+      };
+    } catch (error) {
+      this.logger.error(`Error in removeCouponService: ${error.message}`, CartService.name);
+      throw error;
+    }
+  }
+  
+
+
 
 
   // -----------------------
