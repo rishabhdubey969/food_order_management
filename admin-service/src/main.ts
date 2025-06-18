@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from '../src/api/config/global-exception.filter';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './api/logger/winston.config'
 async function bootstrap() {
@@ -17,6 +17,16 @@ async function bootstrap() {
       whitelist: true, 
       forbidNonWhitelisted: true,
       transform: true, 
+      exceptionFactory: (errors) => {
+        const messages = errors.map((error) => {
+          const constraintMessages = error.constraints
+            ? Object.values(error.constraints).join(', ')
+            : 'Validation failed';
+          return `${error.property}: ${constraintMessages}`;
+        });
+        return new BadRequestException(messages);
+      },
+    
     }),
   );
   const config = new DocumentBuilder()
@@ -29,7 +39,7 @@ async function bootstrap() {
       type: 'http'
     }, 'JWT')
     .build();
-
+    
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document); 
   app.useGlobalFilters(new GlobalExceptionFilter());

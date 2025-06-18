@@ -17,69 +17,70 @@ import { ObjectId } from 'mongodb';
 import { lastValueFrom, Observable } from 'rxjs';
 import { WinstonLogger } from '../logger/winston-logger.service';
 
-interface ManagerServiceGrpc {
-  Signup(data: GetSignUpRequest): Observable<GetSignUpResponse>;
-}
+// interface ManagerServiceGrpc {
+//   Signup(data: GetSignUpRequest): Observable<GetSignUpResponse>;
+// }
 
-export interface GetSignUpRequest {
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-  restaurant_id: string;
-  account_number: string;
-  ifsc_code: string;
-  bank_name: string;
-}
-export interface GetSignUpResponse {
-  message: String;
-  data: ManagerData;
-}
+// export interface GetSignUpRequest {
+//   name: string;
+//   email: string;
+//   phone: string;
+//   password: string;
+//   restaurant_id: string;
+//   account_number: string;
+//   ifsc_code: string;
+//   bank_name: string;
+// }
+// export interface GetSignUpResponse {
+//   message: String;
+//   data: ManagerData;
+// }
 
-export interface ManagerData {
-  id: String;
-  name: String;
-  email: String;
-  phone: String;
-  password: String;
-  restaurantId: String;
-  accountNumber: String;
-  ifscCode: String;
-  bankName: String;
-}
+// export interface ManagerData {
+//   id: String;
+//   name: String;
+//   email: String;
+//   phone: String;
+//   password: String;
+//   restaurantId: String;
+//   accountNumber: String;
+//   ifscCode: String;
+//   bankName: String;
+// }
 
 @Injectable()
-export class ManagerService implements OnModuleInit {
-  // private readonly logger = new Logger(ManagerService.name);
-  private managerServiceGrpc: ManagerServiceGrpc;
+export class ManagerService {
+//implements OnModuleInit {
+ 
+  // private managerServiceGrpc: ManagerServiceGrpc;
 
   constructor(
     @InjectConnection() private readonly connection: Connection,
     private readonly authService: AuthService,
-    // @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
+  
     @Inject('MANAGER_PACKAGE') private managerClient: ClientGrpc,
     private readonly logger: WinstonLogger,
   ) {}
 
-  onModuleInit() {
-    this.managerServiceGrpc =
-      this.managerClient.getService<ManagerServiceGrpc>('ManagerService');
-    this.logger.log(
-      `gRPC Client Initialized with Methods: ${Object.keys(this.managerServiceGrpc).join(', ')}`,
-    );
-  }
+  // onModuleInit() {
+  //   this.managerServiceGrpc =
+  //     this.managerClient.getService<ManagerServiceGrpc>('ManagerService');
+  //   this.logger.log(
+  //     `gRPC Client Initialized with Methods: ${Object.keys(this.managerServiceGrpc).join(', ')}`,
+  //   );
+  // }
 
-  async signup(dto: GetSignUpRequest): Promise<GetSignUpResponse> {
-    try {
-      this.logger.log(`Sending signup request: ${JSON.stringify(dto)}`);
-      const response = await lastValueFrom(this.managerServiceGrpc.Signup(dto));
-      this.logger.log(`Signup successful for user: ${dto.email}`);
-      return response;
-    } catch (error) {
-      this.logger.error(`Signup failed: ${error.message}`, error.stack);
-      throw new RpcException(`Failed to sign up: ${error.message}`);
-    }
-  }
+  // async signup(dto: GetSignUpRequest): Promise<GetSignUpResponse> {
+  //   try {
+  //     this.logger.log(`Sending signup request: ${JSON.stringify(dto)}`);
+  //     const response = await lastValueFrom(this.managerServiceGrpc.Signup(dto));
+  //     this.logger.log(`Signup successful for user: ${dto.email}`);
+  //     return response;
+  //   } catch (error) {
+  //     this.logger.error(`Signup failed: ${error.message}`, error.stack);
+  //     throw new RpcException(`Failed to sign up: ${error.message}`);
+  //   }
+  // }
 
   async blockRestaurant(restaurantId: string) {
     this.logger.log(`Attempting to block restaurant ${restaurantId}`);
@@ -125,27 +126,7 @@ export class ManagerService implements OnModuleInit {
     const message = `${messages.join(' and ')} have been blocked`;
     this.logger.log(message);
 
-    //   const manager = await this.connection
-    //     .collection('managers')
-    //     .findOne({ _id: restaurant.managerId });
-    //     console.log(manager);
-    //   // Send email notification to the manager
-    //   this.client.emit('send_email', {
-    //     to: manager!.email,
-    //     subject: 'Your Manager Account and Restaurant Have Been Blocked',
-    //     html: `<p>${messages.join(' and ')} have been blocked by an admin. Please contact support for more information.</p>`,
-    //   });
-    //   this.logger.log(`Block notification email emitted for ${manager!.email}`);
-
-    //   return { message };
-    // } catch (error) {
-    //   this.logger.error(
-    //     error.stack,
-    //   );
-    //   throw new HttpException(
-    //     error.message || 'Failed to block manager and restaurant',
-    //     error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-    //   );
+   
   }
 
   async getAllManagers(token: string, page: number = 1, limit: number = 10) {
@@ -252,25 +233,10 @@ export class ManagerService implements OnModuleInit {
     const message = `${messages.join(' and ')} have been soft deleted`;
     this.logger.log(message);
 
-    //   // Send email notification to the manager
-    //   this.client.emit('send_email', {
-    //     to: manager.email,
-    //     subject: 'Your Manager Account and Restaurant Have Been Deleted',
-    //     html: `<p>${messages.join(' and ')} have been soft deleted by an admin. Please contact support for more information.</p>`,
-    //   });
-    //   this.logger.log(`Delete notification email emitted for ${manager.email}`);
+
 
     return { message };
-    // } catch (error) {
-    //   this.logger.error(
-    //     `Failed to soft delete manager ${managerId} and restaurant ${restaurantId}: ${error.message}`,
-    //     error.stack,
-    //   );
-    //   throw new HttpException(
-    //     error.message || 'Failed to soft delete manager and restaurant',
-    //     error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-    //   );
-    // }
+ 
   }
 
   async ValidateManager(managerId: string) {

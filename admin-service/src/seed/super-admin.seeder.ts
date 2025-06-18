@@ -14,7 +14,7 @@ export class SeederService {
     const superAdmin = await this.adminModel.findOne({ email:process.env.email });
 
     if (superAdmin) {
-      console.log('Super Admin already exists');
+      //console.log('Super Admin already exists');
       return;
     }
 
