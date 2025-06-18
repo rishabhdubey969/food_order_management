@@ -29,14 +29,14 @@ export class AuthClient implements OnModuleInit {
     console.log('grpc started');
   }
 
-  async getSignUpAccess(id: string, ip: string, userAgent: string) {
-    const generateRequest: generateTokenData = { id, userAgent, ip };
-    const SignupResponse = await lastValueFrom(
-      this.grpcAuthService.GenerateToken(generateRequest),
-    );
+  // async getSignUpAccess(id: string, ip: string, userAgent: string) {
+  //   const generateRequest: generateTokenData = { id, userAgent, ip };
+  //   const SignupResponse = await lastValueFrom(
+  //     this.grpcAuthService.GenerateToken(generateRequest),
+  //   );
 
-    return SignupResponse;
-  }
+  //   return SignupResponse;
+  // }
 
   async ValidateTokenAuthService(accessToken: string) {
     const request: accessTokenRequest = { accessToken };
