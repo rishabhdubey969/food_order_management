@@ -9,7 +9,7 @@ export class NotificationHelperService {
   }
 
    resetEmail(data: any, subject : string, template) {
-    const resetLink = `http://localhost:9000/auth/reset-password/${data.token}`
+    const resetLink = `http://localhost:5173/reset-password/${data.token}`
     return sendMail(data.email, subject, data.name||null, template, resetLink||null);
   }
 
