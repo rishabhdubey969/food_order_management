@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { AllExceptionsFilter } from './cart/common/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,7 +13,9 @@ async function bootstrap() {
   const cartPort = configService.get<number>('CART_PORT') as number;
 
   app.enableCors();
-  
+
+  app.useGlobalFilters(new AllExceptionsFilter());
+
   const config = new DocumentBuilder()
     .setTitle('Cart API')
     .setDescription('Cart module APIs for food ordering app')
@@ -41,5 +44,6 @@ async function bootstrap() {
 
   await app.listen(cartPort);
   console.log(`Cart service is running on port ${cartPort}`);
+
 }
 bootstrap();

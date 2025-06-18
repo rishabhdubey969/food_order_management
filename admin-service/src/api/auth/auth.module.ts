@@ -7,7 +7,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { Admin, AdminSchema } from './entities/admin.entity';
-import { Session, SessionSchema } from './entities/session.entity';
+
 import { EmailModule } from 'src/email/email.module';
 import { LoggerModule } from '../logger/logger.module';
 
@@ -18,11 +18,11 @@ import { LoggerModule } from '../logger/logger.module';
     EmailModule,
     MongooseModule.forFeature([
       { name: Admin.name, schema: AdminSchema },
-      { name: Session.name, schema: SessionSchema },
+     
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET|| 'yourSecretKey',
-      signOptions: { expiresIn: '10m' },
+      signOptions: { expiresIn: process.env.expiresIn },
     }),
     // ClientsModule.register([
     //   {

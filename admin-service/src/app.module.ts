@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import jwtConfig from './api/user/config/jwt.config';
-import userConfig from './api/user/config/user.config'
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
+
 import { AuthModule } from './api/auth/auth.module';
 import { UserModule } from './api/user/user.module'
 import { MongooseModule } from '@nestjs/mongoose';
@@ -18,15 +18,24 @@ import { winstonConfig } from './api/logger/winston.config';
 
 
 @Module({
+  
   imports: [  
-    MongooseModule.forRoot('mongodb+srv://FoodOrder:FoodAdmin123@cluster0.hcogxon.mongodb.net/food?retryWrites=true&w=majority&appName=Cluster0'),
-    ConfigModule.forRoot({ 
-      isGlobal: true, 
-      load: [jwtConfig, userConfig] 
+     ConfigModule.forRoot({
+      isGlobal: true,
     }),
+    
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('URI'),
+        
+      }),
+      inject: [ConfigService],
+    }),
+   
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '1h' },
+      signOptions: { expiresIn: process.env.expiresIn },
     }),
     WinstonModule.forRoot(winstonConfig),
     AuthModule,

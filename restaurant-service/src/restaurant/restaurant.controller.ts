@@ -12,11 +12,8 @@ import {
 import { RestaurantService } from './restaurant.service';
 import {
   ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
   ApiOperation,
   ApiQuery,
-  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateRestaurantDto } from './dto/restaurant.dto';
@@ -53,21 +50,25 @@ export class RestaurantController {
     return this.restaurantService.createRestaurant(dto, managerId);
   }
 
-  /**
-   * Get restaurants nearby based on user coordinates (open to all users)
-   */
-  @Get('nearby')
-  @ApiOperation({ summary: 'Get restaurants nearby based on coordinates' })
-  async getNearbyRestaurants(
+/**
+ * Get restaurants nearby based on user coordinates (open to all users)
+ */
+@Get('nearby')
+@ApiOperation({ summary: 'Get restaurants nearby based on coordinates' })
+@ApiQuery({ name: 'latitude', type: Number, required: true })
+@ApiQuery({ name: 'longitude', type: Number, required: true })
+@ApiQuery({ name: 'limit', type: Number, required: false, example: 10 })
+@ApiQuery({ name: 'offset', type: Number, required: false, example: 0 })
+async getNearbyRestaurants(
     @Query('latitude') latitude: number,
     @Query('longitude') longitude: number,
-    @Query('limit') limit = 10,
-    @Query('offset') offset = 0,
     @Req() req: any,
-  ) {
+    @Query('limit') limit: number = 10,
+    @Query('offset') offset: number = 0,
+) {
     const user = req.user;
     return this.restaurantService.getNearbyRestaurants(latitude, longitude, +limit, +offset, user);
-  }
+}
 
   /**
    * Admin-only route to get a paginated list of all restaurants
@@ -102,9 +103,7 @@ export class RestaurantController {
   /**
    * Get restaurants matching provided tags (Admin only)
    */
-  @UseGuards(GrpcAuthGuard)
   @Get('tags')
-  @Roles(Role.ADMIN)
   async getByTags(@Query('tags') tags?: string) {
     const tagArray = tags ? tags.split(',') : [];
     return this.restaurantService.findByTags(tagArray);

@@ -18,7 +18,7 @@ export class TransactionHistoryController {
  constructor(
     private transactionHistoryService:TransactionHistoryService,
  ){}
-    // @UseGuards()
+    @UseGuards()
     @Get()
     async getTransactionHistory(orderId:string){
         return this.transactionHistoryService.getTransactionHistory(orderId);
