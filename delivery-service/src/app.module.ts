@@ -6,7 +6,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './modules/auth/auth.module';
-import { TrackingModule } from './modules/tracking/tracking.module';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './modules/logger/winstonConfig';
 
 
 @Module({
@@ -27,7 +28,9 @@ import { TrackingModule } from './modules/tracking/tracking.module';
       }
     }),
 
-    AuthModule
+    AuthModule,
+
+    WinstonModule.forRoot(winstonConfig),
   ],
   controllers: [AppController],
   providers: [AppService],

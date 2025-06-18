@@ -33,9 +33,9 @@ async function bootstrap() {
   
 
   // Set global validation pipes
-  app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
-  );
+  // app.useGlobalPipes(
+  //   new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+  // );
   logger.log('Global validation pipes set');
 
   // Configure Kafka microservice

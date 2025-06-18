@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { GlobalExceptionFilter } from './manager/common/global-exception.filter';
+import { GlobalExceptionFilter } from './manager/filters/global-exception.filter';
 import { ValidationPipe } from '@nestjs/common';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './logger/winston.config'; 
@@ -26,25 +26,24 @@ async function bootstrap() {
     }),
   );
 
-  // GRPC Microservice
-  const grpcMicroservice = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.GRPC,
-    options: {
-      package: 'admin',
-      protoPath: 'src/manager/grpc/admin.proto',
-    },
-  });
-
   // Kafka Microservice
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,
     options: {
       client: {
         brokers: ['localhost:29092'],
+        clientId:'managerConsumer',
+        retry:{
+          retries:5
+        },
       },
       consumer: {
-        groupId: 'group-email',
+        groupId: 'managergroup',
+        allowAutoTopicCreation:true
       },
+      producer:{
+        allowAutoTopicCreation:true
+      }
     },
   });
 

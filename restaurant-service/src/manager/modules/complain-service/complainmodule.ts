@@ -7,6 +7,8 @@ import { TokenModule } from '../token/token.module';
 import { JwtAuthGuard } from '../auth/guards/jwtauthguard';
 import { Order, OrderSchema } from '../../schema/order.schema';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { LoggerModule } from 'src/logger/logger.module';
+import { RabbitMQModule } from 'src/rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { MailerModule } from '@nestjs-modules/mailer';
       { name: Complaint.name, schema: ComplaintSchema }]),
     TokenModule,
     MailerModule,
+    LoggerModule,
+    RabbitMQModule,
   ],
   providers: [ComplaintService, JwtAuthGuard],
   controllers: [ComplaintController],

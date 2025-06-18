@@ -1,20 +1,20 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { Profile, ProfileDocument } from './entities/profile.entity';
+import { AuthenticationDocument, Auth } from '../auth/entities/auth.entity';
 import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { PROFILE as ProfileConst, WINSTON_LOGGER_PROFILE } from 'constants/profile.const';
+import { PROFILE, PROFILE as ProfileConst, WINSTON_LOGGER_PROFILE } from 'constants/profile.const';
 import { MediaClient } from 'src/grpc/media/media.client';
 
 @Injectable()
 export class ProfileService {
   constructor(
-    @InjectModel(Profile.name)
-    private profileModel: Model<ProfileDocument>,
+    @InjectModel(Auth.name)
+    private profileModel: Model<AuthenticationDocument>,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: WinstonLogger,
-     private readonly mediaClient: MediaClient,
+    private readonly mediaClient: MediaClient,
   ) {}
 
   /**
@@ -54,10 +54,7 @@ export class ProfileService {
 
     if (!updatedProfile) {
       this.logger.error(`${WINSTON_LOGGER_PROFILE.PROFILE_UPDATE_FAILED}: ${id}`);
-      throw new HttpException(
-        ProfileConst.UPDATE_FAILED,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException(ProfileConst.UPDATE_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_UPDATE_SUCCESS}: ${id}`);
@@ -69,27 +66,29 @@ export class ProfileService {
    * Logs the operation.
    */
   async remove(id: string) {
-    this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_SOFT_DELETE}: ${id}`);
-    return this.profileModel.findByIdAndUpdate(
-      { _id: id },
-      { isDeleted: true, deletedAt: new Date() },
-      { new: true },
+  this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_SOFT_DELETE}: ${id}`);
+  
+  const result = await this.profileModel.findByIdAndUpdate(
+    id,
+    { is_deleted: true, deleted_at: new Date() },
+    { new: true }
+  );
+  return result;
+}
+
+  async mediaUploadService(id: string, uploadMediaDto) {
+    try {
+      return this.mediaClient.GeneratePresignedUrlClient(PROFILE.USER, PROFILE.PROFILE_NAME, id, uploadMediaDto);
+    } catch (error) {
+      throw new HttpException(error.message || PROFILE.Media_PROFILE, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async confirmUploadService(id: string) {
+    return this.mediaClient.ConfirmUploadClient(
+      'media/user/profile/684d51abab85e4eea0294410/7390b6b0-08d8-4670-b544-6ce4aa28c4c1.jpg',
+      'profile',
+      id,
     );
-  }
-
-  async mediaUploadService(id: string){
-return this.mediaClient.GeneratePresignedUrlClient(
- 'user',
-   'profile',
-   id,
-   [
-    { fileExtension: 'jpg', contentType: 'image/jpg' },
-    { fileExtension: 'jpg', contentType: 'image/jpg' },
-  ],
-);
-  }
-
-  async confirmUploadService(id: string){
-    return this.mediaClient.ConfirmUploadClient('media/user/profile/684d51abab85e4eea0294410/1b66654f-1163-4260-862b-595fa0ece4bf.jpg','profile', id);
   }
 }

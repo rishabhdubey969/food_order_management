@@ -1,6 +1,7 @@
 import { Controller, Get, Body, Param, Delete, UsePipes, ValidationPipe, Patch, UseGuards, Req, Post } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UploadMediaDto } from './dto/upload-media.dto'
 import { AuthGuard } from '../../guard/auth.guard';
 import { DeleteProfileSwagger, GetProfileSwagger, UpdateProfileSwagger } from 'src/swagger_doc/profile.swagger';
 
@@ -54,11 +55,11 @@ export class ProfileController {
   @Get('upload')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @UseGuards(AuthGuard)
-  async mediaUpload(@Req() req: any) {
-    return this.profileService.mediaUploadService(req.user.payload.sub);
+  async mediaUpload(@Req() req: any, @Body() uploadMediaDto: UploadMediaDto[]) {
+    return this.profileService.mediaUploadService(req.user.payload.sub, uploadMediaDto);
   }
 
-   @Get('confirm-upload')
+  @Get('confirm-upload')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @UseGuards(AuthGuard)
   async confirmUpload(@Req() req: any) {

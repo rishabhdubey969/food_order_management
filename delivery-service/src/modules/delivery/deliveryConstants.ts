@@ -39,7 +39,7 @@ export const DELIVERY_CONSTANTS = {
     DAILY: 'daily',
     WEEKLY: 'weekly',
     MONTHLY: 'monthly',
-    LIFETIME: 'lifetime',
+    YEARLY: 'yearly',
   },
   TIMEOUTS: {
     IN_TRANSIT_DELAY: 10 * 1000

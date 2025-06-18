@@ -29,6 +29,12 @@ export class Manager {
 
   @Prop({ default: false })
   isdeleted: boolean;
+
+  @Prop()
+  resetToken?: string;
+
+  @Prop()
+  resetTokenExpiry?: Date;
 }
 export type ManagerDocument = Manager & Document;
 

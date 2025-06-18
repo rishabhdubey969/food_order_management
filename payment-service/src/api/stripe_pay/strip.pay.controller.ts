@@ -19,7 +19,7 @@ import { ROUTE } from './constant/message.constant';
 import { Auth } from 'src/constants/auth.constant';
 
 @ApiBearerAuth('JWT')
-@ApiTags('Order')
+@ApiTags('Payment')
 @Controller(ROUTE.PAYMENT)
 export class StripePayController {
   constructor(

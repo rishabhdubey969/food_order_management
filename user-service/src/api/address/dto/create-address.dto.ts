@@ -49,4 +49,5 @@ export class CreateAddressDto {
   @ApiProperty({ example: 77.209, description: 'longitude of the address' })
   @IsNumber()
   longitude: number;
+  
 }

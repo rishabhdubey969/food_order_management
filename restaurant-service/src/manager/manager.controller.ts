@@ -19,11 +19,12 @@ import {
 import ManagerLoginDto from 'src/manager/modules/auth/dto/managerLogindto';
 import ManagerSignupDto from 'src/manager/modules/auth/dto/managerSignuodto';
 import { ManagerService } from './manager.service';
-import {GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { JwtAuthGuard } from './modules/auth/guards/jwtauthguard';
 import { Types } from 'mongoose';
 import { OrderHandoverDto } from './modules/auth/dto/orderHandOver.dto';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
+import { ForgotPasswordDto, ResetPasswordDto } from './modules/auth/dto/reset.password.dto';
 
 @ApiTags('Manager')
 @ApiBearerAuth('access-token')
@@ -49,9 +50,21 @@ export class ManagerController {
   login(@Body() managerLoginDto: ManagerLoginDto) {
     return this.managerService.login(managerLoginDto);
   }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.managerService.initiatePasswordReset(forgotPasswordDto.email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.managerService.resetPassword(
+      resetPasswordDto.token,
+      resetPasswordDto.newPassword,
+    );
+  }
 @UseGuards(JwtAuthGuard)
  @Post('logout')
-@UseGuards(JwtAuthGuard)
 @ApiOperation({ summary: 'Logout Manager (JWT verified)' })
 @ApiResponse({ status: 200, description: 'Manager logged out successfully' })
 logout(@Headers('authorization') authHeader: string) {
@@ -80,10 +93,6 @@ logout(@Headers('authorization') authHeader: string) {
   @ApiResponse({ status: 200, description: 'Manager updated successfully' })
   updateManager(@Param('id') id: string, @Body() updateData: Partial<ManagerSignupDto>) {
     return this.managerService.updateManager(id, updateData);
-  }
-   @GrpcMethod('ManagerService', 'SignupManager')
-  async signupManager(data: ManagerSignupDto) {
-    return this.managerService.Signup(data);
   }
   
   @MessagePattern('isFoodAvailable')
