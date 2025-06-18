@@ -24,7 +24,9 @@ export class ComplaintController {
   tokenService: any;
   constructor(private readonly complaintService: ComplaintService) {}
   
-
+  /**
+   * A user creates a complaint
+   */
   @Post('/:managerId')
   @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Create a new complaint (User only)' })
@@ -47,6 +49,9 @@ export class ComplaintController {
     return this.complaintService.createComplaint(dto, req.user.userId, managerId);
   }
 
+  /**
+   * The manager updates the status of the complaint
+   */
   @Patch('status/:id')
   @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Update complaint status (Manager only)' })
@@ -60,7 +65,10 @@ export class ComplaintController {
     const user = req['user'];
     return this.complaintService.updateComplaintStatus(id, dto, user.userId);
   }
-
+  
+  /**
+   * A manager can get the it's specific complaint of restaurant
+   */
   @Get('manager/:managerId')
   @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Get all complaints for this manager (Manager only)' })
@@ -68,6 +76,9 @@ export class ComplaintController {
     return this.complaintService.getComplaintsForManager(managerId);
   }
   
+  /**
+   * Admin gets complaint related to each manager's restaurant
+   */
   @Get('admin')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth('JWT')

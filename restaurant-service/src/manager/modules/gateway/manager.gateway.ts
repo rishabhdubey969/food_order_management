@@ -18,7 +18,9 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
   constructor(private readonly kafkaService: KafkaService,
     private readonly tokenService: TokenService
   ){}
-
+  /**
+   * Builds a connection
+   */
   async handleConnection(client: Socket & { data: { manager: { id: string } } }) {
 
     const token = client.handshake.headers.authorization?.split(' ')[1];
@@ -34,6 +36,9 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
     this.logger.log(`Manager ${managerId} connected`);
   }
 
+  /**
+   * Disconnect 
+   */
   handleDisconnect(client: Socket & { data?: { manager?: { id: string } }}) {
     const managerId = client.data?.manager?.id;
     if (managerId) {
@@ -41,6 +46,10 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
       this.logger.log(`Manager disconnected: ${managerId}`);
     }
   }
+
+  /**
+   * Checks the connection and emit the response through kafka
+   */
   async handleIsFoodAvailable(managerId: Types.ObjectId, cartData: any): Promise<boolean> {
     const manId = managerId.toString()
     const managerSocket = this.connectedManagers.get(manId);

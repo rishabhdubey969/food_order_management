@@ -33,7 +33,9 @@ import { ForgotPasswordDto, ResetPasswordDto } from './modules/auth/dto/reset.pa
 export class ManagerController {
   constructor(private readonly managerService: ManagerService) {}
 
-  
+  /**
+   * Register a manager
+   */
   @Post('signup')
   @ApiOperation({ summary: 'Signup as a Manager' })
   @ApiBody({ type: ManagerSignupDto })
@@ -42,7 +44,9 @@ export class ManagerController {
     return this.managerService.Signup(managerSignupDto);
   }
   
- 
+  /**
+   * Login a manager
+   */
   @Post('login')
   @ApiOperation({ summary: 'Login as a Manager' })
   @ApiBody({ type: ManagerLoginDto })
@@ -51,11 +55,18 @@ export class ManagerController {
     return this.managerService.login(managerLoginDto);
   }
 
+  /**
+    * forgot-password sends a link manager mail
+   */
   @Post('forgot-password')
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return this.managerService.initiatePasswordReset(forgotPasswordDto.email);
   }
-
+  
+  
+  /**
+   * resetPassword of a manager
+   */
   @Post('reset-password')
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.managerService.resetPassword(
@@ -63,6 +74,10 @@ export class ManagerController {
       resetPasswordDto.newPassword,
     );
   }
+
+  /**
+   * Logout a manager
+   */
 @UseGuards(JwtAuthGuard)
  @Post('logout')
 @ApiOperation({ summary: 'Logout Manager (JWT verified)' })
@@ -72,6 +87,9 @@ logout(@Headers('authorization') authHeader: string) {
   return this.managerService.logout(token);
 }
 
+   /**
+   * Get a manger by it's id
+   */
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT')
   @Get("/:id")
@@ -84,6 +102,9 @@ logout(@Headers('authorization') authHeader: string) {
     return this.managerService.getManagerById(id);
   }
   
+  /**
+   * update a manager by it's id
+   */
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT')
   @Put('update/:id')
@@ -95,12 +116,18 @@ logout(@Headers('authorization') authHeader: string) {
     return this.managerService.updateManager(id, updateData);
   }
   
+  /**
+   * Handling whether the order is available 
+   */
   @EventPattern('isFoodAvailable')
   async handleIsFoodAvailable(@Payload('cartId', ParseObjectIdPipe) cartId: Types.ObjectId){ 
     console.log("hii");
     return await this.managerService.handleIsFoodAvailable(cartId);
   }
   
+  /**
+   * When the order is handovered to the delivery boy
+   */
 @Post('orderHandOver')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth('JWT') 

@@ -46,6 +46,7 @@ export class RestaurantController {
    * Create a restaurant and assign it to a manager (Admin only)
    */
   @UseGuards(JwtAuthGuard, ManagerGuard)
+  @ApiBearerAuth('JWT') 
   @Post('create/:managerId')
   @ApiOperation({ summary: 'Create a restaurant and assign to manager' })
   async createRestaurant(@Body() dto: CreateRestaurantDto, @Req()req: any) {
@@ -137,11 +138,12 @@ async getNearbyRestaurants(
   /**
    * Add a new menu item to a restaurant (Admin/Manager only)
    */
-  @UseGuards(GrpcAuthGuard)
+  @UseGuards(JwtAuthGuard, ManagerGuard)
+  @ApiBearerAuth('JWT') 
   @Post(':restaurantId/menu')
-  @Roles(Role.ADMIN, Role.MANAGER)
-  async createMenu(@Param('restaurantId') restaurantId: string, @Body() dto: CreateMenuItemDto) {
-    return this.restaurantService.createMenuItem(restaurantId, dto);
+  async createMenu(@Param('restaurantId') restaurantId: string, @Body() dto: CreateMenuItemDto, @Req() req: any) {
+    const managerId = req.user.sub;
+    return this.restaurantService.createMenuItem(restaurantId, dto, managerId);
   }
 
   /**

@@ -23,6 +23,9 @@ export class ComplaintService {
     private readonly rabbitMQService: RabbitMQService,
   ) {}
 
+  /**
+   * A user creates a complaint
+   */
   async createComplaint(dto: CreateComplaintDto, userId: string, managerId: string) {
     try {
       const complaint = {
@@ -47,6 +50,10 @@ export class ComplaintService {
     }
   }
 
+  
+  /**
+   * The manager updates the status of the complaint
+   */
   async updateComplaintStatus(
     complaintId: string,
     dto: UpdateComplaintStatusDto,
@@ -151,7 +158,9 @@ export class ComplaintService {
     }
   }
 
-
+  /**
+   * A manager can get the it's specific complaint of restaurant
+   */
   async getComplaintsForManager(managerId: string) {
     try {
       const complaints = await this.connection
@@ -178,6 +187,9 @@ export class ComplaintService {
     }
   }
 
+  /**
+   * Admin gets complaint related to each manager's restaurant
+   */
   async getAllComplaints(token: string) {
     try {
       const user = await this.tokenService.verifyToken(token, 'access');

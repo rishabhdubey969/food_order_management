@@ -58,11 +58,12 @@ export class RestaurantService implements OnModuleInit {
   // Create a restaurant and assign it to a verified manager
   async createRestaurant(createRestaurantDto: CreateRestaurantDto, managerId: string) {
   const manager = await this.managerModel.findOne({ _id: new Types.ObjectId(managerId) });
-
+  console.log(manager);
   if (!manager) {
     throwNotFound(MESSAGES.MANAGER_NOT_FOUND);
   }
   if (!manager.isActiveManager) {
+    console.log(manager.isActiveManager)
     throwBadRequest(MESSAGES.MANAGER_NOT_VERIFIED);
   }
 
@@ -156,9 +157,9 @@ export class RestaurantService implements OnModuleInit {
   }
 
   // Create a new menu item under a restaurant
-  async createMenuItem(restaurantId: string, createMenuItemDto: CreateMenuItemDto) {
+  async createMenuItem(restaurantId: string, createMenuItemDto: CreateMenuItemDto, managerId: string) {
   this.logger.log(`Creating menu item for restaurant ID: ${restaurantId}`);
-  const restaurant = await this.restaurantModel.findById(restaurantId).exec();
+  const restaurant = await this.restaurantModel.findById({_id: new Types.ObjectId(restaurantId), managerId}).exec();
   if (!restaurant) {
     throwNotFound(MESSAGES.RESTAURANT_NOT_FOUND(restaurantId));
   }
