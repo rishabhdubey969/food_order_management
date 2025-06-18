@@ -4,7 +4,7 @@ import {
   NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Restaurant } from './schema/restaurant.schema';
 import { CreateRestaurantDto } from './dto/restaurant.dto';
@@ -191,10 +191,10 @@ export class RestaurantService implements OnModuleInit {
 }
 
 
-  // Get list of coupon IDs attached to a restaurant
+  // Get list of coupon attached to a restaurant
   async getCoupons(restaurantId: string) {
     this.logger.log(`Fetching coupons for restaurant ID: ${restaurantId}`);
-    const coupons = await this.couponModel.find({restaurantId}).exec();
+    const coupons = await this.couponModel.find({restaurantId: new Types.ObjectId(restaurantId)}).exec();
     if(!coupons){
       throwNotFound(MESSAGES.COUPON_NOT_FOUND);
     }
