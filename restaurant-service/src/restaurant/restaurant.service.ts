@@ -56,13 +56,19 @@ export class RestaurantService implements OnModuleInit {
 
   // Create a restaurant and assign it to a verified manager
   async createRestaurant(createRestaurantDto: CreateRestaurantDto, managerId: string) {
-  const manager = await this.managerModel.findOne({ _id: managerId });
+  const manager = await this.managerModel.findOne({ _id: new Types.ObjectId(managerId) });
 
   if (!manager) {
     throwNotFound(MESSAGES.MANAGER_NOT_FOUND);
   }
   if (!manager.isActiveManager) {
     throwBadRequest(MESSAGES.MANAGER_NOT_VERIFIED);
+  }
+
+  const alreadyVerified =  await this.restaurantModel.find({managerId, isActiveManager: true});
+
+  if(alreadyVerified){
+    throwBadRequest(MESSAGES.MANAGER_ALREADY_VERIFIED);
   }
 
   try {
@@ -103,7 +109,7 @@ export class RestaurantService implements OnModuleInit {
   }
 
   // Get nearby restaurants based on user location, also caches the coordinates in Redis
-  async getNearbyRestaurants(latitude: number, longitude: number, limit = 10, offset = 0, user: any) {
+  async getNearbyRestaurants(latitude: number, longitude: number, user: any, limit = 10, offset = 0) {
   const userId = user?.userId;
   const redisKey = `address:${userId}:coordinates`;
   const value = JSON.stringify({ latitude, longitude });
@@ -135,7 +141,6 @@ export class RestaurantService implements OnModuleInit {
     throwInternal(MESSAGES.UNKNOWN_ERROR);
   }
 }
-
 
   // Get all restaurants with pagination
   async getAllRestaurants(limit = 10, offset = 0) {

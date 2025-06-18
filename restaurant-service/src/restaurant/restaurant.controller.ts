@@ -24,6 +24,9 @@ import { UpdateCoponDto } from './dto/updateCoupon.dto';
 import { GrpcAuthGuard } from './guards/auth.guard';
 import { Roles } from './decorators/roles.decorator';
 import { Role } from './common/role.enum';
+import { JwtAuthGuard } from './guards/jwtAuth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { ManagerGuard } from './guards/manager.guard';
 
 interface MediaService {
   getSignedUrl(fileName: string, fileType: string, folderName: string): Promise<string>;
@@ -42,11 +45,11 @@ export class RestaurantController {
   /**
    * Create a restaurant and assign it to a manager (Admin only)
    */
-  @UseGuards(GrpcAuthGuard)
+  @UseGuards(JwtAuthGuard, ManagerGuard)
   @Post('create/:managerId')
-  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create a restaurant and assign to manager' })
-  async createRestaurant(@Param('managerId') managerId: string, @Body() dto: CreateRestaurantDto) {
+  async createRestaurant(@Body() dto: CreateRestaurantDto, @Req()req: any) {
+    const managerId = req.user.sub;
     return this.restaurantService.createRestaurant(dto, managerId);
   }
 
