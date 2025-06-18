@@ -44,8 +44,8 @@ export class OrderController {
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async prePlaceOrder(@Body('cartId', ParseObjectIdPipe) cartId: ObjectId) {
-    return await this.orderService.createOrder(cartId);
+  async prePlaceOrder(@Body()data :PrePlaceOrderDto) {
+    return await this.orderService.createOrder(data.cartId,data.addressId);
   }
 
 

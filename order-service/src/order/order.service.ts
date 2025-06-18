@@ -18,7 +18,7 @@ import { ClientProxy, Ctx, EventPattern, KafkaContext, Payload } from '@nestjs/m
 @Injectable()
 export class OrderService {
   private readonly roleCollections = {
-    USER: 'address',
+    ADDRESS: 'address',
     CART: 'carts',
     RESTAURANT: 'restaurants',
   };
@@ -63,7 +63,7 @@ export class OrderService {
     address.latitude = ADDRESS.latitude
     address.longitude = ADDRESS.longitude;
   }
-  async createOrder(cartId) {
+  async createOrder(cartId,addressId) {
     const startTime = Date.now();
 
     try {
@@ -84,8 +84,8 @@ export class OrderService {
         throw new NotFoundException('Restaurant not found');
       }
       const restaurantAddress = this.createRestaurantAddress(restaurantData);
-      const userAddressData = await this.connection.collection(this.roleCollections.USER)
-        .findOne({ user_id: cartData.userId.toString() });
+      const userAddressData = await this.connection.collection(this.roleCollections.ADDRESS)
+        .findOne({_id:addressId});
     
       if (!userAddressData) {
         throw new NotFoundException('User address not found');
