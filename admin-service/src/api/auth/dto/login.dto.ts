@@ -6,7 +6,7 @@ export class LoginDto {
     description: 'The email address of the admin',
     example: 'admin@example.com',
   })
-  @IsEmail()
+  @IsEmail({},{ message: 'Invalid email format' })
   email: string;
 
   @ApiProperty({

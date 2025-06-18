@@ -11,7 +11,7 @@ export class KafkaService implements OnModuleInit{
     ){}
 
     async onModuleInit() {
-        this.clientKafka.connect();
+        await this.clientKafka.connect();
     }
 
     async handleEvent(eventName: string, payload: any){

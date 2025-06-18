@@ -108,23 +108,26 @@ export class ComplaintService {
         .collection('managers')
         .findOne({ _id: new Types.ObjectId(managerId) });
   
-      if (!manager || !manager.restaurantId) {
+        console.log(manager);
+      if (!manager) {
         this.logger.warn(`Manager or restaurant not found for managerId: ${managerId}`);
         return;
       }
   
       const restaurant = await this.connection
         .collection('restaurants')
-        .findOne({ _id: new Types.ObjectId(manager.restaurantId) });
+        .findOne({ managerId });
   
       if (!restaurant) {
-        this.logger.warn(`Restaurant not found for id: ${manager.restaurantId}`);
+        this.logger.warn(`Restaurant not found`);
         return;
       }
   
       const user = await this.connection
         .collection('users')
         .findOne({ _id: new Types.ObjectId(userId) });
+
+      console.log(user, userId);
   
       if (!user) {
         this.logger.warn(`User not found for id: ${userId}`);
@@ -141,7 +144,7 @@ export class ComplaintService {
       };
   
       this.logger.log(`Emitting complaint notification: ${JSON.stringify(payload)}`);
-  
+       console.log("hi");
       this.rabbitMQService.emit('complaint_notification', payload);
     } catch (error) {
       this.logger.error('Error while emitting complaint notification', error.stack);

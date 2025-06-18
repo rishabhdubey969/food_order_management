@@ -55,7 +55,7 @@ export class ComplaintController {
   async updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateComplaintStatusDto,
-    @Req() req: Request,
+    @Req() req: any,
   ) {
     const user = req['user'];
     return this.complaintService.updateComplaintStatus(id, dto, user.userId);

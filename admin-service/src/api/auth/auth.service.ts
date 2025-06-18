@@ -11,35 +11,35 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import Redis from 'ioredis';
 import { ConfigService } from '@nestjs/config';
-
+import {
+  SUCCESS_MESSAGES,
+  ERROR_MESSAGES,
+} from '../config/constants/errorand success';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/ reset-password.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { ClientProxy } from '@nestjs/microservices';
+
 import { ObjectId } from 'mongodb';
 import { EmailService } from 'src/email/email.service';
-import { WinstonLogger } from '../logger/winston-logger.service'
+import { WinstonLogger } from '../logger/winston-logger.service';
 
 @Injectable()
 export class AuthService {
-  // private readonly logger = new Logger(AuthService.name);
   private readonly redis: Redis;
   @Inject('REDIS_CLIENT') private readonly redisClient: Redis;
 
   constructor(
     @InjectConnection() private readonly connection: Connection,
-  //  @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
-private readonly logger: WinstonLogger,
+
+    private readonly logger: WinstonLogger,
     private readonly emailService: EmailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-//    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
-
   ) {
     this.redis = new Redis({
-      host: this.configService.get<string>('REDIS_HOST', 'localhost'),
-      port: this.configService.get<number>('REDIS_PORT', 6379),
+      host: this.configService.get<string>('REDIS_HOST'),
+      port: this.configService.get<number>('REDIS_PORT'),
     });
     this.redis.on('connect', () => this.logger.log('Connected to Redis'));
     this.redis.on('error', (err) =>
@@ -49,7 +49,6 @@ private readonly logger: WinstonLogger,
 
   async verifyJwtToken(token: string) {
     try {
-      // console.log(token);
       const payload = await this.jwtService.verify(token);
       const redisToken = await this.redis.get(
         `access_token:${payload.sub}:${token}`,
@@ -82,7 +81,7 @@ private readonly logger: WinstonLogger,
     );
     try {
       const { email, password } = loginDto;
-      const deviceId = 'DCD04A41-0726-449B-9867-1773DB5F13E7';
+      const deviceId = process.env.DeviceID;
 
       const admin = await this.connection
         .collection('admins')
@@ -113,11 +112,7 @@ private readonly logger: WinstonLogger,
         let Subject = 'You logged in with a new device';
         let text = 'hello mail';
         await this.emailService.sendEmail(email, Subject, text);
-        // this.client.emit('send_email', {
-        //   to: email,
-        //   subject: 'You logged in with a new device',
-        //   html: `<h2>Logged in successfully from device ID: ${deviceId}</h2>`,
-        // });
+
         this.logger.log(
           `New device email event emitted for ${email} with device ID: ${deviceId}`,
         );
@@ -132,18 +127,10 @@ private readonly logger: WinstonLogger,
       let Subject = 'Your Admin Login OTP';
       let text = `Your OTP for admin login is: ${otp} It expires in 10 minutes`;
       await this.emailService.sendEmail(email, Subject, text);
-      // this.logger.log(`Generated and saved OTP for admin ${email}`);
-
-      // // Send OTP email
-      // this.client.emit('send_email', {
-      //   to: email,
-      //   subject: 'Your Admin Login OTP',
-      //   html: `Your OTP for admin login is: <b>${otp}</b>. It expires in 10 minutes.`,
-      // });
-      // this.logger.log(`OTP email event emitted for ${email}`);
 
       return {
-        message: 'OTP sent to your email',
+        message: SUCCESS_MESSAGES.OTP,
+
         data: { _id: admin._id.toString(), email: admin.email },
       };
     } catch (error) {
@@ -202,15 +189,18 @@ private readonly logger: WinstonLogger,
       };
       const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
       const refreshToken = this.jwtService.sign(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: '7d',
+        secret: this.configService.get<string>(
+          process.env.JWT_REFRESH_SECRET as string,
+        ),
+
+        expiresIn: process.env.EXPIRE_REFRESH,
       });
 
       await this.redis.set(
         `access_token:${admin._id}:${accessToken}`,
         JSON.stringify(payload),
         'EX',
-        10 * 60,
+        1 * 60 * 60,
       );
 
       await this.connection.collection('sessions').insertOne({
@@ -221,28 +211,8 @@ private readonly logger: WinstonLogger,
         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       });
 
-      // setTimeout(() => {
-      //   try {
-      //     this.client.emit('send_email', {
-      //       to: admin.email,
-      //       subject: 'Your Admin Session is About to Expire',
-      //       html: `
-      //         <h2>Session Expiration Warning</h2>
-      //         <p>Your admin session will expire in 2 minutes.</p>
-      //         <p>Please log in again or use your refresh token to continue accessing the admin panel.</p>
-      //         <p><a href="http://localhost:3000/auth/login">Log in here</a></p>
-      //       `,
-      //     });
-      //     this.logger.log(`Token expiration reminder email event emitted for ${admin.email}`);
-      //   } catch (emailError) {
-      //     this.logger.error(
-      //       `Failed to emit token expiration email event for ${admin.email}: ${emailError.message}`,
-      //       emailError.stack
-      //     );
-      //   }
-      // }, 8 * 60 * 1000);
-
       return {
+        message: SUCCESS_MESSAGES.ADMIN_LOGIN,
         data: {
           _id: admin._id.toString(),
           email: admin.email,
@@ -302,29 +272,8 @@ private readonly logger: WinstonLogger,
         `access_token:${payload.sub}:${newAccessToken}`,
         JSON.stringify(payload),
         'EX',
-        10 * 60*60,
+        10 * 60 * 60,
       );
-
-      // setTimeout(() => {
-      //   try {
-      //     this.client.emit('send_email', {
-      //       to: payload.email,
-      //       subject: 'Your Admin Session is About to Expire',
-      //       html: `
-      //         <h2>Session Expiration Warning</h2>
-      //         <p>Your admin session will expire in 2 minutes.</p>
-      //         <p>Please log in again or use your refresh token to continue accessing the admin panel.</p>
-      //         <p><a href="http://localhost:3000/auth/login">Log in here</a></p>
-      //       `,
-      //     });
-      //     this.logger.log(`Token expiration reminder email event emitted for ${payload.email}`);
-      //   } catch (emailError) {
-      //     this.logger.error(
-      //       `Failed to emit token expiration email event for ${payload.email}: ${emailError.message}`,
-      //       emailError.stack,
-      //     );
-      //   }
-      // }, 8 * 60 * 1000);
 
       return {
         data: {
@@ -356,14 +305,14 @@ private readonly logger: WinstonLogger,
         throw new HttpException('Invalid Admin ID', HttpStatus.NOT_FOUND);
       }
 
-      await this.connection.collection('sessions').deleteMany({ AdminId});
+      await this.connection.collection('sessions').deleteMany({ AdminId });
       const keys = await this.redis.keys(`access_token:${AdminId}:*`);
       if (keys.length > 0) {
         await this.redis.del(keys);
       }
 
       this.logger.log(`Successfully logged out admin: ${AdminId}`);
-      return { message: 'Logged out successfully' };
+      return { message: SUCCESS_MESSAGES.LOGOUT_SUCCESS };
     } catch (error) {
       if (error.status === HttpStatus.NOT_FOUND) {
         throw error;
@@ -461,20 +410,16 @@ private readonly logger: WinstonLogger,
         this.logger.log(`Stored reset token in Redis with key: ${redisKey}`);
       }
 
-      // const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      // const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
-      // this.client.emit('send_email', {
-      //   to: email,
-      //   subject: 'Admin Password Reset Request',
-      //   html: `Click <a href="${resetUrl}">here</a> to reset your admin password. Link expires in 1 hour.`,
-      // });
+     
       const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
       let Subject = 'Admin Password Reset Request';
       let text = `Click <a href="${resetUrl}">here</a> to reset your admin password. Link expires in 1 hour.`;
       await this.emailService.sendEmail(email, Subject, text);
       this.logger.log(`Password reset email event emitted for ${email}`);
-      return { message: 'Password reset email sent' };
+      return { 
+        
+        message: SUCCESS_MESSAGES.RESET_EMAIL };
     } catch (error) {
       this.logger.error(
         `Forgot password failed: ${error.message}`,
