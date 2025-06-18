@@ -1,17 +1,10 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards, Res, BadRequestException, Inject, InternalServerErrorException, Req, HttpException } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { PaymentClient } from 'src/grpc/payment/payment.client';
-import { ParseObjectIdPipe } from '@nestjs/mongoose';
-import { ObjectId } from 'mongodb';
-import { OrderStatus, PaymentMethod, PaymentStatus } from 'src/schema/order.schema';
-import { KafkaService } from 'src/kafka/kafka.service';
-import { ClientProxy, Ctx, EventPattern, KafkaContext, MessagePattern, Payload } from '@nestjs/microservices';
 import { jwtGuard } from 'src/guards/jwt-guard';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PrePlaceOrderDto } from 'src/dto/prePlaceOrder.dto';
 import { PlaceOrderDto } from 'src/dto/placeOrder.dto';
 import { OrderDto } from 'src/dto/order.dto';
-import { AuthClient } from 'src/grpc/authentication/auth.client';
 import { Response } from 'express'
 
 
