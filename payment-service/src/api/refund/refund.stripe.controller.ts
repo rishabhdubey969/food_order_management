@@ -13,7 +13,7 @@ export class RefundStripeController {
   @UseGuards(AuthGuard)
   @Post(ROUTES.REFUND)
   @RefundDoc()
-  async refundPayment(@Body() payload:CreateRefundDto) {
-    return this.refundService.createRefund(payload)
+  async refundPayment(@Body() payload: CreateRefundDto) {
+    return this.refundService.createRefund(payload);
   }
 }

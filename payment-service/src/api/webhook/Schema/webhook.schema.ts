@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { StringifyOptions } from 'querystring';
 
 export type WebhookDocument = Webhook & Document;
 
@@ -24,7 +23,7 @@ export class Webhook {
     type: Object,
     required: true,
   })
-  payload: Record<string, any>; 
+  payload: Record<string, any>;
 
   @Prop({
     required: true,

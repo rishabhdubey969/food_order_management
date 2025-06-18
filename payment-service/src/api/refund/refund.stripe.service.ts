@@ -29,7 +29,9 @@ export class RefundStripeService {
     });
   }
 
-  async createRefund(payload:CreateRefundDto): Promise<Stripe.Response<Stripe.Refund>> {
+  async createRefund(
+    payload: CreateRefundDto,
+  ): Promise<Stripe.Response<Stripe.Refund>> {
     const orderId = payload.orderId;
     const paymentdetails =
       await this.stripePayService.extractPaymentDetails(orderId);

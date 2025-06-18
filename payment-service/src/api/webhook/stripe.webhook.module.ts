@@ -11,7 +11,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
   imports: [
     MongooseModule.forFeature([{ name: Webhook.name, schema: WebhookSchema }]),
     StripeConfigModule,
-    StripePayModule,ClientsModule.register([
+    StripePayModule,
+    ClientsModule.register([
       {
         name: 'NOTIFICATION_SERVICE',
         transport: Transport.RMQ,
@@ -21,7 +22,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           queueOptions: { durable: false },
         },
       },
-  ])],
+    ]),
+  ],
   controllers: [StripeWebhookController],
   providers: [StripeWebhookService],
   exports: [StripeWebhookService],

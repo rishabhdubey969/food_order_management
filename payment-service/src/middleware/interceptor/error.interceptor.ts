@@ -1,4 +1,9 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+} from '@nestjs/common';
 import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { HttpException, Logger } from '@nestjs/common';
@@ -10,14 +15,15 @@ export class ErrorInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       catchError((err) => {
-        
         this.logger.error('Error intercepted:');
 
         if (err instanceof HttpException) {
           return throwError(() => err);
         }
 
-        return throwError(() => new HttpException('An unexpected error occurred', 500));
+        return throwError(
+          () => new HttpException('An unexpected error occurred', 500),
+        );
       }),
     );
   }
