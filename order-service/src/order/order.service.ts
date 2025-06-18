@@ -57,10 +57,10 @@ export class OrderService {
   }
   async createUserAddress(ADDRESS: any) {
     const address = new Address();
-    address.address = ADDRESS.address || ADDRESS.address_location_1;
-    address.contactNumber = ADDRESS.phone || '9676534567';
-    address.email = ADDRESS.email || 'abc1@gmail.com';
-    address.latitude = ADDRESS.latitude
+    address.address = ADDRESS.address_location_1;
+    address.contactNumber = ADDRESS.phone ||"8090064743";
+    address.email = ADDRESS.email||"abc@gmail.com";
+    address.latitude = ADDRESS.latitude;
     address.longitude = ADDRESS.longitude;
   }
   async createOrder(cartId,addressId) {
@@ -68,8 +68,7 @@ export class OrderService {
 
     try {
       await this.handleKitchen({cartId:cartId});
-      const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id: cartId });
-
+      const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id: new ObjectId(cartId) });
       if (!cartData) {
         throw new NotFoundException('Cart not found');
       }
@@ -85,14 +84,15 @@ export class OrderService {
       }
       const restaurantAddress = this.createRestaurantAddress(restaurantData);
       const userAddressData = await this.connection.collection(this.roleCollections.ADDRESS)
-        .findOne({_id:addressId});
-    
+        .findOne({_id:new ObjectId(addressId)});
+      
       if (!userAddressData) {
         throw new NotFoundException('User address not found');
       }
-      const userAddress = this.createUserAddress(userAddressData);
+      console.log(userAddressData);
+      const userAddress =  this.createUserAddress(userAddressData);
 
-
+      console.log(userAddress);
       if (isNaN(cartData.subtotal) || isNaN(cartData.total) ||
         isNaN(cartData.tax) || isNaN(cartData.deliveryCharges) ||
         isNaN(cartData.platformFee) || isNaN(cartData.discount)) {
