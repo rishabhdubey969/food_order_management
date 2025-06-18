@@ -6,7 +6,6 @@ import {
   Post,
   Req,
   UseGuards,
-  Put,
   Body,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
@@ -21,7 +20,7 @@ import { GrpcAuthGuard } from './guards/auth.guard';
 import { Role } from './common/role.enum';
 import { WinstonLogger } from '../logger/winston-logger.service';
 import { AddCartDto } from './dto/addCart.dto';
-import { UpdateCartDto } from './dto/updateCart.dto';
+import { RemoveItemDto } from './dto/removeItem.dto';
 
 
 
@@ -35,12 +34,12 @@ export class CartController {
     private readonly logger: WinstonLogger, 
   ) {}
 
+
+  // increase item quantity 
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
-  @Post('add/:restaurantId/:itemId')
+  @Post('add')
   @ApiOperation({ summary: 'Add an item to the cart' })
-  @ApiParam({ name: 'restaurantId', type: 'string' })
-  @ApiParam({ name: 'itemId', type: 'string' })
   @ApiResponse({
     status: 201,
     description: 'Item added to cart successfully',
@@ -56,18 +55,20 @@ export class CartController {
   @ApiResponse({ status: 404, description: 'Item or restaurant not found' })
   @ApiResponse({ status: 409, description: 'Cart already exists for a different restaurant' })
   async addToCart(
-    @Param('restaurantId') restaurantId: string,
-    @Param('itemId') itemId: string,
+    @Body() addToCartDTO: AddCartDto,
     @Req() req: any,
   ) {
     const userId = req.user.sub;
-    this.logger.log(`Adding item ${itemId} to user ${userId}'s cart`, this.context);
-    return this.cartService.addToCartService(userId, restaurantId, itemId);
+    this.logger.log(`Adding item ${addToCartDTO.itemId} to user ${userId}'s cart`, this.context);
+    return this.cartService.addToCartService(userId, addToCartDTO);
   }
 
+
+
+  // decrease item quantity
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
-  @Post('remove/:itemId')
+  @Post('remove')
   @ApiOperation({ summary: 'Remove/decrease item quantity from user cart' })
   @ApiParam({ name: 'itemId', type: 'string' })
   @ApiResponse({
@@ -83,14 +84,17 @@ export class CartController {
   
   @ApiResponse({ status: 404, description: 'Cart or item not found in cart' })
   async removeItem(
-    @Param('itemId') itemId: string,
+    @Body() removeItemDTO: RemoveItemDto,
     @Req() req: any,
   ) {
     const userId = req.user.sub;
-    this.logger.log(`Removing item ${itemId} from user ${userId}'s cart`, this.context);
-    return this.cartService.removeItemService(userId, itemId);
+    this.logger.log(`Removing item ${removeItemDTO.itemId} from user ${userId}'s cart`, this.context);
+    return this.cartService.removeItemService(userId, removeItemDTO);
   }
 
+
+
+  //delete cart
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
   @Delete('delete')
@@ -113,6 +117,9 @@ export class CartController {
     return this.cartService.deleteCartService(userId);
   }
 
+
+
+  // Get user’s cart
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
   @Get('get')
@@ -143,6 +150,8 @@ export class CartController {
     return this.cartService.getCartService(userId);
   }
 
+
+  // Get all available coupons for a restaurant
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
   @Get('coupons/:restaurantId')
@@ -169,10 +178,14 @@ export class CartController {
   
   @ApiResponse({ status: 404, description: 'Restaurant or coupons not found' })
   async getCoupons(@Param('restaurantId') restaurantId: string) {
+
     this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`, this.context);
     return this.cartService.viewCouponsService(restaurantId);
   }
 
+
+
+  // Apply a coupon to user’s cart
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
   @Post('applyCoupon/:couponId')
@@ -200,15 +213,27 @@ export class CartController {
     return this.cartService.applyCouponService(userId, couponId);
   }
 
-  @Post('add2')
-  addToCartt(@Body() body: AddCartDto, @Req() req) {
-    return this.cartService.createCart(req.user._id, body);
-  }
+
+
+
+
+  // // Add to cart using DTO
+  // @UseGuards(GrpcAuthGuard)
+  // @Roles(Role.USER)
+  // @Post('add2')
+  // addToCartt(@Body() body: AddCartDto, @Req() req:any) {
+  //   const userId = req.user.sub;
+  //   return this.cartService.createCart(userId, body);
+  // }
   
-  @Put('update2')
-  updateCart(@Body() body: UpdateCartDto, @Req() req) {
-    return this.cartService.updateCart(req.user._id, body);
-  }
+  // // Update cart using DTO
+  // @UseGuards(GrpcAuthGuard)
+  // @Roles(Role.USER)
+  // @Put('update2')
+  // updateCart(@Body() body: UpdateCartDto, @Req() req:any) {
+  //   const userId = req.user.sub;
+  //   return this.cartService.updateCart(userId, body);
+  // }
   
 
 

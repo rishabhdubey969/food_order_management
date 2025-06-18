@@ -34,7 +34,7 @@ export class StripeWebhookService {
     status?: string;
   }) {
     try {
-      const filter = { stripeEventId: eventData.stripeEventId };
+      const eventDetails = { stripeEventId: eventData.stripeEventId };
       const update = {
         ...eventData,
         receivedAt: Date.now(),
@@ -42,7 +42,7 @@ export class StripeWebhookService {
       const options = { upsert: true, new: true };
 
       const webhookEvent = await this.webhookModel.findOneAndUpdate(
-        filter,
+        eventDetails,
         update,
         options,
       );
@@ -219,7 +219,9 @@ export class StripeWebhookService {
       await this.updatePaymentStatus(session.data[0].id, 'completed');
       const email = charge.billing_details.email
       const status= "completed"
-      const mailData = {email,orderId,status}
+      const amount = charge.amount;
+      const chargeId=  charge.id;
+      const mailData = {email,orderId,status,amount,chargeId}
       this.client.emit('payment_done', mailData);
     } catch (error) {
       Logger.error('Error handling charge succeeded:', error);
@@ -324,7 +326,7 @@ export class StripeWebhookService {
       if (!orderId) {
         throw new Error('No orderId found in payment intent metadata');
       }
-
+      
       await this.paymentService.updatePaymentStatus(orderId, 'failed');
       await this.saveOrUpdateWebhookEvent({
         stripeEventId: paymentIntent.id,
@@ -337,7 +339,7 @@ export class StripeWebhookService {
       });
       
       const email = paymentIntent.receipt_email;
-      console.log(email)
+      
       const status= "failed"
       const mailData = {email,orderId,status}
       this.client.emit('payment_failed', mailData);

@@ -4,411 +4,288 @@ import {
   BadRequestException,
   ConflictException,
   Inject,
+  InternalServerErrorException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Cart, CartDocument } from './schema/cart.schema';
-import { Address, AddressDocument } from './schema/address.schema';
-import { CouponDocument } from './schema/coupon.schema';
-import { Restaurant } from './schema/restaurant.schema';
+import { ObjectId, Db, Collection } from 'mongodb';
 import Redis from 'ioredis';
-import { MenuItem } from './schema/menu-item.schema';
+import { InjectConnection } from '@nestjs/mongoose';
 import { EventPattern } from '@nestjs/microservices';
+
 import { WinstonLogger } from '../logger/winston-logger.service';
 import { CartConstants } from './constant/cart.constants';
 import { AddCartDto } from './dto/addCart.dto';
-import { UpdateCartDto } from './dto/updateCart.dto';
+import { RemoveItemDto } from './dto/removeItem.dto';
+import { ResponseMessages } from './constant/response.message';
 
 @Injectable()
 export class CartService {
+  private readonly carts: Collection;
+  private readonly restaurants: Collection;
+  private readonly menuItems: Collection;
+  private readonly coupons: Collection;
+
   constructor(
-    //Injecting models for cart, coupon, address, restaurant, and menu item
-    @InjectModel(Cart.name) private readonly cartModel: Model<CartDocument>,
-    @InjectModel('Coupons') private readonly couponModel: Model<CouponDocument>,
-    @InjectModel(Address.name) private readonly addressModel: Model<AddressDocument>,
-    @InjectModel('Restaurant') private readonly restaurantModel: Model<Restaurant>,
-    @InjectModel('MenuItem') private readonly menuItemModel: Model<MenuItem>,
-
-    // Injecting Redis client for caching user coordinates
+    @InjectConnection() private readonly db: any,
     @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
-
-    // Injecting Winston logger for logging
-    private readonly logger: WinstonLogger, 
-  ) {}
-
-
- // ADD TO CART
-async addToCartService(userId: string, restaurantId: string, itemId: string) {
-  this.logger.log(`Adding item ${itemId} to cart for user ${userId}`, CartService.name);
-
-  //finding cart for a user
-  let cart = await this.cartModel.findOne({ userId });
-
-  // Checking if restaurant exists
-  const restaurant = await this.restaurantModel.findById(restaurantId);
-  if (!restaurant) {
-    this.logger.warn(`Restaurant ${restaurantId} not found`, CartService.name);
-    throw new NotFoundException('Restaurant not found');
+    private readonly logger: WinstonLogger,
+  ) {
+    const database: Db = this.db.db;
+    this.carts = database.collection('carts');
+    this.restaurants = database.collection('restaurants');
+    this.menuItems = database.collection('menuitems');
+    this.coupons = database.collection('coupons');
   }
 
-  // Checking if item exists and is available
-  const item = await this.menuItemModel.findById(itemId);
-  if (!item) {
-    this.logger.warn(`Item ${itemId} not found`, CartService.name);
-    throw new NotFoundException('Item not found');
-  }
-
-  // Checking if item is available
-  if (!item.isAvailable) {
-    this.logger.warn(`Item ${itemId} is unavailable`, CartService.name);
-    throw new ConflictException('This item is currently unavailable');
-  }
-
-  // Checking if the cart already exists for a different restaurant
-  if (cart && String(cart.restaurantId) !== String(restaurantId)) {
-    this.logger.warn(`Cart conflict: existing cart from different restaurant`, CartService.name);
-    throw new ConflictException('You already have a cart for another restaurant');
-  }
-
-  // Fetching user's coordinates from Redis
-  const redisKey = `address:${userId}:coordinates`;
-  const redisValue = await this.redisClient.get(redisKey);
-  const { latitude = CartConstants.DEFAULT_LAT, longitude = CartConstants.DEFAULT_LON } =
-    redisValue ? JSON.parse(redisValue) : {};
-
-    //fetching coordinates of restaurant
-  const restaurantLat = restaurant.location.coordinates[1];
-  const restaurantLon = restaurant.location.coordinates[0];
-
-  // Calculating distance and delivery charges using helper methods 
-  const distance = this.calculateDistance(latitude, longitude, restaurantLat, restaurantLon);
-  const deliveryCharges = this.calculateDeliveryCharges(distance);
-
-  // Creating a new item object to add to the cart
-  const newItem = {
-    itemId: item._id as string, 
-    name: item.name,
-    quantity: 1,
-    price: item.price,
-    tax: this.calculateTax(item.price),
-  };
-
-  // If no cart exists, create a new one
-  // If cart exists, update it with the new item or increase quantity
-  if (!cart) {
-    const totals = this.calculateCartTotals([newItem], deliveryCharges);
-    cart = new this.cartModel({
-      userId,
-      restaurantId,
-      items: [newItem],
-      deliveryCharges,
-      distanceInKm: parseFloat(distance.toFixed(2)),
-      discount: 0,
-      couponCode: null,
-      couponId: null,
-      ...totals,
-    });
-    this.logger.log(`New cart created for user ${userId}`, CartService.name);
-  } else {
-    // If cart exists, check if item is already in the cart
-    const index = this.findItemIndex(cart.items, itemId);
-    if (index >= 0) {
-      cart.items[index].quantity += 1;
-      cart.items[index].tax = this.calculateTax(cart.items[index].price * cart.items[index].quantity);
-      this.logger.verbose(`Increased quantity of item ${itemId} in cart`, CartService.name);
-    } else {
-      cart.items.push(newItem);
-      this.logger.verbose(`Item ${itemId} added to existing cart`, CartService.name);
+//adding to cart service
+  async addToCartService(userId: string, dto: AddCartDto) {
+    try {
+      this.logger.log(`Adding item ${dto.itemId} for user ${userId}`, CartService.name);
+      const userObjId = new ObjectId(userId);
+  
+      // Fetch cart
+      let cart = await this.carts.findOne({ userId: userObjId });
+  
+      // Fetch restaurant
+      const restaurant = await this.restaurants.findOne({ _id: new ObjectId(dto.restaurantId) });
+      if (!restaurant) throw new NotFoundException('Restaurant not found');
+  
+      // Fetch menu item
+      const menuItem = await this.menuItems.findOne({ _id: new ObjectId(dto.itemId) });
+      if (!menuItem) throw new NotFoundException('Item not found');
+      if (!menuItem.isAvailable) throw new ConflictException('Item is unavailable');
+  
+      // Check for restaurant conflict
+      if (cart && cart.restaurantId.toString() !== dto.restaurantId)
+        throw new ConflictException('You already have a cart for another restaurant');
+  
+      // Calculate distance and delivery charges
+      const { latitude = CartConstants.DEFAULT_LAT, longitude = CartConstants.DEFAULT_LON } =
+        JSON.parse(await this.redisClient.get(`address:${userId}:coordinates`) ?? '{}');
+      const [restLon, restLat] = restaurant.location.coordinates;
+      const distance = this.calculateDistance(latitude, longitude, restLat, restLon);
+      const deliveryCharges = this.calculateDeliveryCharges(distance);
+  
+      // Update items in the cart
+      let items = cart ? cart.items : [];
+      const idx = items.findIndex(i => i.itemId.toString() === dto.itemId);
+  
+      if (idx >= 0) {
+        items[idx].quantity += 1;
+        items[idx].tax = this.calculateTax(items[idx].price * items[idx].quantity);
+      } else {
+        items.push({
+          itemId: new ObjectId(dto.itemId),
+          name: menuItem.name,
+          quantity: 1,
+          price: menuItem.price,
+          tax: this.calculateTax(menuItem.price),
+        });
+      }
+  
+      // Calculate totals
+      const totals = this.calculateCartTotals(items, deliveryCharges);
+      const changes = {
+        $set: {
+          userId: userObjId,
+          restaurantId: new ObjectId(dto.restaurantId),
+          items,
+          deliveryCharges,
+          distanceInKm: parseFloat(distance.toFixed(2)),
+          discount: 0,
+          couponCode: null,
+          couponId: null,
+          ...totals,
+        },
+      };
+  
+      this.logger.debug(`Query: ${JSON.stringify({ userId: userObjId })}`, CartService.name);
+      this.logger.debug(`Changes: ${JSON.stringify(changes)}`, CartService.name);
+  
+      // Update the cart
+      const updated = await this.carts.findOneAndUpdate(
+        { userId: userObjId },
+        changes,
+        { upsert: true, returnDocument: 'after' },
+      );
+  
+      // Handle case where updated cart is not returned
+      if (!updated || !updated.value) {
+        this.logger.warn(`Cart not returned after update for user ${userId}. Fetching manually.`, CartService.name);
+        cart = await this.carts.findOne({ userId: userObjId });
+        if (!cart) {
+          this.logger.error(`Failed to fetch cart for user ${userId} after update`, CartService.name);
+          throw new InternalServerErrorException('Failed to fetch updated cart');
+        }
+        return cart;
+      }
+  
+      return updated.value;
+    } catch (error) {
+      this.logger.error(`Error in addToCartService: ${error.message}`, CartService.name);
+      throw error;
     }
-
-    // Recalculate totals after adding the item
-    const totals = this.calculateCartTotals(cart.items, cart.deliveryCharges, cart.discount || 0);
-    Object.assign(cart, totals);
-    this.logger.log(`Cart for user ${userId} updated`, CartService.name);
   }
 
-  await cart.save();
 
-  return {
-    message: 'Item added to cart',
-    cart,
-  };
-}
-
-
-
-  // Remove item service
-async removeItemService(userId: string, itemId: string) {
-  this.logger.log(`Attempting to remove item ${itemId} from user ${userId}'s cart`, CartService.name);
-
-  //finding cart for user
-  const cart = await this.cartModel.findOne({ userId });
-  if (!cart) {
-    this.logger.warn(`Cart not found for user ${userId}`, CartService.name);
-    throw new NotFoundException('Cart not found');
+  async removeItemService(userId: string, dto: RemoveItemDto) {
+    try {
+      this.logger.log(`Removing item ${dto.itemId} for user ${userId}`, CartService.name);
+      const userObjId = new ObjectId(userId);
+  
+      // Fetch the cart
+      const cart = await this.carts.findOne({ userId: userObjId });
+      if (!cart) throw new NotFoundException(ResponseMessages.CART.CART_NOT_FOUND);
+  
+      // Find the item in the cart
+      const idx = cart.items.findIndex(i => i.itemId.toString() === dto.itemId);
+      if (idx === -1) throw new NotFoundException(ResponseMessages.CART.ITEM_NOT_FOUND);
+  
+      const items = cart.items;
+      const item = items[idx];
+      item.quantity -= 1;
+  
+      // Remove the item if quantity is zero
+      if (item.quantity <= 0) {
+        items.splice(idx, 1);
+      } else {
+        item.tax = this.calculateTax(item.price * item.quantity);
+      }
+  
+      // Delete the cart if no items are left
+      if (items.length === 0) {
+        await this.carts.deleteOne({ _id: cart._id });
+        this.logger.warn(`Cart emptied and deleted for user ${userId}`, CartService.name);
+        return { message: 'Cart deleted because no items left' };
+      }
+  
+      // Calculate totals
+      const totals = this.calculateCartTotals(items, cart.deliveryCharges, cart.discount || 0);
+  
+      // Update the cart
+      const updated = await this.carts.findOneAndUpdate(
+        { userId: userObjId },
+        { $set: { items, ...totals } },
+        { returnDocument: 'after' },
+      );
+  
+      // Handle case where updated cart is not returned
+      if (!updated || !updated.value) {
+        this.logger.warn(`Cart not returned after update for user ${userId}. Fetching manually.`, CartService.name);
+        const updatedCart = await this.carts.findOne({ userId: userObjId });
+        if (!updatedCart) {
+          this.logger.error(`Failed to fetch cart for user ${userId} after update`, CartService.name);
+          throw new InternalServerErrorException('Failed to fetch updated cart');
+        }
+        return updatedCart;
+      }
+  
+      return updated.value;
+    } catch (error) {
+      this.logger.error(`Error in removeItemService: ${error.message}`, CartService.name);
+      throw error;
+    }
   }
 
-  //finding an item in the user's cart
-  const itemIndex = this.findItemIndex(cart.items, itemId);
-  if (itemIndex === -1) {
-    this.logger.warn(`Item ${itemId} not found in cart`, CartService.name);
-    throw new NotFoundException('Item not found in cart');
+  async getCartService(userId: string) {
+    try {
+      this.logger.verbose(`Fetching cart for user ${userId}`, CartService.name);
+      const userObjId = new ObjectId(userId);
+      const cart = await this.carts.findOne({ userId: userObjId });
+      if (!cart) throw new NotFoundException(ResponseMessages.CART.CART_FETCH_FAIL);
+
+      return cart;
+    } catch (error) {
+      this.logger.error(`Error in getCartService: ${error.message}`, CartService.name);
+      throw error;
+    }
   }
 
-  // decreasing the quantity of the item
-  const item = cart.items[itemIndex];
-  item.quantity -= 1;
+  async applyCouponService(userId: string, couponId: string) {
+    try {
+      this.logger.log(`Applying coupon ${couponId} to user ${userId}`, CartService.name);
 
-  // if quantity is zero or less, remove the item from the cart
-  if (item.quantity <= 0) {
-    cart.items.splice(itemIndex, 1);
-    this.logger.log(`Item ${itemId} removed completely from cart`, CartService.name);
-  } else {
-    item.tax = this.calculateTax(item.price * item.quantity);
-    this.logger.verbose(`Item ${itemId} quantity reduced to ${item.quantity}`, CartService.name);
+      const userObjId = new ObjectId(userId);
+      const cart = await this.carts.findOne({ userId: userObjId });
+      if (!cart) throw new NotFoundException(ResponseMessages.CART.CART_NOT_FOUND);
+
+      const coupon = await this.coupons.findOne({ _id: new ObjectId(couponId) });
+      if (!coupon) throw new NotFoundException(ResponseMessages.COUPON.COUPON_NOT_FOUND);
+      if (coupon.restaurantId && coupon.restaurantId.toString() !== cart.restaurantId.toString()) {
+        throw new BadRequestException(ResponseMessages.COUPON.INVALID_COUPON);
+      }
+      if (!coupon.isActive || coupon.expiryDate < new Date()) {
+        throw new BadRequestException(ResponseMessages.COUPON.COUPON_EXPIRED);
+      }
+      if (cart.total < coupon.minOrderAmount) {
+        throw new BadRequestException(
+          ResponseMessages.COUPON.COUPON_MIN_AMOUNT(coupon.minOrderAmount),
+        );
+      }
+
+      const percentageDiscount = (cart.total * coupon.discountPercent) / 100;
+      const discount = Math.min(percentageDiscount, coupon.maxDiscount);
+      const newTotal = Math.round(cart.total - discount);
+
+      await this.carts.updateOne(
+        { _id: cart._id },
+        { $set: { total: newTotal, discount, couponCode: coupon.code, couponId: coupon._id } },
+      );
+
+      this.logger.log(`Coupon applied for user ${userId}`, CartService.name);
+      return {
+        message: 'Coupon applied successfully',
+        newTotal,
+        discountApplied: discount,
+        couponCode: coupon.code,
+      };
+    } catch (error) {
+      this.logger.error(`Error in applyCouponService: ${error.message}`, CartService.name);
+      throw error;
+    }
   }
 
-  // if the cart is now empty, delete the cart
-  if (cart.items.length === 0) {
-    await this.cartModel.deleteOne({ _id: cart._id });
-    this.logger.warn(`Cart for user ${userId} deleted because no items left`, CartService.name);
-    return { message: 'Cart deleted because no items left' };
+  async viewCouponsService(restaurantId: string) {
+    try {
+      this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`, CartService.name);
+      const coupons = await this.coupons
+        .find({ restaurantId: new ObjectId(restaurantId) })
+        .toArray();
+        console.log(coupons)
+
+      if (!coupons.length) throw new NotFoundException(ResponseMessages.COUPON.NO_COUPONS);
+
+      return coupons;
+    } catch (error) {
+      this.logger.error(`Error in viewCouponsService: ${error.message}`, CartService.name);
+      throw error;
+    }
   }
 
-  // Recalculate totals after removing the item
-  const totals = this.calculateCartTotals(cart.items, cart.deliveryCharges, cart.discount || 0);
-  Object.assign(cart, totals);
-
-  await cart.save();
-
-  this.logger.log(`Cart for user ${userId} updated successfully`, CartService.name);
-  return {
-    message: 'Item quantity updated',
-    updatedCart: cart,
-  };
-}
-
-
-//// Delete cart service
-//Grpc service to delete a cart for a user
   @EventPattern('orderCreated')
   async deleteCartService(userId: string) {
-    this.logger.warn(`Deleting cart for user ${userId}`, CartService.name);
-    
-    // Finding the cart for the user
-    const cart = await this.cartModel.findOne({ userId });
-    if (!cart) {
-      this.logger.warn(`Cart not found for user ${userId}`, CartService.name);
-      throw new NotFoundException('Cart not found');
-    }
-  // Deleting the cart
-    await this.cartModel.deleteOne({ _id: cart._id });
-    this.logger.log(`Cart deleted for user ${userId}`, CartService.name);
-    return { message: 'Cart deleted successfully' };
-  }
-
-
-  // Get cart service
-  async getCartService(userId: string) {
-    this.logger.verbose(`Fetching cart for user ${userId}`, CartService.name);
-
-    //finding cart for user
-    const cart = await this.cartModel.findOne({ userId });
-    if (!cart) {
-      this.logger.warn(`No cart found for user ${userId}`, CartService.name);
-      throw new NotFoundException('No active cart found');
-    }
-    return cart;
-  }
-
-
-  //getting coupon service
-  async viewCouponsService(restaurantId: string) {
-    this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`, CartService.name);
-    return this.couponModel.find({ restaurantId });
-  }
-
-  //applying coupon to a cart
-  async applyCouponService(userId: string, couponId: string) {
-    this.logger.log(`Applying coupon ${couponId} to cart of user ${userId}`, CartService.name);
-
-    //finding cart for user
-    const cart = await this.cartModel.findOne({ userId });
-
-    
-    if (!cart) {
-      this.logger.warn(`Cart not found for user ${userId}`, CartService.name);
-      throw new NotFoundException('Cart not found');
-    }
-
-    // Finding the coupon by its ID
-    const coupon = await this.couponModel.findById(couponId);
-    if (!coupon) {
-      this.logger.warn(`Coupon ${couponId} not found`, CartService.name);
-      throw new NotFoundException('Coupon not found');
-    }
-
-    //// Check if the coupon is valid for the restaurant associated with the cart
-    if (coupon.restaurantId && coupon.restaurantId.toString() !== cart.restaurantId.toString()) {
-      this.logger.warn(`Coupon ${couponId} is not valid for restaurant ${cart.restaurantId}`, CartService.name);
-      throw new BadRequestException('This coupon is not valid for this restaurant');
-    }
-
-    //// Check if the coupon is active and not expired
-    const now = new Date();
-    if (!coupon.isActive || coupon.expiryDate < now) {
-      this.logger.warn(`Coupon ${couponId} is expired or inactive`, CartService.name);
-      throw new BadRequestException('Coupon is expired or inactive');
-    }
-
-    //// Check if the cart total meets the minimum order amount required for the coupon
-    if (cart.total < coupon.minOrderAmount) {
-      this.logger.warn(`Cart total is less than coupon minimum amount`, CartService.name);
-      throw new BadRequestException(`Minimum order amount should be ₹${coupon.minOrderAmount}`);
-    }
-
-    //// Calculate the discount based on the coupon's discount percentage and maximum discount limit
-    const percentageDiscount = (cart.total * coupon.discountPercent) / 100;
-    const discount = Math.min(percentageDiscount, coupon.maxDiscount);
-
-    // Update the cart's total, coupon details, and discount amount
-    cart.total = Math.round(cart.total - discount);
-    cart.couponCode = coupon.code;
-    cart.couponId = coupon._id as string;
-    cart.discount = discount;
-
-    await cart.save();
-
-    this.logger.log(`Coupon ${coupon.code} applied to user ${userId}'s cart`, CartService.name);
-
-    return {
-      message: 'Coupon applied successfully',
-      newTotal: cart.total,
-      discountApplied: discount,
-      couponCode: coupon.code,
-    };
-  }
-
-
-
-
-
-/////SOME IMPROVEMENTS///////
-// CREATE
-async createCart(userId: string, dto: AddCartDto) {
-  const existing = await this.cartModel.findOne({ userId });
-  if (existing) {
-    this.logger.warn(`Cart already exists for user ${userId}`);
-    throw new ConflictException('Cart already exists. Use update instead.');
-  }
-  return this._processCart(userId, dto.restaurantId, dto.items);
-}
-
-// UPDATE
-async updateCart(userId: string, dto: UpdateCartDto) {
-  const existing = await this.cartModel.findOne({ userId });
-  if (!existing) throw new NotFoundException('Cart does not exist. Use add instead.');
-
-  // If all items are zero, delete the cart
-  if (!dto.items.some(i => i.quantity > 0)) {
-    await this.cartModel.deleteOne({ _id: existing._id });
-    this.logger.warn(`Deleted cart for user ${userId} — all items have quantity 0`);
-    return { message: 'Cart deleted because all items have quantity zero' };
-  }
-
-  return this._processCart(userId, dto.restaurantId, dto.items);
-}
-
-// REUSABLE PROCESSOR
-private async _processCart(userId: string, restaurantId: string, itemsInput: { itemId: string; quantity: number }[]) {
-  const restaurant = await this.restaurantModel.findById(restaurantId);
-  if (!restaurant) throw new NotFoundException('Restaurant not found');
-
-  const redisKey = `address:${userId}:coordinates`;
-  const redisValue = await this.redisClient.get(redisKey);
-  const { latitude = CartConstants.DEFAULT_LAT, longitude = CartConstants.DEFAULT_LON } =
-    redisValue ? JSON.parse(redisValue) : {};
-
-  const restaurantLat = restaurant.location.coordinates[1];
-  const restaurantLon = restaurant.location.coordinates[0];
-  const distance = this.calculateDistance(latitude, longitude, restaurantLat, restaurantLon);
-  const deliveryCharges = this.calculateDeliveryCharges(distance);
-
-  const cartItems: {
-    itemId: string;
-    name: string;
-    quantity: number;
-    price: number;
-    tax: number;
-  }[] = [];
-
-  
-
-  for (const itemEntry of itemsInput) {
-    const menuItem = await this.menuItemModel.findById(itemEntry.itemId);
-    if (!menuItem) throw new NotFoundException(`Item ${itemEntry.itemId} not found`);
-    if (!menuItem.isAvailable) throw new ConflictException(`Item ${menuItem.name} is unavailable`);
-
-    if (itemEntry.quantity > 0) {
-      const tax = this.calculateTax(menuItem.price * itemEntry.quantity);
-      cartItems.push({
-        itemId: menuItem._id as string,
-        name: menuItem.name,
-        quantity: itemEntry.quantity,
-        price: menuItem.price,
-        tax,
-      });
+    try {
+      this.logger.warn(`Deleting cart for user ${userId}`, CartService.name);
+      const result = await this.carts.deleteOne({ userId: new ObjectId(userId) });
+      if (result.deletedCount === 0) {
+        this.logger.warn(`No cart found to delete for user ${userId}`, CartService.name);
+      } else {
+        this.logger.log(`Cart deleted for user ${userId}`, CartService.name);
+      }
+    } catch (error) {
+      this.logger.error(`Error in deleteCartService: ${error.message}`, CartService.name);
+      throw error;
     }
   }
 
-  const totals = this.calculateCartTotals(cartItems, deliveryCharges);
 
-  const updatedCart = await this.cartModel.findOneAndUpdate(
-    { userId },
-    {
-      $set: {
-        userId,
-        restaurantId,
-        items: cartItems,
-        deliveryCharges,
-        distanceInKm: parseFloat(distance.toFixed(2)),
-        discount: 0,
-        couponCode: null,
-        couponId: null,
-        ...totals,
-      },
-    },
-    { new: true, upsert: true },
-  );
+  // -----------------------
+  // 🧠 Helper Methods Below
+  // -----------------------
 
-  this.logger.log(`Cart processed for user ${userId}`);
-  return {
-    message: 'Cart updated successfully',
-    cart: updatedCart,
-  };
-}
-
-
-
-
-
-
-
-
-
-
-
-  // ===================================
-  // HELPER METHODS
-  // ===================================
-
-  // Converts a value from degrees to radians
   private toRad(value: number): number {
     return (value * Math.PI) / 180;
   }
 
-
-  // Calculates the distance between two geographical points using the Haversine formula
   private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371;
     const dLat = this.toRad(lat2 - lat1);
@@ -420,27 +297,21 @@ private async _processCart(userId: string, restaurantId: string, itemsInput: { i
     return R * c;
   }
 
-
-  // Calculates delivery charges based on the distance
   private calculateDeliveryCharges(distance: number): number {
     return Math.ceil(distance * CartConstants.DELIVERY_CHARGE_PER_KM);
   }
 
-
-// Calculates the tax for a given amount
   private calculateTax(amount: number): number {
     return (amount * CartConstants.TAX_PERCENT) / 100;
   }
 
-
-  // Calculates the total cost of the cart, including item totals, tax, delivery charges, and platform fees
   private calculateCartTotals(
     items: {
       price: number;
       quantity: number;
     }[],
     deliveryCharges: number,
-    discount = 0,  // Default discount is 0
+    discount = 0,
   ) {
     const itemTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const tax = this.calculateTax(itemTotal);
@@ -455,13 +326,8 @@ private async _processCart(userId: string, restaurantId: string, itemsInput: { i
     };
   }
 
-
-  // Finds the index of an item in the cart by its itemId
   private findItemIndex(items: any[], itemId: string): number {
     return items.findIndex(i => String(i.itemId) === itemId);
   }
-
-  
-
-
 }
+

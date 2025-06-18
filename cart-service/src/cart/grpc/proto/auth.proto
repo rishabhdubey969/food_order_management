@@ -22,5 +22,6 @@ message Token {
   string email = 2;
   string phone = 3;
   int32 role = 4;
+  string name = 5;
 }
 

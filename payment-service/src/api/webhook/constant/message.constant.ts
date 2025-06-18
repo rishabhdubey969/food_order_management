@@ -7,10 +7,18 @@ export const ERROR = {
     NO_SESSION_PAYMENTINTENT:'No session found for payment intent',
     NO_INTENT:'No payment intent found in charge',
     NO_ORDERID:'No orderId found in payment intent metadata',
-    
-
+    NO_RAW_BODY:'No raw body found.',
+    NO_SIG:'No stripe-signature header found'
   };
   
   export const SUCCESS = {
-    PAYMENTINTENT_SUCCEEDED:'Payment intent succeeded for order:'
+    PAYMENTINTENT_SUCCEEDED:'Payment intent succeeded for order:',
+    WEBHOOOK_SUCCES:'Webhook event received successfully'
   };
+
+
+  export const ROUTES ={
+    WEBHOOK:'webhook',
+    STRIPE:'stripe'
+
+  }

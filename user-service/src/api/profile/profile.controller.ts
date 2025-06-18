@@ -59,7 +59,7 @@ export class ProfileController {
     return this.profileService.mediaUploadService(req.user.payload.sub, uploadMediaDto);
   }
 
-   @Get('confirm-upload')
+  @Get('confirm-upload')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @UseGuards(AuthGuard)
   async confirmUpload(@Req() req: any) {

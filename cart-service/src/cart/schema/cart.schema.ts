@@ -1,5 +1,6 @@
+
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type CartDocument = Cart & Document;
 
@@ -9,11 +10,11 @@ export class Cart {
   userId: string;
 
   @Prop({ required: true })
-  restaurantId: string;
+  restaurantId: Types.ObjectId;
 
   @Prop([
     {
-      itemId: String,
+      itemId: Types.ObjectId,
       name: String,
       quantity: Number,
       price: Number,
@@ -21,23 +22,22 @@ export class Cart {
   ])
   items: {
     tax: number;
-    itemId: string;
+    itemId: Types.ObjectId;
     name: string;
     quantity: number;
     price: number;
   }[];
 
   @Prop({ default: 0 })
-  itemTotal: number; // Sum of item price * quantity
+  itemTotal: number; 
 
   @Prop({ default: 0 })
-  subtotal: number; // Before tax & delivery
+  subtotal: number; 
 
   @Prop({ default: 0 })
-  tax: number; // Tax from restaurant
-
+  tax: number; 
   @Prop({ default: 0 })
-  platformFee: number; // Fixed, e.g., ₹9
+  platformFee: number; 
 
   @Prop({ default: 0 })
   deliveryCharges: number;
@@ -46,16 +46,14 @@ export class Cart {
   discount: number;
 
   @Prop({ default: 0 })
-  total: number; // Final total: subtotal + tax + delivery + platform - discount
-
+  total: number; 
   @Prop({ default: 0 })
-  distanceInKm: number; // Used to compute deliveryCharges
-
+  distanceInKm: number; 
   @Prop({ default: null })
   couponCode: string;
 
   @Prop({ default: null }) 
-  couponId: string;
+  couponId: Types.ObjectId
 
 }
 

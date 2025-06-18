@@ -18,12 +18,6 @@ import { ERROR } from './constant/message.constant';
 export class StripePayService {
   private stripe: Stripe;
   private readonly logger = new Logger(StripePayService.name);
-  private readonly roleCollections = {
-    USER: 'address',
-    CART: 'carts',
-    RESTAURANT: 'restaurants',
-    ORDER: 'orders',
-  };
   constructor(
     @InjectModel(Payment.name)
     private paymentModel: Model<PaymentDocument>,
@@ -125,11 +119,28 @@ export class StripePayService {
   }
 
   async updatePaymentStatus(sessionId: string, status: string) {
+    
+    // const pay = this.paymentModel.findOne({sessionId:sessionId})
+    // if(!pay){
+    //   // const orderData = await this.connection.collection('order').findOne({se})
+    //   const paymentHistory = new this.paymentHistoryModel({
+    //     orderId: pay.orderId,
+    //     amount: total_amount,
+    //     currency: 'usd',
+    //     sessionId: session.id,
+    //     status: 'pending',
+    //     userId:userId
+    //   })
+
+    //   await paymentHistory.save();
+    // }
     const payment = await this.paymentModel.findOneAndUpdate(
       { sessionId: sessionId },
       { status: status },
       { new: true },
     );
+    
+    
     return payment;
   }
 
@@ -203,7 +214,7 @@ export class StripePayService {
       const total_amount = orderData?.total;
       const userId = orderData.userId;
       if (!total_amount || isNaN(total_amount)) {
-        throw new BadRequestException('Invalid order amount');
+        throw new BadRequestException(ERROR.AMOUNT_INVALID);
       }
 
       const session = await this.stripe.checkout.sessions.create({

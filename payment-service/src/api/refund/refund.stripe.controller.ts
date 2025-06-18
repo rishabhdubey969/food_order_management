@@ -2,20 +2,18 @@ import { Controller, Post, Body, HttpCode, UseGuards } from '@nestjs/common';
 import { RefundStripeService } from './refund.stripe.service';
 import { RefundDoc } from 'src/swagger/stripe_pay.swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { ROUTES } from './constant/message.constant';
+import { Payload } from '@nestjs/microservices';
+import { CreateRefundDto } from './DTO/create.refund.dto';
 
-@Controller('stripe')
+@Controller(ROUTES.STRIPE)
 export class RefundStripeController {
-  constructor(private readonly stripeService: RefundStripeService) {}
+  constructor(private readonly refundService: RefundStripeService) {}
 
   @UseGuards(AuthGuard)
-  @Post('refund')
+  @Post(ROUTES.REFUND)
   @RefundDoc()
-  async refundPayment(@Body() body: { orderId: string }) {
-    const { orderId } = body;
-    const refund = await this.stripeService.createRefund(orderId);
-    return {
-      refundId: refund.id,
-      status: refund.status,
-    };
+  async refundPayment(@Body() payload:CreateRefundDto) {
+    return this.refundService.createRefund(payload)
   }
 }
