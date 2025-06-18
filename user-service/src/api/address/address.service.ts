@@ -58,7 +58,7 @@ export class AddressService {
    * @returns A promise that resolves to the address document(s) matching the provided ID.
    */
   async findOneAddressService(id: string) {
-    return await this.addressModel.find({ _id: id }).exec();
+    return await this.addressModel.find({ user_id: id }).exec();
   }
 
   /**
