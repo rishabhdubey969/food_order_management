@@ -33,9 +33,9 @@ async function bootstrap() {
   
 
   // Set global validation pipes
-  // app.useGlobalPipes(
-  //   new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
-  // );
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+  );
   logger.log('Global validation pipes set');
 
   // Configure Kafka microservice
@@ -45,16 +45,23 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,
       options: {
+        subscribe: {
+      // This is where you configure consumer behavior in NestJS
+      fromBeginning: true,
+    },
+    run: {
+      // These are the actual KafkaJS consumer options
+      autoCommit: false, // Disable auto-commit
+      autoCommitInterval: 0, // Disable periodic commits
+      autoCommitThreshold: 1, // Commit after each message
+    },
         client: {
           brokers: ['localhost:29092'],
           clientId: 'deliveryConsumer',
-          retry:{
-            retries: 5
-          },
         },
         consumer: {
           groupId: 'deliveryGroup',
-          allowAutoTopicCreation: true
+          allowAutoTopicCreation: true,
         },
         producer:{
           allowAutoTopicCreation: true

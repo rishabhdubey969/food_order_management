@@ -32,6 +32,7 @@ export class DeliveryPartnerController {
       partnerId: partnerId.toString()
     });
     
+    console.log(partnerId)
     const profile = await this.deliveryPartnerService.getProfile(partnerId);
     
     this.logger.info('Profile retrieved successfully', {
