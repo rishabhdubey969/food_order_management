@@ -57,9 +57,10 @@ export class OrderService {
     address.longitude = ADDRESS.longitude;
   }
   async createOrder(cartId) {
+    console.log(cartId);
     const startTime = Date.now();
     try {
-      const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id: cartId });
+      const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id:cartId});
   
       if (!cartData) {
         throw new NotFoundException('Cart not found');
@@ -75,9 +76,10 @@ export class OrderService {
         throw new NotFoundException('Restaurant not found');
       }
       const restaurantAddress = this.createRestaurantAddress(restaurantData);
+      console.log(cartData.userId);
       const userAddressData = await this.connection.collection(this.roleCollections.USER)
-        .findOne({ user_id: cartData.userId });
-     
+        .findOne({ user_id: cartData.userId.toString() });
+       console.log(userAddressData);
       if (!userAddressData) {
         throw new NotFoundException('User address not found');
       }

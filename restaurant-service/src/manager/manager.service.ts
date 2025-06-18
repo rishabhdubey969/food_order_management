@@ -249,7 +249,7 @@ export class ManagerService {
     }
   }
 
-  async handleIsFoodAvailable(cartId: ObjectId) {
+  async handleIsFoodAvailable(cartId: Types.ObjectId) {
     try {
       if (!cartId || !isValidObjectId(cartId)) {
         this.logger.warn('Invalid cart ID');
@@ -275,7 +275,7 @@ export class ManagerService {
       }
 
       this.logger.log(`New order processed for manager: ${manager._id}`);
-      return await this.managerGateway.handleNewOrder(manager._id, cartData);
+      return await this.managerGateway.handleIsFoodAvailable(manager._id, cartData);
     } catch (error) {
       this.logger.error(`Error processing cart ${cartId}`, error.stack);
       throw new InternalServerErrorException('Failed to process new order');

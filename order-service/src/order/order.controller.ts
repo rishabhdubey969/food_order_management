@@ -50,6 +50,7 @@ export class OrderController {
       @ApiResponse({ status: 401, description: 'Unauthorized' })
       async prePlaceOrder(@Body('cartId',ParseObjectIdPipe) cartId: ObjectId){
           // console.log(cartId);
+          console.log('hii')
           await this.handleKitchen({cartId:cartId});
           return await this.orderService.createOrder(cartId);   
       }   

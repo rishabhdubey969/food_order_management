@@ -54,6 +54,7 @@ export class RestaurantService implements OnModuleInit {
   return restaurant;
 }
 
+
   // Create a restaurant and assign it to a verified manager
   async createRestaurant(createRestaurantDto: CreateRestaurantDto, managerId: string) {
   const manager = await this.managerModel.findOne({ _id: managerId });
