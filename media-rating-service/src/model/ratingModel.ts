@@ -1,6 +1,4 @@
-// ratingModel.ts
-
-import { Document, Schema, model } from 'mongoose';
+import { Document, Schema, model } from "mongoose";
 
 // Define the IUser interface
 export interface IUser extends Document {
@@ -49,6 +47,6 @@ const userSchema = new Schema<IUser>({
 });
 
 // Create and export the UserRating model
-const UserRatingModel = model<IUser>('UserRating', userSchema);
+const UserRatingModel = model<IUser>("UserRating", userSchema);
 
-export default UserRatingModel;  // Default export for the model
+export default UserRatingModel; // Default export for the model

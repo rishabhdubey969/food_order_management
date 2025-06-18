@@ -19,8 +19,8 @@ export class AddressController {
    */
   @Post()
   @CreateAddressDoc()
-  async create(@Body() createAddressDto: CreateAddressDto) {
-    return this.addressService.addressCreateService(createAddressDto);
+  async create(@Body() createAddressDto: CreateAddressDto, @Req() req: any) {
+    return this.addressService.addressCreateService(createAddressDto, req.user.payload.sub);
   }
 
   /**

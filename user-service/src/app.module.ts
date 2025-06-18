@@ -7,8 +7,6 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { WinstonModule } from 'nest-winston';
 import { winstonLogger } from 'logger/winston.logger';
-import { JwtConstant } from 'jwt_security/jwt.const';
-import { JwtModule } from '@nestjs/jwt';
 import { AddressModule } from './api/address/address.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
@@ -23,12 +21,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     }),
     WinstonModule.forRoot(winstonLogger),
     MongooseModule.forRoot(process.env.MONGO_CONNECTION as string), // Mongo Connection
-    JwtModule.register({
-      // JWT Configuration
-      global: true,
-      secret: JwtConstant.SECRET,
-      signOptions: { expiresIn: JwtConstant.EXPIRE_TIME },
-    }),
   ],
   controllers: [AppController],
   providers: [AppService],
