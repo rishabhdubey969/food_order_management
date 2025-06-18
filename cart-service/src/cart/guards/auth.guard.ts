@@ -19,6 +19,7 @@ import {
     email: string;
     phone: string;
     role: number;
+    name: string;
   }
   
   interface TokenValidationResponse {
