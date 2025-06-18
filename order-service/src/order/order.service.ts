@@ -55,13 +55,14 @@ export class OrderService {
 
     return address;
   }
-  async createUserAddress(ADDRESS: any) {
+  createUserAddress(ADDRESS: any) {
     const address = new Address();
     address.address = ADDRESS.address_location_1;
     address.contactNumber = ADDRESS.phone ||"8090064743";
     address.email = ADDRESS.email||"abc@gmail.com";
     address.latitude = ADDRESS.latitude;
     address.longitude = ADDRESS.longitude;
+    return address;
   }
   async createOrder(cartId,addressId) {
     const startTime = Date.now();
@@ -89,10 +90,7 @@ export class OrderService {
       if (!userAddressData) {
         throw new NotFoundException('User address not found');
       }
-      console.log(userAddressData);
-      const userAddress =  this.createUserAddress(userAddressData);
-
-      console.log(userAddress);
+      const userAddress = this.createUserAddress(userAddressData);
       if (isNaN(cartData.subtotal) || isNaN(cartData.total) ||
         isNaN(cartData.tax) || isNaN(cartData.deliveryCharges) ||
         isNaN(cartData.platformFee) || isNaN(cartData.discount)) {
