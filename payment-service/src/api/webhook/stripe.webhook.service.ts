@@ -7,7 +7,7 @@ import { Model } from 'mongoose';
 import { Webhook, WebhookDocument } from './Schema/webhook.schema';
 import { ERROR, SUCCESS } from './constant/message.constant';
 import { ClientProxy } from '@nestjs/microservices';
-import { log } from 'console';
+
 
 @Injectable()
 export class StripeWebhookService {
@@ -19,7 +19,7 @@ export class StripeWebhookService {
 
     private readonly stripeConfig: StripeConfigService,
     private readonly paymentService: StripePayService,
-    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy
+    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   private async saveOrUpdateWebhookEvent(eventData: {
@@ -48,9 +48,7 @@ export class StripeWebhookService {
       );
 
       if (!webhookEvent) {
-        throw new Error(
-          ERROR.FAILED_UPDATE,
-        );
+        throw new Error(ERROR.FAILED_UPDATE);
       }
 
       this.logger.log(
@@ -143,7 +141,7 @@ export class StripeWebhookService {
         throw new Error(ERROR.NOT_EXIST_PAYMENTINTENT);
       }
 
-      Logger.log(SUCCESS.PAYMENTINTENT_SUCCEEDED,orderId);
+      Logger.log(SUCCESS.PAYMENTINTENT_SUCCEEDED, orderId);
 
       const session = await this.stripeConfig
         .getStripeInstance()
@@ -163,8 +161,7 @@ export class StripeWebhookService {
       });
 
       if (session.data.length === 0) {
-        throw new Error(ERROR.NO_SESSION_PAYMENTINTENT)
-        
+        throw new Error(ERROR.NO_SESSION_PAYMENTINTENT);
       }
 
       await this.updatePaymentStatus(session.data[0].id, 'completed');
@@ -201,9 +198,7 @@ export class StripeWebhookService {
         });
 
       if (session.data.length === 0) {
-        throw new Error(
-          ERROR.NO_SESSION_PAYMENTINTENT
-        );
+        throw new Error(ERROR.NO_SESSION_PAYMENTINTENT);
       }
 
       await this.saveOrUpdateWebhookEvent({
@@ -215,13 +210,13 @@ export class StripeWebhookService {
         status: 'COMPLETED',
         orderId: orderId,
       });
-     
+
       await this.updatePaymentStatus(session.data[0].id, 'completed');
-      const email = charge.billing_details.email
-      const status= "completed"
+      const email = charge.billing_details.email;
+      const status = 'completed';
       const amount = charge.amount;
-      const chargeId=  charge.id;
-      const mailData = {email,orderId,status,amount,chargeId}
+      const chargeId = charge.id;
+      const mailData = { email, orderId, status, amount, chargeId };
       this.client.emit('payment_done', mailData);
     } catch (error) {
       Logger.error('Error handling charge succeeded:', error);
@@ -326,7 +321,7 @@ export class StripeWebhookService {
       if (!orderId) {
         throw new Error('No orderId found in payment intent metadata');
       }
-      
+
       await this.paymentService.updatePaymentStatus(orderId, 'failed');
       await this.saveOrUpdateWebhookEvent({
         stripeEventId: paymentIntent.id,
@@ -337,11 +332,11 @@ export class StripeWebhookService {
         errormessage: 'FAILED',
         orderId: orderId,
       });
-      
+
       const email = paymentIntent.receipt_email;
-      
-      const status= "failed"
-      const mailData = {email,orderId,status}
+
+      const status = 'failed';
+      const mailData = { email, orderId, status };
       this.client.emit('payment_failed', mailData);
       Logger.log(`Payment failed for order ${orderId}`);
       Logger.log(
@@ -403,9 +398,9 @@ export class StripeWebhookService {
 
       const paymentHistory = await this.paymentService.updatePaymentHistory(
         sessionId,
-        status
+        status,
       );
-      
+
       if (!payment) {
         this.logger.warn(`Payment not found for session ID: ${sessionId}`);
         throw new NotFoundException(
@@ -414,7 +409,9 @@ export class StripeWebhookService {
       }
 
       if (!paymentHistory) {
-        this.logger.warn(`Payment history not found for session ID: ${sessionId}`);
+        this.logger.warn(
+          `Payment history not found for session ID: ${sessionId}`,
+        );
         throw new NotFoundException(
           `Payment history not found for session ID: ${sessionId}`,
         );

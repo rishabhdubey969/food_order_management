@@ -7,7 +7,12 @@ import {
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model } from 'mongoose';
 import Stripe from 'stripe';
-import { Payment, PaymentDocument, paymentHistory, paymentHistoryDocument } from './Schema/stripe.pay.schema';
+import {
+  Payment,
+  PaymentDocument,
+  paymentHistory,
+  paymentHistoryDocument,
+} from './Schema/stripe.pay.schema';
 import { ConfigService } from '@nestjs/config';
 import { StripeConfigService } from '../../config/stripe.config';
 import { CreatePaymentDto } from './DTO/create.payment.dto';
@@ -22,9 +27,9 @@ export class StripePayService {
     @InjectModel(Payment.name)
     private paymentModel: Model<PaymentDocument>,
     @InjectModel(paymentHistory.name)
-    private paymentHistoryModel : Model<paymentHistoryDocument>,
+    private paymentHistoryModel: Model<paymentHistoryDocument>,
     private readonly configService: ConfigService,
-   
+
     private stripeConfig: StripeConfigService,
     @InjectConnection() private readonly connection: Connection,
   ) {
@@ -75,7 +80,7 @@ export class StripePayService {
         payment_intent_data: {
           metadata: {
             orderId: orderId,
-            userId:userId
+            userId: userId,
           },
         },
       });
@@ -88,7 +93,6 @@ export class StripePayService {
         status: 'pending',
       });
 
-
       await payment.save();
 
       const paymentHistory = new this.paymentHistoryModel({
@@ -97,19 +101,23 @@ export class StripePayService {
         currency: 'usd',
         sessionId: session.id,
         status: 'pending',
-        userId:userId
-      })
+        userId: userId,
+      });
 
       await paymentHistory.save();
 
-      
-
       return { url: session.url };
     } catch (error) {
-      this.logger.error(`Checkout session failed for order ${payload?.orderId}:`, error.message, error.stack);
+      this.logger.error(
+        `Checkout session failed for order ${payload?.orderId}:`,
+        error.message,
+        error.stack,
+      );
       Logger.error('Error creating checkout session:', error);
       if (error instanceof Stripe.errors.StripeError) {
-        throw new BadRequestException(`Payment processing error: ${error.message}`);
+        throw new BadRequestException(
+          `Payment processing error: ${error.message}`,
+        );
       }
       if (error) {
         throw error;
@@ -119,7 +127,6 @@ export class StripePayService {
   }
 
   async updatePaymentStatus(sessionId: string, status: string) {
-    
     // const pay = this.paymentModel.findOne({sessionId:sessionId})
     // if(!pay){
     //   // const orderData = await this.connection.collection('order').findOne({se})
@@ -139,8 +146,7 @@ export class StripePayService {
       { status: status },
       { new: true },
     );
-    
-    
+
     return payment;
   }
 
@@ -188,11 +194,11 @@ export class StripePayService {
     //   return "Payment Failed"
     // }
   }
-  
 
-
-  async fetchDetails(orderId:string){
-    const paymentHistory = await this.paymentHistoryModel.findOne({orderId:orderId});
+  async fetchDetails(orderId: string) {
+    const paymentHistory = await this.paymentHistoryModel.findOne({
+      orderId: orderId,
+    });
     return paymentHistory;
   }
 
@@ -240,7 +246,7 @@ export class StripePayService {
         payment_intent_data: {
           metadata: {
             orderId: orderId,
-            userId:userId
+            userId: userId,
           },
         },
       });
@@ -253,7 +259,6 @@ export class StripePayService {
         status: 'pending',
       });
 
-
       await payment.save();
 
       const paymentHistory = new this.paymentHistoryModel({
@@ -262,19 +267,23 @@ export class StripePayService {
         currency: 'usd',
         sessionId: session.id,
         status: 'pending',
-        userId:userId
-      })
+        userId: userId,
+      });
 
       await paymentHistory.save();
 
-      
-
       return { url: session.url };
     } catch (error) {
-      this.logger.error(`Checkout session failed for order ${payload?.orderId}:`, error.message, error.stack);
+      this.logger.error(
+        `Checkout session failed for order ${payload?.orderId}:`,
+        error.message,
+        error.stack,
+      );
       Logger.error('Error creating checkout session:', error);
       if (error instanceof Stripe.errors.StripeError) {
-        throw new BadRequestException(`Payment processing error: ${error.message}`);
+        throw new BadRequestException(
+          `Payment processing error: ${error.message}`,
+        );
       }
       if (error) {
         throw error;
