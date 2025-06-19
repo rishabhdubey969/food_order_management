@@ -16,6 +16,7 @@ export const LoginSwagger = () => applyDecorators(
 export const VerifyOtpSwagger = () => applyDecorators(
   ApiOperation({ summary: 'Verify OTP for admin login' }),
   ApiBody({ type: VerifyOtpDto }),
+   ApiBearerAuth('JWT'),
   ApiResponse({ status: 200, description: 'OTP verified successfully', type: Object }),
   ApiResponse({ status: 400, description: 'Bad Request' }),
   ApiResponse({ status: 500, description: 'Internal Server Error' }),
