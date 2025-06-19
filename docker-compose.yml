@@ -58,7 +58,6 @@ services:
       - "15672:15672" # RabbitMQ management UI
     networks:
       - app-network
-      
 networks:
   app-network:
     driver: bridge
