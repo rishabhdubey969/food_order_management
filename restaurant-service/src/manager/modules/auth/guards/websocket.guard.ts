@@ -5,7 +5,7 @@ import { Socket } from 'socket.io';
 
 @Injectable()
 export class WsManagerGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {} 
+  constructor(private readonly jwtService: JwtService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const client = context.switchToWs().getClient<Socket>();
@@ -18,9 +18,9 @@ export class WsManagerGuard implements CanActivate {
         secret: process.env.JWT_SECRET,
       });
 
-      
+
       client.data.manager = {
-        id: payload.sub,  
+        id: payload.sub,
       };
 
       return true;

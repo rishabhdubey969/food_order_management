@@ -6,7 +6,7 @@ import { ERROR_MESSAGES } from 'src/manager/constants/errorand success';
 @Injectable()
 export class TokenService {
   logger: any;
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService) { }
 
   async hash(data: any) {
     const salt = await bcrypt.genSalt(10);
@@ -44,26 +44,26 @@ export class TokenService {
     }
   }
   async validateTokenFlow(accessToken: string, refreshToken: string) {
-  try {
-    return await this.verifyToken(accessToken, 'access'); 
-  } catch (accessErr) {
-  // Handle or log the access token failure
-  this.logger.warn(`Access token verification failed: ${accessErr.message}`);
+    try {
+      return await this.verifyToken(accessToken, 'access');
+    } catch (accessErr) {
+      // Handle or log the access token failure
+      this.logger.warn(`Access token verification failed: ${accessErr.message}`);
 
-  try {
-    const payload = await this.verifyToken(refreshToken, 'refresh');
-    const newAccessToken = this.signAccessToken({
-      id: payload.id,
-      role: payload.role,
-    });
+      try {
+        const payload = await this.verifyToken(refreshToken, 'refresh');
+        const newAccessToken = this.signAccessToken({
+          id: payload.id,
+          role: payload.role,
+        });
 
-    return { payload, newAccessToken };
-  } catch (refreshErr) {
-    this.logger.error(`Refresh token verification failed: ${refreshErr.message}`);
-    throw new UnauthorizedException('Both tokens are invalid or expired');
+        return { payload, newAccessToken };
+      } catch (refreshErr) {
+        this.logger.error(`Refresh token verification failed: ${refreshErr.message}`);
+        throw new UnauthorizedException('Both tokens are invalid or expired');
+      }
+    }
   }
-}
-}
 }
 
 

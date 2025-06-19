@@ -25,8 +25,20 @@ export class ComplaintController {
   constructor(private readonly complaintService: ComplaintService) {}
   
   /**
-   * A user creates a complaint
-   */
+ * Handles creation of a new user complaint
+ * 
+ * @param createComplaintDto - Complaint details including:
+ *           - orderId: string (related order reference)
+ *           - complaintType: enum (QUALITY, DELIVERY, SERVICE)
+ *           - description: string (detailed complaint reason)
+ *           - attachments?: string[] (optional image URLs)
+ * 
+ * @returns Promise<ComplaintReceipt> - Contains:
+ *           - complaintId: string
+ *           - status: string (PENDING/IN_REVIEW/RESOLVED)
+ *           - createdAt: Date
+ *           - estimatedResolutionTime?: Date
+ */
   @Post('/:managerId')
   @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Create a new complaint (User only)' })
@@ -50,8 +62,21 @@ export class ComplaintController {
   }
 
   /**
-   * The manager updates the status of the complaint
-   */
+ * Updates the status/resolution of a user complaint (Manager Only)
+ * 
+ * @param complaintId - The unique identifier of the complaint ticket
+ * @param updateComplaintDto - Update details including:
+ *           - status: enum (IN_REVIEW, RESOLVED, REJECTED)
+ *           - resolution?: string (required if status=RESOLVED)
+ *           - managerNotes?: string (internal comments)
+ * 
+ * @returns Promise<UpdatedComplaint> - Contains:
+ *           - complaintId: string
+ *           - previousStatus: string
+ *           - newStatus: string
+ *           - updatedAt: Date
+ *           - resolution?: string
+ */
   @Patch('status/:id')
   @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Update complaint status (Manager only)' })
@@ -66,9 +91,17 @@ export class ComplaintController {
     return this.complaintService.updateComplaintStatus(id, dto, user.userId);
   }
   
-  /**
-   * A manager can get the it's specific complaint of restaurant
-   */
+ /**
+ * Retrieves a specific complaint belonging to the manager's restaurant
+ * 
+ * @param complaintId - The unique identifier of the complaint
+ * @param managerId - The authenticated manager's ID (from JWT)
+ * @returns Promise<RestaurantComplaintDetails> - Detailed complaint object including:
+ *           - complaint: Complaint details
+ *           - order: Related order summary
+ *           - customer: Basic customer info
+ *           - timeline: Status change history
+ */
   @Get('manager/:managerId')
   @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Get all complaints for this manager (Manager only)' })
