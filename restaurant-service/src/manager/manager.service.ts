@@ -34,7 +34,9 @@ export class ManagerService {
     @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
     private readonly logger: WinstonLogger,
   ) {}
-
+    /**
+   * Register a manager
+   */
   async Signup(managerSignupDto: ManagerSignupDto) {
     try {
       const { email, password } = managerSignupDto;
@@ -78,7 +80,9 @@ export class ManagerService {
       throw new InternalServerErrorException(ERROR_MESSAGES.REGISTRATION_FAILED);
     }
   }
-
+   /**
+   * Login a manager
+   */
   async login(managerLoginDto: ManagerLoginDto) {
     try {
       const { email, password } = managerLoginDto;
@@ -121,7 +125,10 @@ export class ManagerService {
       throw error;
     }
   }
-
+   
+   /**
+   * InitiatePasswordReset of a manager
+   */
   async initiatePasswordReset(email: string) {
     try {
       if (!email) {
@@ -151,7 +158,10 @@ export class ManagerService {
       throw new UnauthorizedException(ERROR_MESSAGES.RESET_PASSWORD_FAILED);
     }
   }
-
+  
+  /**
+   * A link will be send to reset password of manager
+   */
   async resetPassword(token: string, newPassword: string) {
     try {
       if (!token || !newPassword) {
@@ -196,6 +206,9 @@ export class ManagerService {
     this.client.emit('password_changed', { email, subject: 'Your Password Has Been Changed' });
   }
 
+  /**
+   * Logout a manager
+   */
   async logout(token: string) {
     try {
       await this.tokenService.verifyToken(token, 'access');
@@ -207,6 +220,9 @@ export class ManagerService {
     }
   }
 
+  /**
+   * Get a manger by it's id
+   */
   async getManagerById(id: string) {
     try {
       const manager = await this.managerModel.findById(id);
@@ -230,6 +246,9 @@ export class ManagerService {
     }
   }
 
+  /**
+   * update a manager by it's id
+   */
   async updateManager(id: string, updateManagerDto: Partial<ManagerSignupDto>) {
     try {
       const updatedManager = await this.managerModel.findByIdAndUpdate(id, updateManagerDto, { new: true });
@@ -249,7 +268,10 @@ export class ManagerService {
     }
   }
 
-  async handleIsFoodAvailable(cartId: ObjectId) {
+  /**
+   * Handling whether the order is available 
+   */
+  async handleIsFoodAvailable(cartId: Types.ObjectId) {
     try {
       if (!cartId || !isValidObjectId(cartId)) {
         this.logger.warn('Invalid cart ID');
@@ -275,13 +297,16 @@ export class ManagerService {
       }
 
       this.logger.log(`New order processed for manager: ${manager._id}`);
-      return await this.managerGateway.handleNewOrder(manager._id, cartData);
+      return await this.managerGateway.handleIsFoodAvailable(manager._id, cartData);
     } catch (error) {
       this.logger.error(`Error processing cart ${cartId}`, error.stack);
       throw new InternalServerErrorException('Failed to process new order');
     }
   }
 
+  /**
+   * Processing the order decision ('accept' | 'reject')
+   */
   async processOrderDecision(orderId: string, decision: 'accept' | 'reject') {
     try {
       const result =
@@ -299,7 +324,10 @@ export class ManagerService {
       throw new InternalServerErrorException(`Failed to ${decision} order`);
     }
   }
-
+  
+  /**
+   * When the order is handovered to the delivery boy
+   */
   async handleOrderHandover(orderId: Types.ObjectId) {
     try {
       await this.kafkaService.handleEvent('handOvered', { orderId });

@@ -15,8 +15,6 @@ app.use(express.json());
 // Middleware to parse URL-encoded request bodies (for form data, though multer handles multipart)
 app.use(express.urlencoded({ extended: true }));
 
-// API Versioning: Mount routes under /api/v1
-// app.use('/api', mediaRoutesV1);
 app.use('/api', ratingRoutes);
 app.get('/', (req: Request, res: Response) => {
   res.send('Media HTTP is working');
@@ -32,7 +30,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     res.status(404).json({ status: 'error', message: 'Route not found' });
 });
 
-// Global error handling middleware (MUST be the last middleware)
+//Global error handling middleware (MUST be the last middleware)
 // app.use(errorHandler);
 
 // Start the server after connecting to the database

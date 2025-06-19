@@ -12,11 +12,8 @@ import {
 import { RestaurantService } from './restaurant.service';
 import {
   ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
   ApiOperation,
   ApiQuery,
-  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateRestaurantDto } from './dto/restaurant.dto';
@@ -27,6 +24,9 @@ import { UpdateCoponDto } from './dto/updateCoupon.dto';
 import { GrpcAuthGuard } from './guards/auth.guard';
 import { Roles } from './decorators/roles.decorator';
 import { Role } from './common/role.enum';
+import { JwtAuthGuard } from './guards/jwtAuth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { ManagerGuard } from './guards/manager.guard';
 
 interface MediaService {
   getSignedUrl(fileName: string, fileType: string, folderName: string): Promise<string>;
@@ -45,29 +45,34 @@ export class RestaurantController {
   /**
    * Create a restaurant and assign it to a manager (Admin only)
    */
-  @UseGuards(GrpcAuthGuard)
+  @UseGuards(JwtAuthGuard, ManagerGuard)
+  @ApiBearerAuth('JWT') 
   @Post('create/:managerId')
-  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create a restaurant and assign to manager' })
-  async createRestaurant(@Param('managerId') managerId: string, @Body() dto: CreateRestaurantDto) {
+  async createRestaurant(@Body() dto: CreateRestaurantDto, @Req()req: any) {
+    const managerId = req.user.sub;
     return this.restaurantService.createRestaurant(dto, managerId);
   }
 
-  /**
-   * Get restaurants nearby based on user coordinates (open to all users)
-   */
-  @Get('nearby')
-  @ApiOperation({ summary: 'Get restaurants nearby based on coordinates' })
-  async getNearbyRestaurants(
+/**
+ * Get restaurants nearby based on user coordinates (open to all users)
+ */
+@Get('nearby')
+@ApiOperation({ summary: 'Get restaurants nearby based on coordinates' })
+@ApiQuery({ name: 'latitude', type: Number, required: true })
+@ApiQuery({ name: 'longitude', type: Number, required: true })
+@ApiQuery({ name: 'limit', type: Number, required: false, example: 10 })
+@ApiQuery({ name: 'offset', type: Number, required: false, example: 0 })
+async getNearbyRestaurants(
     @Query('latitude') latitude: number,
     @Query('longitude') longitude: number,
-    @Query('limit') limit = 10,
-    @Query('offset') offset = 0,
     @Req() req: any,
-  ) {
+    @Query('limit') limit: number = 10,
+    @Query('offset') offset: number = 0,
+) {
     const user = req.user;
     return this.restaurantService.getNearbyRestaurants(latitude, longitude, +limit, +offset, user);
-  }
+}
 
   /**
    * Admin-only route to get a paginated list of all restaurants
@@ -133,11 +138,12 @@ export class RestaurantController {
   /**
    * Add a new menu item to a restaurant (Admin/Manager only)
    */
-  @UseGuards(GrpcAuthGuard)
+  @UseGuards(JwtAuthGuard, ManagerGuard)
+  @ApiBearerAuth('JWT') 
   @Post(':restaurantId/menu')
-  @Roles(Role.ADMIN, Role.MANAGER)
-  async createMenu(@Param('restaurantId') restaurantId: string, @Body() dto: CreateMenuItemDto) {
-    return this.restaurantService.createMenuItem(restaurantId, dto);
+  async createMenu(@Param('restaurantId') restaurantId: string, @Body() dto: CreateMenuItemDto, @Req() req: any) {
+    const managerId = req.user.sub;
+    return this.restaurantService.createMenuItem(restaurantId, dto, managerId);
   }
 
   /**

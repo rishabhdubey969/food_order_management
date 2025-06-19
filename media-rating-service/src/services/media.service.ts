@@ -5,20 +5,7 @@ import { buildS3Key } from "../utils/path";
 import { v4 as uuid } from "uuid";
 
 export const handlers = {
-  // GeneratePresignedUrl: async (call: { request: { service: string; resourceType: string; resourceId: string; fileExtension: string; contentType: string; }; }, callback: (arg0: { code: number; message: string; } | null, arg1: { presignedUrl: string; key: string; } | undefined) => void) => {
-
-  //   const { service, resourceType, resourceId, fileExtension, contentType } = call.request;
-  //   if (!['user','product','admin'].includes(service)) {
-  //     return callback({ code: 7, message: 'Unauthorized service' }, undefined);
-  //   }
-  //   const fileName = `${uuid()}.${fileExtension}`;
-  //   const fileKey = buildS3Key(service, resourceType, resourceId, fileName);
-
-  //   const cmd = new PutObjectCommand({ Bucket: S3_BUCKET, Key: fileKey, ContentType: contentType });
-  //   const url = await getSignedUrl(s3, cmd, { expiresIn: 300 });
-  //   callback(null, { presignedUrl: url, key:fileKey });
-  // },
-
+  
   GeneratePresignedUrl: async (
   call: {
     request: {

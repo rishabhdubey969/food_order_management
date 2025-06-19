@@ -1,8 +1,9 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
-import { Response, Request } from 'express';
+import { Request, Response } from 'express';
 import { MongoError } from 'mongodb';
 import { Error as MongooseError } from 'mongoose';
 import { AxiosError } from 'axios';
+import { status as GrpcStatus } from '@grpc/grpc-js';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -10,8 +11,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const res = ctx.getResponse<Response>();
     const req = ctx.getRequest<Request>();
+    const res = ctx.getResponse<Response>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let responseBody: Record<string, any> = {
@@ -22,7 +23,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       path: req.url,
     };
 
-    // Handle MongoDB Duplicate Key Error
+    // Mongo Duplicate Key Error
     if (exception instanceof MongoError && exception.code === 11000) {
       status = HttpStatus.CONFLICT;
       responseBody = {
@@ -34,7 +35,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       };
     }
 
-    // Handle Mongoose Validation Error
+    // Mongoose Validation Error
     else if (exception instanceof MongooseError.ValidationError) {
       status = HttpStatus.UNPROCESSABLE_ENTITY;
       const details = Object.values(exception.errors).map((err: any) => ({
@@ -51,7 +52,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       };
     }
 
-    // Handle Axios External API Error
+    // Axios External API Error
     else if (exception?.isAxiosError) {
       const axiosEx = exception as AxiosError;
       status = axiosEx.response?.status || HttpStatus.BAD_GATEWAY;
@@ -65,7 +66,54 @@ export class HttpExceptionFilter implements ExceptionFilter {
       };
     }
 
-    // Handle NestJS HttpException
+    // gRPC Error
+    else if (typeof exception?.code === 'number' && exception?.details) {
+      const grpcCode = exception.code;
+
+      switch (grpcCode) {
+        case GrpcStatus.UNAVAILABLE:
+          status = HttpStatus.SERVICE_UNAVAILABLE;
+          responseBody = {
+            ...responseBody,
+            statusCode: status,
+            message: 'Dependent service is unavailable',
+            errorCode: 'GRPC_SERVICE_UNAVAILABLE',
+          };
+          break;
+
+        case GrpcStatus.DEADLINE_EXCEEDED:
+          status = HttpStatus.REQUEST_TIMEOUT;
+          responseBody = {
+            ...responseBody,
+            statusCode: status,
+            message: 'Request to service timed out',
+            errorCode: 'GRPC_TIMEOUT',
+          };
+          break;
+
+        case GrpcStatus.NOT_FOUND:
+          status = HttpStatus.NOT_FOUND;
+          responseBody = {
+            ...responseBody,
+            statusCode: status,
+            message: 'Resource not found in RPC call',
+            errorCode: 'GRPC_NOT_FOUND',
+          };
+          break;
+
+        default:
+          status = HttpStatus.BAD_GATEWAY;
+          responseBody = {
+            ...responseBody,
+            statusCode: status,
+            message: exception.details || 'RPC error occurred',
+            errorCode: `GRPC_ERROR_${grpcCode}`,
+          };
+          break;
+      }
+    }
+
+    // NestJS HttpException
     else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const response = exception.getResponse();
@@ -73,11 +121,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
       responseBody = {
         ...responseBody,
         statusCode: status,
-        ...(typeof response === 'string' ? { message: response } : response),
+        ...(typeof response === 'string' ? { message: response } : (response as object)),
       };
     }
 
-    // Log and respond
+    // Final log and return
     this.logger.error(`[${req.method}] ${req.url} -> ${responseBody.message}`);
 
     res.status(status).json(responseBody);

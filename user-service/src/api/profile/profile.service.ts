@@ -66,16 +66,22 @@ export class ProfileService {
    * Logs the operation.
    */
   async remove(id: string) {
-  this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_SOFT_DELETE}: ${id}`);
-  
-  const result = await this.profileModel.findByIdAndUpdate(
-    id,
-    { is_deleted: true, deleted_at: new Date() },
-    { new: true }
-  );
-  return result;
-}
+    this.logger.info(`${WINSTON_LOGGER_PROFILE.PROFILE_SOFT_DELETE}: ${id}`);
 
+    const result = await this.profileModel.findByIdAndUpdate(
+      id,
+      { is_deleted: true, deleted_at: new Date() },
+      { new: true },
+    );
+    return result;
+  }
+
+  /**
+   * Media Persign url call from media service by using grpc
+   * @param id
+   * @param uploadMediaDto
+   * @returns
+   */
   async mediaUploadService(id: string, uploadMediaDto) {
     try {
       return this.mediaClient.GeneratePresignedUrlClient(PROFILE.USER, PROFILE.PROFILE_NAME, id, uploadMediaDto);
@@ -87,7 +93,7 @@ export class ProfileService {
   async confirmUploadService(id: string) {
     return this.mediaClient.ConfirmUploadClient(
       'media/user/profile/684d51abab85e4eea0294410/7390b6b0-08d8-4670-b544-6ce4aa28c4c1.jpg',
-      'profile',
+      PROFILE.PROFILE_NAME,
       id,
     );
   }

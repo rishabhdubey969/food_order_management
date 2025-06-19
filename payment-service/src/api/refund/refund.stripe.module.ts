@@ -11,7 +11,7 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
     MongooseModule.forFeature([{ name: Refund.name, schema: RefundSchema }]),
     StripePayModule,
   ],
-  providers: [RefundStripeService,AuthClient],
+  providers: [RefundStripeService, AuthClient],
   controllers: [RefundStripeController],
   exports: [RefundStripeService],
 })

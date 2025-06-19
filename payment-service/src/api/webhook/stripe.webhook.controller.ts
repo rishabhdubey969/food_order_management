@@ -3,7 +3,6 @@ import {
   Post,
   Req,
   Res,
-  HttpCode,
   Logger,
   RawBodyRequest,
   BadRequestException,
@@ -12,7 +11,7 @@ import { Request, Response } from 'express';
 import { StripeWebhookService } from './stripe.webhook.service';
 import { StripeConfigService } from '../../config/stripe.config';
 import { ERROR, ROUTES, SUCCESS } from './constant/message.constant';
-import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
+import { ResponseMessage } from 'src/decorators/response-message.decorator';
 
 @Controller(ROUTES.WEBHOOK)
 export class StripeWebhookController {
@@ -23,7 +22,7 @@ export class StripeWebhookController {
     private readonly stripeConfig: StripeConfigService,
   ) {}
 
-  @Post(ROUTES.WEBHOOK)
+  @Post(ROUTES.STRIPE)
   @ResponseMessage(SUCCESS.WEBHOOOK_SUCCES)
   // @HttpCode(200)
   async handleWebhook(

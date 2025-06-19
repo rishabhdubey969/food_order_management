@@ -2,10 +2,6 @@ import { IsNotEmpty, IsString, IsInt, IsOptional, IsNumber } from 'class-validat
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAddressDto {
-  @ApiProperty({ example: 'user_id', description: 'user_id of the user' })
-  @IsNotEmpty()
-  @IsString()
-  readonly user_id: string;
 
   @ApiProperty({ example: 'office || home || other', description: 'user address label' })
   @IsNotEmpty()

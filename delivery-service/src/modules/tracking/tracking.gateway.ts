@@ -484,7 +484,7 @@ export class TrackingGateway implements OnGatewayConnection, OnGatewayDisconnect
           message: TRACKING_CONSTANTS.MESSAGES.SUCCESS.DELIVERY_ACCEPTED
         });
 
-        await this.midModuleService.updateStatus(partnerId, DeliveryPartnerStatus.OCCUPIED);
+        // await this.midModuleService.updateStatus(partnerId, DeliveryPartnerStatus.OCCUPIED);
         await this.midModuleService.assignedPartner(partnerId, orderId);
 
         const userSocket = this.customersMap.get(userId);

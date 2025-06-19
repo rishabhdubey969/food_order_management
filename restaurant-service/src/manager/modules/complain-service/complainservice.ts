@@ -23,6 +23,9 @@ export class ComplaintService {
     private readonly rabbitMQService: RabbitMQService,
   ) {}
 
+  /**
+   * A user creates a complaint
+   */
   async createComplaint(dto: CreateComplaintDto, userId: string, managerId: string) {
     try {
       const complaint = {
@@ -47,6 +50,10 @@ export class ComplaintService {
     }
   }
 
+  
+  /**
+   * The manager updates the status of the complaint
+   */
   async updateComplaintStatus(
     complaintId: string,
     dto: UpdateComplaintStatusDto,
@@ -108,23 +115,26 @@ export class ComplaintService {
         .collection('managers')
         .findOne({ _id: new Types.ObjectId(managerId) });
   
-      if (!manager || !manager.restaurantId) {
+        console.log(manager);
+      if (!manager) {
         this.logger.warn(`Manager or restaurant not found for managerId: ${managerId}`);
         return;
       }
   
       const restaurant = await this.connection
         .collection('restaurants')
-        .findOne({ _id: new Types.ObjectId(manager.restaurantId) });
+        .findOne({ managerId });
   
       if (!restaurant) {
-        this.logger.warn(`Restaurant not found for id: ${manager.restaurantId}`);
+        this.logger.warn(`Restaurant not found`);
         return;
       }
   
       const user = await this.connection
         .collection('users')
         .findOne({ _id: new Types.ObjectId(userId) });
+
+      console.log(user, userId);
   
       if (!user) {
         this.logger.warn(`User not found for id: ${userId}`);
@@ -141,14 +151,16 @@ export class ComplaintService {
       };
   
       this.logger.log(`Emitting complaint notification: ${JSON.stringify(payload)}`);
-  
+       console.log("hi");
       this.rabbitMQService.emit('complaint_notification', payload);
     } catch (error) {
       this.logger.error('Error while emitting complaint notification', error.stack);
     }
   }
 
-
+  /**
+   * A manager can get the it's specific complaint of restaurant
+   */
   async getComplaintsForManager(managerId: string) {
     try {
       const complaints = await this.connection
@@ -175,6 +187,9 @@ export class ComplaintService {
     }
   }
 
+  /**
+   * Admin gets complaint related to each manager's restaurant
+   */
   async getAllComplaints(token: string) {
     try {
       const user = await this.tokenService.verifyToken(token, 'access');

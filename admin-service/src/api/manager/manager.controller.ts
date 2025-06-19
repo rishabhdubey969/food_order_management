@@ -16,8 +16,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import {
-  GetSignUpRequest,
-  GetSignUpResponse,
+  // GetSignUpRequest,
+  // GetSignUpResponse,
   ManagerService,
 } from './manager.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
@@ -122,9 +122,9 @@ export class ManagerController {
     }
   }
 
-  @Post('signup')
-  @SignupSwagger()
-  async signup(@Body() data: GetSignUpRequest): Promise<GetSignUpResponse> {
-    return this.managerService.signup(data);
-  }
+  // @Post('signup')
+  // @SignupSwagger()
+  // async signup(@Body() data: GetSignUpRequest): Promise<GetSignUpResponse> {
+  //   return this.managerService.signup(data);
+  // }
 }

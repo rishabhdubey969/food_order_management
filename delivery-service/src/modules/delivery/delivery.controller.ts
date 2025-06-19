@@ -12,7 +12,7 @@ import { GetPartnerDeliveriesSwagger } from '../deliveryPartner/deliveryPartnerS
 import { DELIVERY_PARTNER_CONSTANTS } from '../deliveryPartner/deliveryPartnerConstants';
 import { CurrentPartner } from 'src/common/decorators';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
-import { DeliveryDto } from '../deliveryPartner/DTOS/deliveryDto';
+import { DeliveryDto } from '../deliveryPartner/dtos/deliveryDto';
 
 @DeliverySwagger()
 @Controller(DELIVERY_CONSTANTS.ENDPOINTS.DELIVERY_BASE)
@@ -86,6 +86,7 @@ export class DeliveryController {
       const partition = context.getPartition();
       const offset = context.getMessage().offset;
 
+    try{ 
       this.logger.debug('Committing Kafka offset', {
         topic,
         partition,
@@ -105,6 +106,22 @@ export class DeliveryController {
         orderId: orderId.toString(),
         message: DELIVERY_CONSTANTS.MESSAGES.SUCCESS.DELIVERY_CREATED,
       });
+    }catch(error){
+      this.logger.debug('Committing Kafka offset', {
+        topic,
+        partition,
+        offset,
+      });
+
+      await consumer.commitOffsets([{
+        topic,
+        partition,
+        offset: (parseInt(offset) + 1).toString(),
+      }]);
+
+      this.logger.debug('Kafka offset committed successfully');
+      throw error;
+    }
   }
 
   @DeliveredSwagger()
@@ -141,10 +158,9 @@ export class DeliveryController {
   @Get(DELIVERY_PARTNER_CONSTANTS.ENDPOINTS.DELIVERIES_HISTORY)
   async getPartnerDeliveries(
     @CurrentPartner('sub', ParseObjectIdPipe) partnerId: Types.ObjectId,
-    @Query() query: DeliveryDto
+    @Query('page', ParseIntPipe) page: number,
+    @Query('limit', ParseIntPipe) limit: number
   ) {
-
-    const { page, limit } = query;
     this.logger.info('Fetching partner deliveries', {
       service: 'DeliveryPartnerController',
       method: 'getPartnerDeliveries',

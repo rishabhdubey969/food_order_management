@@ -6,6 +6,10 @@ import { Address, Order, OrderStatus, PaymentMethod, PaymentStatus, ProductItem 
 import puppeteer from 'puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
+import { PlaceOrderDto } from 'src/dto/placeOrder.dto';
+import { PaymentClient } from 'src/grpc/payment/payment.client';
+import { KafkaService } from 'src/kafka/kafka.service';
+import { ClientProxy, Ctx, EventPattern, KafkaContext, Payload } from '@nestjs/microservices';
 
 
 
@@ -14,13 +18,16 @@ import * as path from 'path';
 @Injectable()
 export class OrderService {
   private readonly roleCollections = {
-    USER: 'address',
+    ADDRESS: 'address',
     CART: 'carts',
     RESTAURANT: 'restaurants',
   };
   constructor(@InjectModel(Order.name) private OrderSchema: Model<Order>,
     @InjectConnection() private readonly connection: Connection,
-    ) {}
+    private paymentClient: PaymentClient,
+    private readonly kafkaService: KafkaService,
+    @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy
+  ) { }
 
   getHello(): string {
     return "hello world";
@@ -48,19 +55,21 @@ export class OrderService {
 
     return address;
   }
-  async createUserAddress(ADDRESS: any) {
+  createUserAddress(ADDRESS: any) {
     const address = new Address();
-    address.address = ADDRESS.address || ADDRESS.address_location_1;
-    address.contactNumber = ADDRESS.phone || '9676534567';
-    address.email = ADDRESS.email || 'abc1@gmail.com';
-    address.latitude = ADDRESS.latitude
+    address.address = ADDRESS.address_location_1;
+    address.contactNumber = ADDRESS.phone ||"8090064743";
+    address.email = ADDRESS.email||"abc@gmail.com";
+    address.latitude = ADDRESS.latitude;
     address.longitude = ADDRESS.longitude;
+    return address;
   }
-  async createOrder(cartId) {
+  async createOrder(cartId,addressId) {
     const startTime = Date.now();
+
     try {
-      const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id: cartId });
-  
+      await this.handleKitchen({cartId:cartId});
+      const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id: new ObjectId(cartId) });
       if (!cartData) {
         throw new NotFoundException('Cart not found');
       }
@@ -70,20 +79,18 @@ export class OrderService {
 
       const items = this.createItems(cartData.items);
       const restaurantData = await this.connection.collection(this.roleCollections.RESTAURANT).findOne({ _id: new ObjectId(cartData.restaurantId) });
-      
+
       if (!restaurantData) {
         throw new NotFoundException('Restaurant not found');
       }
       const restaurantAddress = this.createRestaurantAddress(restaurantData);
-      const userAddressData = await this.connection.collection(this.roleCollections.USER)
-        .findOne({ user_id: cartData.userId });
-     
+      const userAddressData = await this.connection.collection(this.roleCollections.ADDRESS)
+        .findOne({_id:new ObjectId(addressId)});
+      
       if (!userAddressData) {
         throw new NotFoundException('User address not found');
       }
       const userAddress = this.createUserAddress(userAddressData);
-      
-
       if (isNaN(cartData.subtotal) || isNaN(cartData.total) ||
         isNaN(cartData.tax) || isNaN(cartData.deliveryCharges) ||
         isNaN(cartData.platformFee) || isNaN(cartData.discount)) {
@@ -140,12 +147,50 @@ export class OrderService {
       }
       return { "orderInfo": updatedOrder };
     } catch (error) {
-      if(error instanceof NotFoundException){
+      if (error instanceof NotFoundException) {
         throw error
       }
       throw new InternalServerErrorException('Failed to update order');
     }
   }
+  
+
+  async placeOrder(data: PlaceOrderDto, request: any){
+    if (data.modeOfPayment == "cashOnDelivery") {
+      try {
+        await this.handleCart({ userId: request.sub});
+        await this.handleDelivery({ orderId: data.orderId });
+        await this.client.emit('orderConfirmed', { email: request.email, modeofPayment: data.modeOfPayment, message: "order Confirmed" });
+        return await this.updateOrder(data.orderId, "NILL", PaymentStatus.PENDING, PaymentMethod.CASH_ON_DELIVERY, OrderStatus.PREPARING);
+      } catch (error) {
+        await this.updateOrder(data.orderId,"NILL",PaymentStatus.FAILED,PaymentMethod.CASH_ON_DELIVERY,OrderStatus.FAILED);
+        throw new Error('Failed to process cash on delivery order');
+      }
+    } 
+    else if (data.modeOfPayment == "online") {
+      try {
+        const paymentData = await this.paymentClient.getPayStatus(data.orderId.toString());
+        
+        if (paymentData.paymentStatus == "Failed") {
+          const orderCancelled = await this.updateOrder(data.orderId, paymentData.paymentID, PaymentStatus.FAILED, PaymentMethod.UPI, OrderStatus.CANCELLED );
+          return orderCancelled;
+        }
+        else if (paymentData.paymentStatus == "completed") {
+          await this.handleCart({ userId: request.sub});
+          await this.handleDelivery({ orderId: data.orderId });
+          await this.client.emit('orderConfirmed', { email: request.email, modeofPayment: data.modeOfPayment, message: "order Confirmed" });
+          const orderConfirmed = await this.updateOrder(data.orderId, paymentData.paymentID,PaymentStatus.COMPLETED, PaymentMethod.UPI,OrderStatus.CONFIRMED);
+          return orderConfirmed;
+        }
+      } catch (error) {
+        await this.updateOrder(data.orderId,"NILL",PaymentStatus.FAILED,PaymentMethod.UPI,OrderStatus.FAILED);
+        throw new Error('Failed to process online payment order');
+      }
+    }
+
+  }
+
+
 
   async cancelOrder(orderId: string) {
     try {
@@ -178,7 +223,7 @@ export class OrderService {
       return order;
     }
     catch (error) {
-      throw new InternalServerErrorException('Failed to find order');
+      throw new InternalServerErrorException('Failed to find order by id');
     }
   }
 
@@ -200,13 +245,41 @@ export class OrderService {
 
   }
 
-  async generateInvoice(orderId: string, options: any = {}): Promise<Buffer> {
-    const startTime=Date.now();
-    const order = await this.OrderSchema.findById(orderId);
+
+  async handleDelivery(payload: { orderId: string }) {
+    await this.kafkaService.handleEvent('newOrder', payload);
+  }
+  async handleCart(payload: { userId: string }) {
+    await this.kafkaService.handleEvent('orderCreated', payload);
+
+  }
+  async handleKitchen(payload: { cartId: ObjectId }) {
+    await this.kafkaService.handleEvent('isFoodAvailable', payload);
+  }
+  @EventPattern('deliveryPatenerResponse')
+  async deliveryAssigned(@Payload() payload: any, @Ctx() context: KafkaContext) {
+    console.log("recieved message");
+    const consumer = context.getConsumer();
+    const topic = context.getTopic();
+    const partition = context.getPartition();
+    const offset = context.getMessage().offset;
+
+    await consumer.commitOffsets([
+      {
+        topic,
+        partition,
+        offset: (Number(offset) + 1).toString(),
+      }
+    ]);
+    console.log(payload);
+  }
+
+  async generateInvoice(orderId: string, options: any = {},request:any): Promise<Buffer> {
+    const startTime = Date.now();
+    const order = await this.OrderSchema.findOne({_id:orderId,userId:request.sub});
     if (!order || !orderId) {
       throw new Error('Invalid order data');
     }
-
     let browser;
     try {
       browser = await puppeteer.launch({
@@ -220,15 +293,15 @@ export class OrderService {
         ...options.browserOptions
       });
 
+  
       const page = await browser.newPage();
 
       await page.setExtraHTTPHeaders({
         'Content-Security-Policy': "default-src 'self'"
       });
-      
 
-      const html = this.generateInvoiceHTML(order);
 
+      const html = this.generateInvoiceHTML(order,request);
       await page.setContent(html, {
         waitUntil: 'networkidle0',
         timeout: 30000
@@ -246,6 +319,7 @@ export class OrderService {
         preferCSSPageSize: true,
         ...options.pdfOptions
       };
+    
       const pdfBuffer = await page.pdf(pdfOptions);
       if (options.debug) {
         const outputDir = path.join(__dirname, '..', '..', 'invoices');
@@ -256,7 +330,6 @@ export class OrderService {
         fs.writeFileSync(outputPath, pdfBuffer);
         console.log(`Invoice saved to ${outputPath}`);
       }
-
       return pdfBuffer;
 
     } catch (err) {
@@ -268,8 +341,7 @@ export class OrderService {
     }
   }
 
-
-  private generateInvoiceHTML(order: any): string {
+private generateInvoiceHTML(order: any,request:any): string {
     return `
         <!DOCTYPE html>
           <html>
@@ -373,7 +445,7 @@ export class OrderService {
                 <div class="invoice-title">Invoice</div>
               </div>
               <div class="section">
-                <div><strong>Bill To:</strong>${order.deliveryAddress.address.toString()}</div>
+                <div><strong>Bill To:</strong>${request.email}</div>
                 <div><strong>Date:</strong> ${new Date().toLocaleDateString()}</div>
                 <div><strong>Receipt No:</strong> ${order._id.toString()}</div>
               </div>

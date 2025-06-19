@@ -88,7 +88,7 @@ async function bootstrap() {
     },
     'JWT')
     .build();
-
+   await app.startAllMicroservices();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
  

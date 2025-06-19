@@ -3,7 +3,7 @@ import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
 import { json } from 'express';
 import { PaymentModule } from './payment.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import {  join } from 'path';
+import { join } from 'path';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AllExceptionsFilter } from 'src/middleware/filter/exception.filter';
 import { ErrorInterceptor } from 'src/middleware/interceptor/error.interceptor';
@@ -37,7 +37,7 @@ async function bootstrap() {
         }),
       ],
     }),
-  },);
+  });
 
   app.use((req, res, next) => {
     if (req.originalUrl === '/webhook/stripe') {
@@ -65,7 +65,7 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
   app.useGlobalInterceptors(
     new ErrorInterceptor(),
-    new SimpleResponseInterceptor(app.get(Reflector))
+    new SimpleResponseInterceptor(app.get(Reflector)),
   );
   const swaggerConfig = new DocumentBuilder()
     .setTitle('API with NestJS')
@@ -100,5 +100,3 @@ async function bootstrap() {
   console.log(`Application is running on: ${port}`);
 }
 bootstrap();
-
-

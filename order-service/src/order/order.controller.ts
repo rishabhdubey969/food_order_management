@@ -1,209 +1,167 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards,Res, BadRequestException, Inject, InternalServerErrorException, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards, Res, BadRequestException, Inject, InternalServerErrorException, Req, HttpException } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { PaymentClient } from 'src/grpc/payment/payment.client';
-import { ParseObjectIdPipe } from '@nestjs/mongoose';
-import {ObjectId} from 'mongodb';
-import { OrderStatus, PaymentMethod, PaymentStatus } from 'src/schema/order.schema';
-import { KafkaService } from 'src/kafka/kafka.service';
-import { ClientProxy, Ctx, EventPattern, KafkaContext, MessagePattern, Payload } from '@nestjs/microservices';
 import { jwtGuard } from 'src/guards/jwt-guard';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PrePlaceOrderDto } from 'src/dto/prePlaceOrder.dto';
 import { PlaceOrderDto } from 'src/dto/placeOrder.dto';
 import { OrderDto } from 'src/dto/order.dto';
-import { AuthClient } from 'src/grpc/authentication/auth.client';
 import { Response } from 'express'
 
 
 
-@ApiBearerAuth('JWT')
 @ApiTags('Order')
-@UseGuards(jwtGuard)
 @Controller('order')
 export class OrderController {
 
-    constructor(private readonly orderService: OrderService,
-        private authClient:AuthClient,
-        private paymentClient:PaymentClient,
-        private readonly kafkaService: KafkaService,
-        @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy
-      ) {}
-      
+  constructor(private readonly orderService: OrderService,
+  ) { }
 
-      @Get('/status')
-      @ApiOperation({ summary: 'Get service status' })
-      @ApiResponse({ status: 200, description: 'Service is running' })
-     async getHello(){
-        return this.orderService.getHello();
-      }
-     
 
-      @Post('/prePlaceOrder')
-      @ApiOperation({ summary: 'Prepare order from cart' })
-      @ApiBody({ type: PrePlaceOrderDto })
-      @ApiResponse({ 
-        status: 201, 
-        description: 'Order prepared successfully',
-        type: OrderDto
-      })
-      @ApiResponse({ status: 400, description: 'Bad Request' })
-      @ApiResponse({ status: 401, description: 'Unauthorized' })
-      async prePlaceOrder(@Body('cartId',ParseObjectIdPipe) cartId: ObjectId){
-          // console.log(cartId);
-          await this.handleKitchen({cartId:cartId});
-          return await this.orderService.createOrder(cartId);   
-      }   
+  @Get('/status')
+  @ApiOperation({ summary: 'Get service status' })
+  @ApiResponse({ status: 200, description: 'Service is running' })
+  async getHello() {
+    return this.orderService.getHello();
+  }
+
+
+  @ApiBearerAuth('JWT')
+  @UseGuards(jwtGuard)
+  @Post('/prePlaceOrder')
+  @ApiOperation({ summary: 'Prepare order from cart' })
+  @ApiBody({ type: PrePlaceOrderDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Order prepared successfully',
+    type: OrderDto
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async prePlaceOrder(@Body()data :PrePlaceOrderDto) {
+    return await this.orderService.createOrder(data.cartId,data.addressId);
+  }
 
 
 
- 
-      @Post('/placeOrder')
-      @ApiOperation({ summary: 'Finalize order placement with payment method' })
-      @ApiBody({ type: PlaceOrderDto })
-      @ApiResponse({ 
-        status: 201, 
-        description: 'Order placed successfully',
-        type: OrderDto
-      })
-      @ApiResponse({ status: 400, description: 'Bad Request' })
-      @ApiResponse({ status: 401, description: 'Unauthorized' })
-      @ApiResponse({ status: 402, description: 'Payment Failed' })
-      async placeOrder(@Body() data:PlaceOrderDto,@Req() request:any){
-        if(data.modeOfPayment=="cashOnDelivery"){
-             await this.handleCart({userId:request.user._id});
-            await this.handleDelivery({orderId: data.orderId});
-            await this.client.emit('orderConfirmed',{email:request.user.email,modeofPayment:data.modeOfPayment,message:"order Confirmed"});
-            return await this.orderService.updateOrder(data.orderId,"NILL",PaymentStatus.PENDING,PaymentMethod.CASH_ON_DELIVERY,OrderStatus.PREPARING);
-        }
-        else if(data.modeOfPayment=="online"){
-              const paymentData= await this.paymentClient.getPayStatus(data.orderId.toString());
-              if(paymentData.paymentStatus=="Failed"){
-                const orderCancelled=await this.orderService.updateOrder(data.orderId,paymentData.paymentID,PaymentStatus.FAILED,PaymentMethod.UPI,OrderStatus.CANCELLED);
-                return orderCancelled;
-              }
-              else if(paymentData.paymentStatus=="completed"){
-                await this.handleCart({userId:request.user._id});
-                await  this.handleDelivery({orderId:data.orderId});
-                const orderConfirmed=await this.orderService.updateOrder(data.orderId,paymentData.paymentID,PaymentStatus.COMPLETED,PaymentMethod.UPI,OrderStatus.CONFIRMED);
-                return orderConfirmed;
-              }
-        }
-        else{
-           throw new BadRequestException('Invalid  values');
-        }
-      }
-   
+  @ApiBearerAuth('JWT')
+  @UseGuards(jwtGuard)
+  @Post('/placeOrder')
+  @ApiOperation({ summary: 'Finalize order placement with payment method' })
+  @ApiBody({ type: PlaceOrderDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Order placed successfully',
+    type: OrderDto
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 402, description: 'Payment Failed' })
+  async placeOrder(@Body() data: PlaceOrderDto, @Req() request: any) {
+    return await this.orderService.placeOrder(data, request.user.payload);
+  }
 
-      @Get('/cancelOrder/:orderId')
-      @ApiOperation({ summary: 'Cancel an order' })
-      @ApiParam({ name: 'orderId', description: 'ID of the order to cancel' })
-      @ApiResponse({ 
-        status: 200, 
-        description: 'Order cancelled successfully',
-        type: OrderDto
-      })
-      @ApiResponse({ status: 400, description: 'Bad Request' })
-      @ApiResponse({ status: 401, description: 'Unauthorized' })
-      @ApiResponse({ status: 404, description: 'Order not found' })
-      @Get('/cancelOrder/:orderId')
-      async cancelOrder(@Param('orderId') orderId:string){
-           return await this.orderService.cancelOrder(orderId);
-      }
-      
-      
-      @Get('/:orderId')
-      @ApiOperation({ summary: 'Get order details by ID' })
-      @ApiParam({ name: 'orderId', description: 'ID of the order to retrieve' })
-      @ApiResponse({ 
-        status: 200, 
-        description: 'Order details',
-        type: OrderDto
-      })
-      @ApiResponse({ status: 401, description: 'Unauthorized' })
-      @ApiResponse({ status: 404, description: 'Order not found' })
-      async getOrderById(@Param('orderId') orderId:any){
-         return await this.orderService.getOrder(orderId);
-      }
+
+  @ApiBearerAuth('JWT')
+  @UseGuards(jwtGuard)
+  @Get('/cancelOrder/:orderId')
+  @ApiOperation({ summary: 'Cancel an order' })
+  @ApiParam({ name: 'orderId', description: 'ID of the order to cancel' })
+  @ApiResponse({
+    status: 200,
+    description: 'Order cancelled successfully',
+    type: OrderDto
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  @Get('/cancelOrder/:orderId')
+  async cancelOrder(@Param('orderId') orderId: string) {
+    return await this.orderService.cancelOrder(orderId);
+  }
 
    
-      @Get('/allOrder/:userId')
-      @ApiOperation({ summary: 'Get all orders for a user' })
-      @ApiParam({ name: 'userId', description: 'ID of the user' })
-      @ApiQuery({ 
-        name: 'limit', 
-        required: false, 
-        description: 'Limit number of results' 
-      })
-      @ApiQuery({ 
-        name: 'offset', 
-        required: false, 
-        description: 'Offset for pagination' 
-      })
-      @ApiResponse({ 
-        status: 200, 
-        description: 'List of user orders',
-        type: [OrderDto]
-      })
-     @ApiResponse({ status: 401, description: 'Unauthorized' })
-      async getAllOrder(@Query() query:Record<string,any>){
-        return await this.orderService.getAllOrder(query.userId,query);
-      }
-
-      
-
-      @Get('/generateInvoice/:orderId')
-      @ApiOperation({ summary: 'Generate invoice for an order' })
-    @ApiParam({ name: 'orderId', description: 'ID of the order' })
-    @ApiResponse({ 
-      status: 200, 
-      description: 'Invoice generated successfully',
-      type: String
-    })
-    @ApiResponse({ status: 401, description: 'Unauthorized' })
-    @ApiResponse({ status: 404, description: 'Order not found' })
-      async generateInvoice(@Param('orderId') orderId:string,@Res() res: Response){
-        try {
-          const pdfBuffer = await this.orderService.generateInvoice(orderId, { debug: true });
-          res.set({
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename=invoice_${orderId}.pdf`,
-            'Content-Length': pdfBuffer.length,
-          });
-    
-          return res.send(pdfBuffer);
-        } catch (err) {
-          throw new InternalServerErrorException('Failed to download');
-        }  
-      }
+  @ApiBearerAuth('JWT')
+  @UseGuards(jwtGuard)
+  @Get('orderById/:orderId')
+  @ApiOperation({ summary: 'Get order details by ID' })
+  @ApiParam({ name: 'orderId', description: 'ID of the order to retrieve' })
+  @ApiResponse({
+    status: 200,
+    description: 'Order details',
+    type: OrderDto
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  async getOrderById(@Param('orderId') orderId: any) {
+    return await this.orderService.getOrder(orderId);
+  }
 
 
-      async handleDelivery(payload: {orderId:string})
-      {
-        await this.kafkaService.handleEvent('newOrder', payload);
-      }
-      async handleCart(payload:{userId:string}){
-          await this.kafkaService.handleEvent('orderCreated',payload);
-      
-      }
-      async handleKitchen(payload:{cartId:ObjectId}){
-        await this.kafkaService.handleEvent('isFoodAvailable',payload);
-      }
-      @EventPattern('deliveryPatenerResponse')
-      async deliveryAssigned(@Payload() payload:any, @Ctx() context: KafkaContext)
-      {    
-           console.log("recieved message");
-           const consumer = context.getConsumer();
-           const topic = context.getTopic();
-           const partition = context.getPartition();
-           const offset = context.getMessage().offset;
+  @ApiBearerAuth('JWT')
+  @UseGuards(jwtGuard)
+  @Get('/userAllOrder')
+  @ApiOperation({
+    summary: 'Get all orders for the authenticated user',
+    description: 'Retrieves a list of all orders belonging to the currently authenticated user.'
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number for pagination',
+    example: 1,
+    type: Number
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+    example: 10,
+    type: Number
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved user orders'
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT'
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error'
+  })
+  async getAllOrder(@Query() data: Record<string, any>, @Req() request: any) {
+    const userId = request.user.payload.sub;
+    return await this.orderService.getAllOrder(userId, data);
+  }
 
-           await consumer.commitOffsets([
-            {
-              topic,
-              partition,
-              offset: (parseInt(offset) + 1).toString()
-            }
-           ]);
-           console.log(payload);
-      }
+
+
+  @ApiBearerAuth('JWT')
+  @UseGuards(jwtGuard)
+  @Get('/generateInvoice/:orderId')
+  @ApiOperation({ summary: 'Generate invoice for an order' })
+  @ApiParam({ name: 'orderId', description: 'ID of the order' })
+  @ApiResponse({
+    status: 200,
+    description: 'Invoice generated successfully',
+    type: String
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  async generateInvoice(@Param('orderId') orderId: string, @Res() res: Response,@Req() request:any) {
+    try {
+      const pdfBuffer = await this.orderService.generateInvoice(orderId, { debug: true },request.user.payload);
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename=invoice_${orderId}.pdf`,
+        'Content-Length': pdfBuffer.length,
+      });
+
+      return res.send(pdfBuffer);
+    } catch (err) {
+      throw new InternalServerErrorException('Failed to download');
+    }
+  }
+
 }

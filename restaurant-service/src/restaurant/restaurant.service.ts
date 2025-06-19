@@ -54,15 +54,23 @@ export class RestaurantService implements OnModuleInit {
   return restaurant;
 }
 
+
   // Create a restaurant and assign it to a verified manager
   async createRestaurant(createRestaurantDto: CreateRestaurantDto, managerId: string) {
-  const manager = await this.managerModel.findOne({ _id: managerId });
-
+  const manager = await this.managerModel.findOne({ _id: new Types.ObjectId(managerId) });
+  console.log(manager);
   if (!manager) {
     throwNotFound(MESSAGES.MANAGER_NOT_FOUND);
   }
   if (!manager.isActiveManager) {
+    console.log(manager.isActiveManager)
     throwBadRequest(MESSAGES.MANAGER_NOT_VERIFIED);
+  }
+
+  const alreadyVerified =  await this.restaurantModel.find({managerId, isActiveManager: true});
+
+  if(alreadyVerified){
+    throwBadRequest(MESSAGES.MANAGER_ALREADY_VERIFIED);
   }
 
   try {
@@ -103,7 +111,7 @@ export class RestaurantService implements OnModuleInit {
   }
 
   // Get nearby restaurants based on user location, also caches the coordinates in Redis
-  async getNearbyRestaurants(latitude: number, longitude: number, limit = 10, offset = 0, user: any) {
+  async getNearbyRestaurants(latitude: number, longitude: number, user: any, limit = 10, offset = 0) {
   const userId = user?.userId;
   const redisKey = `address:${userId}:coordinates`;
   const value = JSON.stringify({ latitude, longitude });
@@ -136,7 +144,6 @@ export class RestaurantService implements OnModuleInit {
   }
 }
 
-
   // Get all restaurants with pagination
   async getAllRestaurants(limit = 10, offset = 0) {
     this.logger.log(`Fetching all restaurants with limit: ${limit}, offset: ${offset}`);
@@ -150,9 +157,9 @@ export class RestaurantService implements OnModuleInit {
   }
 
   // Create a new menu item under a restaurant
-  async createMenuItem(restaurantId: string, createMenuItemDto: CreateMenuItemDto) {
+  async createMenuItem(restaurantId: string, createMenuItemDto: CreateMenuItemDto, managerId: string) {
   this.logger.log(`Creating menu item for restaurant ID: ${restaurantId}`);
-  const restaurant = await this.restaurantModel.findById(restaurantId).exec();
+  const restaurant = await this.restaurantModel.findById({_id: new Types.ObjectId(restaurantId), managerId}).exec();
   if (!restaurant) {
     throwNotFound(MESSAGES.RESTAURANT_NOT_FOUND(restaurantId));
   }

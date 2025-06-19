@@ -3,7 +3,6 @@ import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model } from 'mongoose';
 
 import { AuthService } from '../auth/auth.service';
-import { ClientProxy } from '@nestjs/microservices';
 import { ObjectId } from 'mongodb';
 
 @Injectable()
@@ -14,7 +13,6 @@ export class UserService {
    
     @InjectConnection() private readonly connection: Connection,
     private readonly authService: AuthService,
-    // @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
   ) {}
 
   async blockUser(userId: string) {
@@ -53,13 +51,7 @@ export class UserService {
       this.logger.log(`User with ID: ${userId} has been blocked`);
 
      
-      // this.client.emit('send_email', {
-      //   to: user.email,
-      //   subject: 'Your Account Has Been Blocked',
-      //   html: `<p>Your account has been blocked by an admin. Please contact support for more information.</p>`,
-      // });
-      // this.logger.log(`Block notification email emitted for ${user.email}`);
-
+   
       return { message: `User with ID ${userId} has been blocked` };
     } catch (error) {
       this.logger.error(`Failed to block user with ID: ${userId}: ${error.message}`, error.stack);
@@ -105,13 +97,7 @@ export class UserService {
       this.logger.log(`User with ID: ${userId} has been blocked`);
 
      
-      // this.client.emit('send_email', {
-      //   to: user.email,
-      //   subject: 'Your Account Has Been Unblocked',
-      //   html: `<p>Your account has been unblocked by an admin. You can now access your account.</p>`,
-      // });
-      // this.logger.log(`Unblock notification email emitted for ${user.email}`);
-
+    
       return { message: `User with ID ${userId} has been unblocked` };
     } catch (error) {
       this.logger.error(`Failed to unblock user with ID: ${userId}: ${error.message}`, error.stack);
@@ -126,7 +112,6 @@ export class UserService {
     this.logger.log(`Fetching list of users with pagination - page: ${page}, limit: ${limit}`);
     try {
       let payload = await this.authService.verifyJwtToken(token);
-      // console.log(payload);
 
       if (payload.role !== 'admin') {
         this.logger.warn(`Unauthorized access attempt by role: ${payload.role}`);

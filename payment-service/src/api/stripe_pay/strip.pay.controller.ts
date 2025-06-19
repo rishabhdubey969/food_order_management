@@ -1,22 +1,13 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 
 import { StripePayService } from './stripe.pay.service';
 import { CreatePaymentDto } from './DTO/create.payment.dto';
 import { StripeConfigService } from '../../config/stripe.config';
 import { GrpcMethod } from '@nestjs/microservices';
-import {
-  ApiBearerAuth,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { PaymmentDoc, RetryDoc } from 'src/swagger/stripe_pay.swagger';
 import { ROUTE } from './constant/message.constant';
-import { Auth } from 'src/constants/auth.constant';
 
 @ApiBearerAuth('JWT')
 @ApiTags('Payment')
@@ -48,7 +39,7 @@ export class StripePayController {
 
   @UseGuards(AuthGuard)
   @Post(ROUTE.REQUEST)
-  async requestPayment(@Body() payload:CreatePaymentDto){
-    return await this.paymentService.requestPayment(payload)
+  async requestPayment(@Body() payload: CreatePaymentDto) {
+    return await this.paymentService.requestPayment(payload);
   }
 }

@@ -26,7 +26,6 @@ export function GetAddressAllDoc() {
 export function GetAddressByIdDoc() {
   return applyDecorators(
     ApiOperation({ summary: 'Get a specific address by its ID ' }),
-    ApiParam({ name: 'id', type: String, description: 'Address ID' }),
     ApiResponse({ status: 200, description: 'User address found' }),
     ApiResponse({ status: 404, description: 'User address not found' }),
     ApiBearerAuth(),
@@ -36,7 +35,6 @@ export function GetAddressByIdDoc() {
 export function UpdateAddressByIdDoc() {
   return applyDecorators(
     ApiOperation({ summary: 'Update an existing address by its ID ' }),
-    ApiParam({ name: 'id', type: String, description: 'Address ID' }),
     ApiBody({ type: UpdateAddressDto }),
     ApiResponse({ status: 200, description: 'User address updated successfully' }),
     ApiResponse({ status: 404, description: 'User address not updated successfully' }),
@@ -48,7 +46,6 @@ export function UpdateAddressByIdDoc() {
 export function DeleteAddressByIdDoc() {
   return applyDecorators(
     ApiOperation({ summary: 'Delete an address by its ID' }),
-    ApiParam({ name: 'id', type: String, description: 'Address ID' }),
     ApiResponse({ status: 200, description: 'Address deleted successfully' }),
     ApiResponse({ status: 404, description: 'Address deleted not successfully' }),
     ApiBearerAuth(),

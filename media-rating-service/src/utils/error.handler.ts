@@ -1,4 +1,3 @@
-// src/utils/error.handler.ts
 import { Logger } from './logger';
 import { Response } from 'express';
 import { CONSTANTS } from '../constant/ratingConstant'; // Assuming the globalMessage is properly typed
@@ -17,17 +16,17 @@ export class ApiError extends Error {
     }
 }
 
-// // Global error handler for gRPC methods would be different, but this serves for internal service errors.
-// // For gRPC, you typically return a gRPC status code and details in the callback.
-// export const handleServiceError = (error: any, context: string): { code: number; details: string } => {
-//     if (error instanceof ApiError) {
-//         Logger.error(`[${context}] API Error: ${error.statusCode} - ${error.message}`, context);
-//         return { code: error.statusCode >= 500 ? 13 : 3, details: error.message }; // INTERNAL or INVALID_ARGUMENT
-//     } else {
-//         Logger.error(`[${context}] Unhandled Error: ${error.message || 'Unknown error'}\n${error.stack}`, context);
-//         return { code: 2, details: 'An internal server error occurred.' }; // UNKNOWN
-//     }
-// };
+// Global error handler for gRPC methods would be different, but this serves for internal service errors.
+// For gRPC, you typically return a gRPC status code and details in the callback.
+export const handleServiceError = (error: any, context: string): { code: number; details: string } => {
+    if (error instanceof ApiError) {
+        Logger.error(`[${context}] API Error: ${error.statusCode} - ${error.message}`, context);
+        return { code: error.statusCode >= 500 ? 13 : 3, details: error.message }; // INTERNAL or INVALID_ARGUMENT
+    } else {
+        Logger.error(`[${context}] Unhandled Error: ${error.message || 'Unknown error'}\n${error.stack}`, context);
+        return { code: 2, details: 'An internal server error occurred.' }; // UNKNOWN
+    }
+};
 
 interface ResponseData {
   [key: string]: any;
