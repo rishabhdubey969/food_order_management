@@ -33,9 +33,10 @@ export class AuthController {
     try {
   
       const userId = req.user._id;
+      const email=req.user.email;
     
       const {  otp } = verifyOtpDto;
-      return await this.authService.verifyOtp(userId, otp);
+      return await this.authService.verifyOtp(userId, otp,email);
     } catch (error) {
       throw new HttpException(
         error.message || 'OTP verification failed',

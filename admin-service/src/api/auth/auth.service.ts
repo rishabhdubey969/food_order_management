@@ -127,9 +127,8 @@ export class AuthService {
       let Subject = 'Your Admin Login OTP';
       let text = `Your OTP for admin login is: ${otp} It expires in 10 minutes`;
       await this.emailService.sendEmail(email, Subject, text);
-      let data={_id: admin._id.toString(), email: admin.email }
+      let data={_id: admin._id.toString(), email: email }
       const accessToken = await this.jwtService.sign(data,{ expiresIn: '5m' })
-      console.log('access_token:',accessToken);
       return {
         message: SUCCESS_MESSAGES.OTP,
         accessToken
@@ -144,9 +143,9 @@ export class AuthService {
     }
   }
 
-  async verifyOtp(userId: string, otp: string) {
+  async verifyOtp(userId: string, otp: string,  email:string) {
     this.logger.log(
-      `Starting OTP verification for admin userId: ${userId}`,
+      `Starting OTP verification for admin userId: ${email}`,
     );
     try {
 
