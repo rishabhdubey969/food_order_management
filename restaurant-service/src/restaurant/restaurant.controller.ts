@@ -12,8 +12,11 @@ import {
 import { RestaurantService } from './restaurant.service';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
+  ApiParam,
   ApiQuery,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateRestaurantDto } from './dto/restaurant.dto';
@@ -27,6 +30,7 @@ import { Role } from './common/role.enum';
 import { JwtAuthGuard } from './guards/jwtAuth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { ManagerGuard } from './guards/manager.guard';
+import { UpdateMenuItemDto } from './dto/updateMenuItem.dto';
 
 interface MediaService {
   getSignedUrl(fileName: string, fileType: string, folderName: string): Promise<string>;
@@ -153,6 +157,50 @@ async getNearbyRestaurants(
   @Get(':restaurantId/menu/:itemId')
   async getMenuItemById(@Param('restaurantId') restaurantId: string, @Param('itemId') itemId: string) {
     return this.restaurantService.getItemById(restaurantId, itemId);
+  }
+
+  @Put('menuItem/:itemId')
+  @ApiOperation({ summary: 'Update an existing menu item' }) // Overall description of the endpoint
+  @ApiParam({
+    name: 'itemId',
+    description: 'The ID of the menu item to update',
+    type: String,
+    example: '60c72b2f9b1e8a001c8e4d3a', 
+  })
+  @ApiBody({
+    type: UpdateMenuItemDto, 
+    description: 'Data to update the menu item',
+    examples: { 
+      partialUpdate: {
+        summary: 'Update price and description',
+        value: {
+          price: 15.99,
+          description: 'A delicious new description for the dish.',
+        },
+      },
+      fullUpdate: {
+        summary: 'Full update of menu item details',
+        value: {
+          name: 'Spicy New Burger',
+          description: 'Our classic burger with a spicy kick!',
+          price: 12.50,
+          imageUrl: 'http://example.com/spicy-burger.jpg',
+          tags: ['spicy', 'burger', 'new'],
+          copons: ['SUMMER20'],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The menu item has been successfully updated.',
+    type: CreateMenuItemDto, // Assuming the response shape is similar to CreateMenuItemDto
+  })
+  @ApiResponse({ status: 404, description: 'Menu item not found.' })
+  @ApiResponse({ status: 400, description: 'Invalid input or validation error.' })
+  @ApiResponse({ status: 500, description: 'Internal server error.' })
+  async updateMenuItem(@Param('itemId') itemId: string, @Body()updateMenuItemDto: UpdateMenuItemDto){
+    return await this.restaurantService.updateMenuItem(itemId, updateMenuItemDto);
   }
 
   /**

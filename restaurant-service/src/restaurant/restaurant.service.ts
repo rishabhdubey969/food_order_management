@@ -20,6 +20,7 @@ import { WinstonLogger } from 'src/logger/winston-logger.service';
 import { Manager } from 'src/manager/schema/manager.schema';
 import { MESSAGES } from './constants/restaurant-constant';
 import { throwBadRequest, throwInternal, throwNotFound } from './common/http-exception.utils';
+import { UpdateMenuItemDto } from './dto/updateMenuItem.dto';
 
 interface MediaService {
   getSignedUrl(key: string): Promise<string>;
@@ -177,6 +178,35 @@ export class RestaurantService implements OnModuleInit {
     } catch (error) {
       this.logger.error(`Error creating menu item: ${error.message}`, error.stack);
       throwInternal(MESSAGES.UNKNOWN_ERROR);
+    }
+  }
+
+
+  async updateMenuItem(itemId: string, updateMenuItemDto: UpdateMenuItemDto) {
+    try {
+      console.log(updateMenuItemDto);
+      
+      const item = await this.menuItemModel.findByIdAndUpdate(
+        { _id: new Types.ObjectId(itemId) },
+        updateMenuItemDto,
+        { new: true } 
+      );
+
+      if (!item) {
+        throwNotFound(MESSAGES.ITEM_NOT_FOUND);
+      }
+      console.log(item);
+      return item;
+    } catch (error) {
+      this.logger.error(`Error updating menu item with ID ${itemId}: ${error.message}`, error.stack);
+
+      if (error.name === 'CastError') {
+        throwNotFound(MESSAGES.ITEM_NOT_FOUND);
+      } else if (error.name === 'ValidationError') {
+        throwBadRequest(MESSAGES.VALIDATION_FAILED(error.message));
+      } else {
+        throwInternal(MESSAGES.UNKNOWN_ERROR);
+      }
     }
   }
 
