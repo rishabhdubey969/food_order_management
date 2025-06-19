@@ -4,12 +4,13 @@ import { RestaurantController } from './restaurant.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RestaurantSchema } from './schema/restaurant.schema';
 import { MenuItemSchema } from './schema/menuItem.schema';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ClientsModule, ClientsProviderAsyncOptions, Transport } from '@nestjs/microservices';
 import { CouponSchema } from './schema/copon.schema';
 import { RedisModule } from './redis/redis.module';
 import { LoggerModule } from 'src/logger/logger.module';
 import { ManagerSchema } from 'src/manager/schema/manager.schema';
 import { Manager } from './schema/manager.schema';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [MongooseModule.forFeature([
@@ -19,8 +20,20 @@ import { Manager } from './schema/manager.schema';
     {  name: Manager.name, schema: ManagerSchema},
   ]), RedisModule,
   LoggerModule,
-  // ClientsModule.register([
-  //   {
+  ClientsModule.registerAsync([
+      {
+        name: 'AUTH_SERVICE',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.GRPC,
+          options: {
+            package: configService.get<string>('AUTH_GRPC_PACKAGE'),
+            protoPath: configService.get<string>('AUTH_GRPC_PROTO_PATH'),
+            url: configService.get<string>('AUTH_GRPC_URL'),
+          },
+        }),
+        inject: [ConfigService],
+      } as ClientsProviderAsyncOptions,
+      // {
   //     name: 'MEDIA_SERVICE',
   //     transport: Transport.GRPC,
   //     options: {
@@ -29,17 +42,6 @@ import { Manager } from './schema/manager.schema';
   //       url: 'localhost:50051', 
   //     },
   //   },
-  // ]),
-  ClientsModule.register([
-    {
-      name: 'AUTH_SERVICE',
-      transport: Transport.GRPC,
-      options: {
-        package: 'auth', 
-        protoPath: "src/grpc/proto/auth.proto", // adjust path to your actual proto
-        url: 'localhost:50051', // adjust to your auth service host/port
-      },
-    },
   ]),
 
   ],

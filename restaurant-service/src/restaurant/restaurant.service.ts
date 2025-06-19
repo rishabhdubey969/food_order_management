@@ -23,6 +23,7 @@ import { throwBadRequest, throwInternal, throwNotFound } from './common/http-exc
 import { UpdateMenuItemDto } from './dto/updateMenuItem.dto';
 import { types } from 'util';
 import { Type } from 'class-transformer';
+import { throwError } from 'rxjs';
 
 interface MediaService {
   getSignedUrl(key: string): Promise<string>;
@@ -227,7 +228,7 @@ export class RestaurantService implements OnModuleInit {
       }
       this.logger.log(`Successfully deleted menu item: ${JSON.stringify(item)}`);
       return item;
-    }catch(error){
+    } catch (error) {
       this.logger.error(`Error deleting menu item with ID ${itemId}: ${error.message}`, error.stack);
       throwInternal(MESSAGES.UNKNOWN_ERROR);
     }
@@ -252,6 +253,31 @@ export class RestaurantService implements OnModuleInit {
     }
 
     return await this.menuItemModel.find({ restaurantId }).exec();
+  }
+
+  async getMenuItemForManager(managerId: string) {
+    try {
+      const restaurant = await this.restaurantModel.findOne({ managerId });
+
+    if (!restaurant) {
+      this.logger.warn(`Restaurant not found for manager ID: ${managerId}`);
+      throwNotFound(MESSAGES.RESTAURANT_NOT_FOUND_FOR_MANAGER);
+    }
+   
+    const restaurantIdAsObjectId = restaurant._id as Types.ObjectId;
+    const menuItems = await this.menuItemModel.find({ restaurantId: restaurantIdAsObjectId.toString() });
+
+    if (!menuItems || menuItems.length === 0) { 
+      this.logger.error(`No menu items found for restaurant ID: ${restaurant._id}`);
+      return []; 
+      
+    }
+
+    return menuItems; 
+    }catch(error){
+      this.logger.error(`Menu item can't be found ${error}`);
+      throwInternal(MESSAGES.UNKNOWN_ERROR);
+    }
   }
 
 

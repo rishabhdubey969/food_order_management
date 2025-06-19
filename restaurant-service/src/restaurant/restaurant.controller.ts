@@ -282,9 +282,27 @@ export class RestaurantController {
  * @param restaurantId The unique identifier of the restaurant for which to retrieve menu items.
  * @returns A list of menu item objects associated with the specified restaurant.
  */
+
+  @UseGuards(JwtAuthGuard, ManagerGuard)
+  @ApiBearerAuth('JWT')
   @Get(':restaurantId/menu')
   async getMenuItems(@Param('restaurantId') restaurantId: string) {
     return this.restaurantService.getMenuItems(restaurantId);
+  }
+
+  /**
+   * Retrieves all menu items for that specific manager.
+   * 
+   * @param req taken this to get manager ID  from  token.
+   * @returns A list of menu items of the restaurant to that specific manager.
+   */
+  @Get('menuItem')
+  @UseGuards(JwtAuthGuard, ManagerGuard)
+  @ApiBearerAuth('JWT')
+  async getMenuItemForManager(@Req() req: any){
+    const managerId = req.user.sub;
+    console.log(managerId);
+    return await this.restaurantService.getMenuItemForManager(managerId);
   }
 
   /**
