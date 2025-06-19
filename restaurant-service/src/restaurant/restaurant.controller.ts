@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -203,6 +204,11 @@ async getNearbyRestaurants(
     return await this.restaurantService.updateMenuItem(itemId, updateMenuItemDto);
   }
 
+  @Delete('menu/:itemId')
+  async deleteItem(@Param('itemId') itemId: string){
+    return await this.restaurantService.deleteItem(itemId);
+  }
+  
   /**
    * Get all menu items for a given restaurant
    */

@@ -21,6 +21,8 @@ import { Manager } from 'src/manager/schema/manager.schema';
 import { MESSAGES } from './constants/restaurant-constant';
 import { throwBadRequest, throwInternal, throwNotFound } from './common/http-exception.utils';
 import { UpdateMenuItemDto } from './dto/updateMenuItem.dto';
+import { types } from 'util';
+import { Type } from 'class-transformer';
 
 interface MediaService {
   getSignedUrl(key: string): Promise<string>;
@@ -185,11 +187,11 @@ export class RestaurantService implements OnModuleInit {
   async updateMenuItem(itemId: string, updateMenuItemDto: UpdateMenuItemDto) {
     try {
       console.log(updateMenuItemDto);
-      
+
       const item = await this.menuItemModel.findByIdAndUpdate(
         { _id: new Types.ObjectId(itemId) },
         updateMenuItemDto,
-        { new: true } 
+        { new: true }
       );
 
       if (!item) {
@@ -207,6 +209,27 @@ export class RestaurantService implements OnModuleInit {
       } else {
         throwInternal(MESSAGES.UNKNOWN_ERROR);
       }
+    }
+  }
+
+  /**
+   * 
+   * @param itemId 
+   * @returns 
+   */
+  async deleteItem(itemId: string) {
+    try {
+      const item = await this.menuItemModel.findByIdAndDelete(new Types.ObjectId(itemId));
+
+      if (!item) {
+        this.logger.warn(`Menu item with ID ${itemId} not found for deletion.`);
+        throwNotFound(MESSAGES.ITEM_NOT_FOUND);
+      }
+      this.logger.log(`Successfully deleted menu item: ${JSON.stringify(item)}`);
+      return item;
+    }catch(error){
+      this.logger.error(`Error deleting menu item with ID ${itemId}: ${error.message}`, error.stack);
+      throwInternal(MESSAGES.UNKNOWN_ERROR);
     }
   }
 
