@@ -23,17 +23,21 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
    */
   async handleConnection(client: Socket & { data: { manager: { id: string } } }) {
 
+    try{
     const token = client.handshake.headers.authorization?.split(' ')[1];
     console.log(token);
     if(!token){
       throw new UnauthorizedException('No token provided');
     }
     const payload = await this.tokenService.verifyToken(token, "access");
-    console.log(payload)
     const managerId = payload.sub.toString();
     
     this.connectedManagers.set(managerId , client);
     this.logger.log(`Manager ${managerId} connected`);
+  }catch(err)
+  {
+    client.disconnect();
+  }
   }
 
   /**

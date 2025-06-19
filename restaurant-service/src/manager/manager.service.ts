@@ -66,7 +66,6 @@ export class ManagerService {
       return {
         message: SUCCESS_MESSAGES.MANAGER_SIGNUP,
         data: {
-          id: savedManager._id,
           name: savedManager.name,
           email: savedManager.email,
           accountNumber: savedManager.accountNumber,
@@ -115,7 +114,6 @@ export class ManagerService {
         accessToken,
         refreshToken,
         data: {
-          id: manager._id,
           name: manager.name,
           email: manager.email,
         },

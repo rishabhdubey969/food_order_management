@@ -33,8 +33,10 @@ import { ForgotPasswordDto, ResetPasswordDto } from './modules/auth/dto/reset.pa
 export class ManagerController {
   constructor(private readonly managerService: ManagerService) {}
 
-  /**
-   * Register a manager
+  /**Register a manager
+   * 
+   * @param managerSignupDto 
+   * @returns 
    */
   @Post('signup')
   @ApiOperation({ summary: 'Signup as a Manager' })
@@ -44,8 +46,10 @@ export class ManagerController {
     return this.managerService.Signup(managerSignupDto);
   }
   
-  /**
-   * Login a manager
+  /**Login a manager
+   * 
+   * @param managerLoginDto The manager's login credentials (username and password)
+   * @returns An object containing access token and refresh token
    */
   @Post('login')
   @ApiOperation({ summary: 'Login as a Manager' })
@@ -55,8 +59,10 @@ export class ManagerController {
     return this.managerService.login(managerLoginDto);
   }
 
-  /**
-    * forgot-password sends a link manager mail
+  /**forgot-password sends a link manager mail
+   * 
+   * @param forgotPasswordDto 
+   * @returns 
    */
   @Post('forgot-password')
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {

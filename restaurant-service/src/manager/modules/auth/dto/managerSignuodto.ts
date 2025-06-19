@@ -3,12 +3,12 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Prop } from '@nestjs/mongoose';
 
 export default class ManagerSignupDto {
-  @ApiProperty({ example: 'John Doe' })
+  @ApiProperty({ example: 'Adrisha Gupta' })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ example: 'john@example.com' })
+  @ApiProperty({ example: 'adrisha@example.com' })
   @IsEmail()
   email: string;
 
