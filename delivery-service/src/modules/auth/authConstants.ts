@@ -31,6 +31,7 @@ export const AUTH_CONSTANTS = {
       EMAIL_ALREADY_EXISTS: 'Email already exists',
       INVALID_CURRENT_PASSWORD: 'Current password is incorrect',
       EMAIL_NOT_FOUND: 'Email not found',
+      EMAIL_FOUND: 'Email Exists',
       INVALID_OTP: 'Invalid OTP',
       UNAUTHORIZED: 'Unauthorized',
       BAD_REQUEST: 'Bad Request',
