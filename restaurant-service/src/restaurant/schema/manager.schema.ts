@@ -6,7 +6,7 @@ export class Manager {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true, unique: true, index: true})
   email: string;
 
   @Prop({ required: true })
