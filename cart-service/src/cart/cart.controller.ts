@@ -14,6 +14,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import { Roles } from './decorator/role.decorator';
 import { GrpcAuthGuard } from './guards/auth.guard';
@@ -37,50 +38,67 @@ export class CartController {
 
   // increase item quantity 
   @UseGuards(GrpcAuthGuard)
-  @Roles(Role.USER)
-  @Post('add')
-  @ApiOperation({ summary: 'Add an item to the cart' })
-  @ApiResponse({
-    status: 201,
-    description: 'Item added to cart successfully',
-    schema: {
-      example: {
-        _id: '6851b7b5786ecbff4c06e854 //THIS IS CARTId',
-        userId: '684d51abab85e4eea0294410',
-        couponCode: null,
-        couponId: null,
-        deliveryCharges: 2501,
-        discount: 0,
-        distanceInKm: 500,
-        itemTotal: 29.97,
-        items: [
-          {
-            itemId: '683d3dcb6728e2e8cc8dd6e4',
-            name: 'Margherita Pizza',
-            quantity: 3,
-            price: 9.99,
-            tax: 1.4985,
-          },
-        ],
-        platformFee: 9,
-        restaurantId: '683d7adf339b913562146f00',
-        subtotal: 29.97,
-        tax: 1.4985,
-        total: 2541,
+@Roles(Role.USER)
+@Post('add')
+@ApiOperation({ summary: 'Add an item to the cart' })
+@ApiBody({
+  description: 'Payload to add an item to the cart',
+  schema: {
+    type: 'object',
+    properties: {
+      restaurantId: {
+        type: 'string',
+        description: 'The ID of the restaurant',
+        example: '64a51abab85e4eea0294410',
+      },
+      itemId: {
+        type: 'string',
+        description: 'The ID of the item to be added to the cart',
+        example: '63d3dcb6728e2e8cc8dd6e4',
       },
     },
-  })
-  @ApiResponse({ status: 404, description: 'Item or restaurant not found' })
-  @ApiResponse({ status: 409, description: 'Cart already exists for a different restaurant' })
-  async addToCart(
-    @Body() addToCartDTO: AddCartDto,
-    @Req() req: any,
-  ) {
-    const userId = req.user.sub;
-    this.logger.log(`Adding item ${addToCartDTO.itemId} to user ${userId}'s cart`, this.context);
-    return this.cartService.addToCartService(userId, addToCartDTO);
-  }
-  
+  },
+})
+@ApiResponse({
+  status: 201,
+  description: 'Item added to cart successfully',
+  schema: {
+    example: {
+      _id: '6851b7b5786ecbff4c06e854 //THIS IS CARTId',
+      userId: '684d51abab85e4eea0294410',
+      couponCode: null,
+      couponId: null,
+      deliveryCharges: 2501,
+      discount: 0,
+      distanceInKm: 500,
+      itemTotal: 29.97,
+      items: [
+        {
+          itemId: '683d3dcb6728e2e8cc8dd6e4',
+          name: 'Margherita Pizza',
+          quantity: 3,
+          price: 9.99,
+          tax: 1.4985,
+        },
+      ],
+      platformFee: 9,
+      restaurantId: '683d7adf339b913562146f00',
+      subtotal: 29.97,
+      tax: 1.4985,
+      total: 2541,
+    },
+  },
+})
+@ApiResponse({ status: 404, description: 'Item or restaurant not found' })
+@ApiResponse({ status: 409, description: 'Cart already exists for a different restaurant' })
+async addToCart(
+  @Body() addToCartDTO: AddCartDto,
+  @Req() req: any,
+) {
+  const userId = req.user.sub;
+  this.logger.log(`Adding item ${addToCartDTO.itemId} to user ${userId}'s cart`, this.context);
+  return this.cartService.addToCartService(userId, addToCartDTO);
+}
 
 
 
@@ -89,6 +107,19 @@ export class CartController {
   @Roles(Role.USER)
   @Post('remove')
   @ApiOperation({ summary: 'Remove/decrease item quantity from user cart' })
+  @ApiBody({
+    description: 'Payload to remove or decrease the quantity of an item in the cart',
+    schema: {
+      type: 'object',
+      properties: {
+        itemId: {
+          type: 'string',
+          description: 'The ID of the item to be removed or decreased in quantity',
+          example: '63d3dcb6728e2e8cc8dd6e4',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'Item removed or quantity decreased successfully',
@@ -128,7 +159,6 @@ export class CartController {
     this.logger.log(`Removing item ${removeItemDTO.itemId} from user ${userId}'s cart`, this.context);
     return this.cartService.removeItemService(userId, removeItemDTO);
   }
-  
 
 
 
@@ -161,45 +191,72 @@ export class CartController {
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
   @Get('get')
+  @ApiTags('Cart')
   @ApiOperation({ summary: 'Get user’s active cart' })
   @ApiResponse({
     status: 200,
-    description: 'Item removed or quantity decreased successfully',
+    description: 'Cart retrieved successfully',
     schema: {
       example: {
-        _id: '6851b7b5786ecbff4c06e854  //THIS IS CARTId',
-        userId: '684d51abab85e4eea0294410',
-        couponCode: null,
-        couponId: null,
-        deliveryCharges: 2501,
-        discount: 0,
-        distanceInKm: 500,
-        itemTotal: 19.98,
-        items: [
-          {
-            itemId: '683d3dcb6728e2e8cc8dd6e4',
-            name: 'Margherita Pizza',
-            quantity: 2,
-            price: 9.99,
-            tax: 0.999,
-          },
-        ],
-        platformFee: 9,
-        restaurantId: '683d7adf339b913562146f00',
-        subtotal: 19.98,
-        tax: 0.999,
-        total: 2530,
+        cart: {
+          _id: '6851b7b5786ecbff4c06e854',
+          userId: '684d51abab85e4eea0294410',
+          couponCode: null,
+          couponId: null,
+          deliveryCharges: 2501,
+          discount: 0,
+          distanceInKm: 500,
+          itemTotal: 19.98,
+          items: [
+            {
+              itemId: '683d3dcb6728e2e8cc8dd6e4',
+              name: 'Margherita Pizza',
+              quantity: 2,
+              price: 9.99,
+              tax: 0.999,
+            },
+          ],
+          platformFee: 9,
+          restaurantId: '683d7adf339b913562146f00',
+          subtotal: 19.98,
+          tax: 0.999,
+          total: 2530,
+        },
+        message: 'Cart is up to date',
       },
     },
   })
-  
-  @ApiResponse({ status: 404, description: 'Cart not found for user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cart updated with latest prices, availability, taxes, and totals',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Cart is empty',
+    schema: {
+      example: {
+        cart: null,
+        message: 'Your cart is empty',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Cart not found for user',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'No active cart found',
+        error: 'Not Found',
+      },
+    },
+  })
   async getCart(@Req() req: any) {
     const userId = req.user.sub;
     this.logger.verbose(`Fetching cart for user ${userId}`, this.context);
     return this.cartService.getCartService(userId);
   }
-
+  
 
   // Get all available coupons for a restaurant
   @UseGuards(GrpcAuthGuard)

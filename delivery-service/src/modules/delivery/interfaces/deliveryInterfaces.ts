@@ -12,6 +12,7 @@ export interface CompleteDelivery{
   orderId: Types.ObjectId;
   restaurantId: string;
   userId: string;
+  partnerId: string;
   pickupLocation: Location;
   deliveryLocation: Location;
   totalOrderAmount: number;

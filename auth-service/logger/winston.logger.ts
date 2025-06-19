@@ -4,6 +4,7 @@ import * as path from 'path';
 
 const logDirectory = path.join(__dirname, '../../logs');
 
+// Ensure the log directory exists
 const dailyRotateFileTransport = new winston.transports.DailyRotateFile({
   dirname: logDirectory,
   filename: 'user-service-%DATE%.log',
@@ -13,7 +14,10 @@ const dailyRotateFileTransport = new winston.transports.DailyRotateFile({
   maxFiles: '7d',  // keep logs for 7 days only
 });
   
-
+/**
+ * Winston logger configuration for the user service.
+ * It logs messages to both the console and a daily rotating file.
+ */
 export const winstonLogger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(

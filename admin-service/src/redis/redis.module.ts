@@ -1,7 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import Redis from 'ioredis';
 
-@Global() // Ensure this module is global
+@Global() 
 @Module({
   providers: [
     {
@@ -13,7 +13,7 @@ import Redis from 'ioredis';
           password: process.env.REDIS_PASSWORD || undefined,
         });
         redisClient.on('connect', () => {
-          console.log('Connected to Redis (RedisModule)');
+          
         });
         redisClient.on('error', (error) => {
           console.error(`Redis connection error (RedisModule): ${error.message}`);

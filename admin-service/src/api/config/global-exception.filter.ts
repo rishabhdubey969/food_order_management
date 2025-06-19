@@ -1,70 +1,97 @@
-// // src/config/global-exception.filter.ts
-// import { ExceptionFilter, Catch, ArgumentsHost, HttpException, Logger, HttpStatus } from '@nestjs/common';
-// import { Response } from 'express';
-// import { ErrorHandler } from './error-handler';
 
-// @Catch()
-// export class GlobalExceptionFilter implements ExceptionFilter {
-//   private readonly logger = new Logger(GlobalExceptionFilter.name);
+  import {
+    ExceptionFilter,
+    Catch,
+    ArgumentsHost,
+    HttpException,
+    HttpStatus,
+    Logger,
+  } from '@nestjs/common';
+  import { Request, Response } from 'express';
+  import { MongoError } from 'mongodb';
 
-//   catch(exception: any, host: ArgumentsHost) {
-//     const ctx = host.switchToHttp();
-//     const response = ctx.getResponse<Response>();
-//     const status = exception instanceof HttpException
-//       ? exception.getStatus()
-//       : HttpStatus.INTERNAL_SERVER_ERROR;
-//     const message = exception.message || 'Internal server error';
+  @Catch()
+  export class GlobalExceptionFilter implements ExceptionFilter {
+    private readonly logger = new Logger(GlobalExceptionFilter.name);
 
-//     this.logger.error(`Exception: ${message}`, exception.stack);
-//     response.status(status).json({
-//       status: 'error',
-//       message,
-//     });
-//   }
-// }import { ExceptionFilter, Catch, ArgumentsHost, HttpException, BadRequestException, Logger, HttpStatus } from '@nestjs/common';
-import { Response } from 'express';
-import { ErrorHandler } from './error-handler';
-import { ArgumentsHost, BadRequestException, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
+    catch(exception: unknown, host: ArgumentsHost) {
+      const ctx = host.switchToHttp();
+      const response = ctx.getResponse<Response>();
+      const request = ctx.getRequest<Request>();
 
-@Catch()
-export class GlobalExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(GlobalExceptionFilter.name);
+      let status = HttpStatus.INTERNAL_SERVER_ERROR;
+      let message: string | object = 'Internal server error';
+      let errorType = 'InternalServerError';
 
-  catch(exception: any, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest();
+    
+      if (exception instanceof HttpException) {
+        status = exception.getStatus();
+        message = exception.getResponse();
+        errorType = exception.constructor.name;
+      }
+  
+      else if (exception instanceof MongoError) {
+        status = this.mapMongoError(exception);
+        message = this.getMongoErrorMessage(exception);
+        errorType = 'DatabaseError';
+        this.logger.error(`MongoDB error: ${exception.message}`, exception.stack);
+      }
+  
+      else if (exception instanceof Error) {
+        this.logger.error(`Unexpected error: ${exception.message}`, exception.stack);
+        errorType = exception.constructor.name;
+        message = exception.message;
+      }
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let errorResponse: {
-      status: number;
-      message: string | string[];
-    } = {
-      status: HttpStatus.INTERNAL_SERVER_ERROR, // Default to 500
-      message: 'Internal server error', // Default initialization
-    };
+    
+      this.logger.error(
+        `Error: ${message} | Path: ${request.url} | Stack: ${exception instanceof Error ? exception.stack : ''}`
+      );
 
-    if (exception instanceof HttpException) {
-      status = exception.getStatus();
+    
+      response.status(status).json({
+        statusCode: status,
+        timestamp: new Date().toISOString(),
+        path: request.url,
+        error: errorType,
+        message: typeof message === 'string' ? message : (message as any).message,
+        details: typeof message === 'object' ? message : undefined,
+      });
+    }
 
-      if (exception instanceof BadRequestException) {
-        const exceptionResponse = exception.getResponse();
-        const messageValue = typeof exceptionResponse === 'object' && 'message' in exceptionResponse
-          ? Array.isArray(exceptionResponse.message) ? exceptionResponse.message : [exceptionResponse.message]
-          : typeof exceptionResponse === 'string' ? [exceptionResponse] : ['Validation failed'];
-        errorResponse = {
-          status: status, // Use the dynamic status code
-          message: messageValue,
-        };
-      } else {
-        errorResponse = {
-          status: status, // Use the dynamic status code
-          message: exception.message || 'Unexpected error',
-        };
+    private mapMongoError(error: MongoError): HttpStatus {
+      switch (error.code) {
+        case 11000: 
+          return HttpStatus.CONFLICT;
+        case 121: 
+          return HttpStatus.BAD_REQUEST;
+        case 13: 
+          return HttpStatus.UNAUTHORIZED;
+        case 18:
+          return HttpStatus.UNAUTHORIZED;
+        case 50: 
+          return HttpStatus.REQUEST_TIMEOUT;
+        default:
+          return HttpStatus.INTERNAL_SERVER_ERROR;
       }
     }
 
-    this.logger.error(`Exception: ${Array.isArray(errorResponse.message) ? errorResponse.message.join(', ') : errorResponse.message}`, exception.stack);
-    response.status(status).json(errorResponse);
+    private getMongoErrorMessage(error: MongoError): string {
+      switch (error.code) {
+        case 11000:
+          const keyMatch = error.message.match(/index: (.+?)_/);
+          return keyMatch 
+            ? `${keyMatch[1]} already exists` 
+            : 'Duplicate key error';
+        case 121:
+          return 'Document validation failed';
+        case 13:
+        case 18:
+          return 'Database authentication failed';
+        case 50:
+          return 'Database operation timed out';
+        default:
+          return 'Database operation failed';
+      }
+    }
   }
-}

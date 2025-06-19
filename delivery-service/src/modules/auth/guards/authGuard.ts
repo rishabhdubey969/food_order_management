@@ -30,7 +30,6 @@ export class AuthGuard implements CanActivate {
         return false;
       }
       request['sub'] = partnerId;
-      console.log('hii')
     return true;
   }
 }

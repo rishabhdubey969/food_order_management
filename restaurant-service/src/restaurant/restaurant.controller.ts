@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -12,8 +13,11 @@ import {
 import { RestaurantService } from './restaurant.service';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
+  ApiParam,
   ApiQuery,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateRestaurantDto } from './dto/restaurant.dto';
@@ -27,6 +31,7 @@ import { Role } from './common/role.enum';
 import { JwtAuthGuard } from './guards/jwtAuth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { ManagerGuard } from './guards/manager.guard';
+import { UpdateMenuItemDto } from './dto/updateMenuItem.dto';
 
 interface MediaService {
   getSignedUrl(fileName: string, fileType: string, folderName: string): Promise<string>;
@@ -97,11 +102,12 @@ async getNearbyRestaurants(
   /**
    * Get restaurant managed by a specific manager (Admin or that Manager)
    */
-  @UseGuards(GrpcAuthGuard)
-  @Get('manager/:managerId')
-  @Roles(Role.ADMIN, Role.MANAGER)
-  async getByManager(@Param('managerId') managerId: string) {
-    return this.restaurantService.getRestaurantByManagerId(managerId);
+  @UseGuards(JwtAuthGuard, ManagerGuard)
+  @Get('manager')
+  @ApiBearerAuth('JWT') 
+  async getByManager(@Req() req: any) {
+    const managerId = req.user.sub;
+    return await this.restaurantService.getRestaurantByManagerId(managerId);
   }
 
   /**
@@ -110,7 +116,7 @@ async getNearbyRestaurants(
   @Get('tags')
   async getByTags(@Query('tags') tags?: string) {
     const tagArray = tags ? tags.split(',') : [];
-    return this.restaurantService.findByTags(tagArray);
+    return await this.restaurantService.findByTags(tagArray);
   }
 
   /**
@@ -140,10 +146,10 @@ async getNearbyRestaurants(
    */
   @UseGuards(JwtAuthGuard, ManagerGuard)
   @ApiBearerAuth('JWT') 
-  @Post(':restaurantId/menu')
-  async createMenu(@Param('restaurantId') restaurantId: string, @Body() dto: CreateMenuItemDto, @Req() req: any) {
+  @Post('/menu')
+  async createMenu(@Body() dto: CreateMenuItemDto, @Req() req: any) {
     const managerId = req.user.sub;
-    return this.restaurantService.createMenuItem(restaurantId, dto, managerId);
+    return this.restaurantService.createMenuItem(dto, managerId);
   }
 
   /**
@@ -154,6 +160,55 @@ async getNearbyRestaurants(
     return this.restaurantService.getItemById(restaurantId, itemId);
   }
 
+  @Put('menuItem/:itemId')
+  @ApiOperation({ summary: 'Update an existing menu item' }) // Overall description of the endpoint
+  @ApiParam({
+    name: 'itemId',
+    description: 'The ID of the menu item to update',
+    type: String,
+    example: '60c72b2f9b1e8a001c8e4d3a', 
+  })
+  @ApiBody({
+    type: UpdateMenuItemDto, 
+    description: 'Data to update the menu item',
+    examples: { 
+      partialUpdate: {
+        summary: 'Update price and description',
+        value: {
+          price: 15.99,
+          description: 'A delicious new description for the dish.',
+        },
+      },
+      fullUpdate: {
+        summary: 'Full update of menu item details',
+        value: {
+          name: 'Spicy New Burger',
+          description: 'Our classic burger with a spicy kick!',
+          price: 12.50,
+          imageUrl: 'http://example.com/spicy-burger.jpg',
+          tags: ['spicy', 'burger', 'new'],
+          copons: ['SUMMER20'],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The menu item has been successfully updated.',
+    type: CreateMenuItemDto, // Assuming the response shape is similar to CreateMenuItemDto
+  })
+  @ApiResponse({ status: 404, description: 'Menu item not found.' })
+  @ApiResponse({ status: 400, description: 'Invalid input or validation error.' })
+  @ApiResponse({ status: 500, description: 'Internal server error.' })
+  async updateMenuItem(@Param('itemId') itemId: string, @Body()updateMenuItemDto: UpdateMenuItemDto){
+    return await this.restaurantService.updateMenuItem(itemId, updateMenuItemDto);
+  }
+
+  @Delete('menu/:itemId')
+  async deleteItem(@Param('itemId') itemId: string){
+    return await this.restaurantService.deleteItem(itemId);
+  }
+  
   /**
    * Get all menu items for a given restaurant
    */
@@ -193,9 +248,9 @@ async getNearbyRestaurants(
   /**
    * Search restaurants by food item name (User role)
    */
-  @UseGuards(GrpcAuthGuard)
+  // @UseGuards(GrpcAuthGuard)
   @Get('search/food')
-  @Roles(Role.USER)
+  // @Roles(Role.USER)
   async searchByFood(@Query('q') query: string) {
     return this.restaurantService.searchRestaurantsByFood(query);
   }

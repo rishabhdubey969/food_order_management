@@ -13,6 +13,8 @@ var transporter = nodemailer.createTransport({
     }
 });
 
+// This function sends an email using the configured transporter.
+// It takes the recipient's email address, subject, name, template type, and an optional
 export const sendMail = async (to: string, subject: string, name: string, template, otp: string|null) => {
   console.log('Sending email to:', template, otp);
   const info = await transporter.sendMail({

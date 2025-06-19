@@ -8,6 +8,14 @@ import { AxiosError } from 'axios';
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
+  /**
+   * Catches exceptions and formats the response based on the type of error.
+   * Handles MongoDB duplicate key errors, Mongoose validation errors,
+   * Axios external API errors, and NestJS HttpExceptions.
+   *
+   * @param exception - The thrown exception
+   * @param host - The context of the request
+   */
   catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();

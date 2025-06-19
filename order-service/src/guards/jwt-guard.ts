@@ -20,9 +20,7 @@ export class jwtGuard implements CanActivate {
 
     const token = authHeader.split(' ')[1];
     try {
-      // console.log("hii");
       const payload = await this.authclient.ValidateTokenAuthService(token);
-      console.log(payload);
       request['user'] = payload;
       return true;
     } catch (err) {

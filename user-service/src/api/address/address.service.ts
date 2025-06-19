@@ -26,18 +26,20 @@ export class AddressService {
    * @throws {ConflictException} If the address already exists for the user.
    * @returns The newly created address document.
    */
-  async addressCreateService(createAddressDto: CreateAddressDto) {
+  async addressCreateService(createAddressDto: CreateAddressDto, userId: string) {
     this.logger.info(`${WINSTON_LOGGER_ADDRESS.ADDRESS_CREATE}: ${createAddressDto}`);
     const exists = await this.addressModel.findOne({
-      user_id: createAddressDto.user_id,
+      user_id: userId,
       latitude: createAddressDto.latitude,
       longitude: createAddressDto.longitude,
     });
 
+    const fullAddressDto = {...createAddressDto, user_id: userId };
+
     if (exists) {
       throw new ConflictException(ADDRESS.ADDRESS_EXIST);
     }
-    const createdAddress = new this.addressModel(createAddressDto);
+    const createdAddress = new this.addressModel(fullAddressDto);
     return await createdAddress.save();
   }
 
@@ -56,7 +58,7 @@ export class AddressService {
    * @returns A promise that resolves to the address document(s) matching the provided ID.
    */
   async findOneAddressService(id: string) {
-    return await this.addressModel.find({ _id: id }).exec();
+    return await this.addressModel.find({ user_id: id }).exec();
   }
 
   /**

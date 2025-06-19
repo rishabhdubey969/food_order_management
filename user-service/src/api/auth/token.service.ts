@@ -11,6 +11,12 @@ export class TokenService {
     private readonly configService: ConfigService,
   ) {}
 
+  /**
+   * Generates a reset token for a user.
+   * The token is hashed and stored in Redis with a TTL.
+   * @param userId - The ID of the user requesting the password reset.
+   * @returns The hashed token to be sent to the user.
+   */
   async generate(userId: string): Promise<string> {
     const token = randomBytes(32).toString('hex');
     const hashed = createHash('sha256').update(token).digest('hex');
@@ -21,14 +27,31 @@ export class TokenService {
     return hashed; // send this via email to the user
   }
 
+  /**
+   * Validates the reset token by checking if it exists in Redis.
+   * @param token - The reset token to validate.
+   * @returns The user ID associated with the token or null if invalid.
+   */
   async validate(token: string): Promise<string | null> {
-  return await this.redisService.get(`reset:${token}`); 
+    return await this.redisService.get(`reset:${token}`);
   }
 
+  /**
+   * Validates the reset token by checking if it exists in Redis.
+   * @param token - The reset token to validate.
+   * @returns The user ID associated with the token or null if invalid.
+   */
   async remove(token: string): Promise<void> {
     await this.redisService.del(`reset:${token}`);
   }
 
+  /**
+   * Generates a one-time password (OTP) for user signup.
+   * The OTP is stored in Redis with a 5-minute expiration.
+   * If the user has failed to enter the correct OTP 3 times, they are blocked for 24 hours.
+   * @param email - The email associated with the OTP.
+   * @returns The generated OTP.
+   */
   async signupOtp(email: string): Promise<string> {
     try {
       const isBlocked = await this.redisService.get(`otp:blocked:${email}`);
@@ -43,6 +66,12 @@ export class TokenService {
     }
   }
 
+  /**
+   * Validates the OTP for the given email.
+   * If the OTP is invalid, it increments the attempts and blocks the user after 3 failed attempts.
+   * @param email - The email associated with the OTP.
+   * @param otp - The OTP to validate.
+   */
   async validateOtp(email: string, otp: string) {
     try {
       const isBlocked = await this.redisService.get(`otp:blocked:${email}`);
@@ -63,6 +92,10 @@ export class TokenService {
     }
   }
 
+  /**
+   * Removes the OTP and its attempts from Redis.
+   * @param email - The email associated with the OTP.
+   */
   async removeOtp(email: string) {
     try {
       await this.redisService.del(`otp:${email}`);
