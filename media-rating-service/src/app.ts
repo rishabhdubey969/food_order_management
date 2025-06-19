@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
-import { connectToDatabase } from  '../src/database/db'
+import { connectToDatabase } from '../src/database/db';
 import ratingRoutes from './routes/ratingRoutes';
 import './grpc/clients/grpc.server';
 // import { errorHandler } from './utils/error.handler';
@@ -22,12 +22,12 @@ app.get('/', (req: Request, res: Response) => {
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
-    res.status(200).json({ status: 'ok', message: 'Media service is running!' });
+  res.status(200).json({ status: 'ok', message: 'Media service is running!' });
 });
 
 // Catch-all for undefined routes
 app.use((req: Request, res: Response, next: NextFunction) => {
-    res.status(404).json({ status: 'error', message: 'Route not found' });
+  res.status(404).json({ status: 'error', message: 'Route not found' });
 });
 
 //Global error handling middleware (MUST be the last middleware)
