@@ -37,7 +37,7 @@ export class CartService {
   }
 
 //adding to cart service
-  async addToCartService(userId: string, dto: AddCartDto) {
+ async addToCartService(userId: string, dto: AddCartDto) {
     try {
       this.logger.log(`Adding item ${dto.itemId} for user ${userId}`, CartService.name);
       const userObjId = new ObjectId(userId);
@@ -47,16 +47,16 @@ export class CartService {
   
       // Fetch restaurant
       const restaurant = await this.restaurants.findOne({ _id: new ObjectId(dto.restaurantId) });
-      if (!restaurant) throw new NotFoundException('Restaurant not found');
+      if (!restaurant) throw new NotFoundException(ResponseMessages.CART.RESTAURANT_NOT_FOUND);
   
       // Fetch menu item
       const menuItem = await this.menuItems.findOne({ _id: new ObjectId(dto.itemId) });
-      if (!menuItem) throw new NotFoundException('Item not found');
-      if (!menuItem.isAvailable) throw new ConflictException('Item is unavailable');
+      if (!menuItem) throw new NotFoundException(ResponseMessages.CART.ITEM_NOT_FOUND_MENU);
+      if (!menuItem.isAvailable) throw new ConflictException(ResponseMessages.CART.ITEM_UNAVAILABLE);
   
       // Check for restaurant conflict
       if (cart && cart.restaurantId.toString() !== dto.restaurantId)
-        throw new ConflictException('You already have a cart for another restaurant');
+        throw new ConflictException(ResponseMessages.CART.RESTAURANT_CONFLICT);
   
       // Calculate distance and delivery charges
       const { latitude = CartConstants.DEFAULT_LAT, longitude = CartConstants.DEFAULT_LON } =
@@ -114,7 +114,7 @@ export class CartService {
         cart = await this.carts.findOne({ userId: userObjId });
         if (!cart) {
           this.logger.error(`Failed to fetch cart for user ${userId} after update`, CartService.name);
-          throw new InternalServerErrorException('Failed to fetch updated cart');
+          throw new InternalServerErrorException(ResponseMessages.CART.CART_UPDATE_FAILED);
         }
         return cart;
       }
@@ -124,7 +124,7 @@ export class CartService {
       this.logger.error(`Error in addToCartService: ${error.message}`, CartService.name);
       throw error;
     }
-  }
+  } 
 
 
   async removeItemService(userId: string, dto: RemoveItemDto) {
@@ -132,11 +132,11 @@ export class CartService {
       this.logger.log(`Removing item ${dto.itemId} for user ${userId}`, CartService.name);
       const userObjId = new ObjectId(userId);
   
-      // Fetch the cart
+      // fetch the cart
       const cart = await this.carts.findOne({ userId: userObjId });
       if (!cart) throw new NotFoundException(ResponseMessages.CART.CART_NOT_FOUND);
   
-      // Find the item in the cart
+      // find item in the cart
       const idx = cart.items.findIndex(i => i.itemId.toString() === dto.itemId);
       if (idx === -1) throw new NotFoundException(ResponseMessages.CART.ITEM_NOT_FOUND);
   
@@ -144,21 +144,21 @@ export class CartService {
       const item = items[idx];
       item.quantity -= 1;
   
-      // Remove the item if quantity is zero
+      // Remove item if quantity is zero
       if (item.quantity <= 0) {
         items.splice(idx, 1);
       } else {
         item.tax = this.calculateTax(item.price * item.quantity);
       }
   
-      // Delete the cart if no items are left
+      // delete cart if no items are left
       if (items.length === 0) {
         await this.carts.deleteOne({ _id: cart._id });
         this.logger.warn(`Cart emptied and deleted for user ${userId}`, CartService.name);
-        return { message: 'Cart deleted because no items left' };
+        return { message: ResponseMessages.CART.CART_DELETED };
       }
   
-      // Calculate totals
+      // calculating totals
       const totals = this.calculateCartTotals(items, cart.deliveryCharges, cart.discount || 0);
   
       // Update the cart
@@ -174,7 +174,7 @@ export class CartService {
         const updatedCart = await this.carts.findOne({ userId: userObjId });
         if (!updatedCart) {
           this.logger.error(`Failed to fetch cart for user ${userId} after update`, CartService.name);
-          throw new InternalServerErrorException('Failed to fetch updated cart');
+          throw new InternalServerErrorException(ResponseMessages.CART.CART_UPDATE_FAILED);
         }
         return updatedCart;
       }
@@ -188,14 +188,85 @@ export class CartService {
 
 
   // Get user’s cart
+
   async getCartService(userId: string) {
     try {
       this.logger.verbose(`Fetching cart for user ${userId}`, CartService.name);
       const userObjId = new ObjectId(userId);
-      const cart = await this.carts.findOne({ userId: userObjId });
+  
+      let cart = await this.carts.findOne({ userId: userObjId });
       if (!cart) throw new NotFoundException(ResponseMessages.CART.CART_FETCH_FAIL);
-
-      return cart;
+  
+      let updated = false;
+  
+      const items = await Promise.all(
+        cart.items.map(async (item) => {
+          const menuItem = await this.menuItems.findOne({ _id: item.itemId });
+  
+          if (!menuItem || !menuItem.isAvailable) {
+            updated = true;
+            return null; // Item is no longer valid
+          }
+  
+          if (item.price !== menuItem.price) {
+            updated = true;
+            item.price = menuItem.price;
+          }
+  
+          item.tax = this.calculateTax(item.price * item.quantity);
+  
+          return item;
+        }),
+      );
+  
+      const validItems = items.filter(Boolean);
+  
+      // If no valid items are left, mark cart as empty
+      if (validItems.length === 0) {
+        await this.carts.updateOne(
+          { userId: userObjId },
+          {
+            $set: {
+              items: [],
+              itemTotal: 0,
+              subtotal: 0,
+              tax: 0,
+              total: cart.deliveryCharges + (cart.platformFee || 0),
+            },
+          },
+        );
+  
+        return {
+          cart: null,
+          message: 'Your cart is empty',
+        };
+      }
+  
+      // If anything was updated (price or removed), save changes
+      if (updated) {
+        const totals = this.calculateCartTotals(validItems, cart.deliveryCharges, cart.discount || 0);
+  
+        const result = await this.carts.findOneAndUpdate(
+          { userId: userObjId },
+          {
+            $set: {
+              items: validItems,
+              ...totals,
+            },
+          },
+          { returnDocument: 'after' },
+        );
+  
+        return {
+          cart: result?.value,
+          message: 'Cart updated with latest prices, taxes, and totals',
+        };
+      }
+  
+      return {
+        cart,
+        message: 'Cart is up to date',
+      };
     } catch (error) {
       this.logger.error(`Error in getCartService: ${error.message}`, CartService.name);
       throw error;
@@ -354,7 +425,7 @@ export class CartService {
 
 
   // -----------------------
-  // 🧠 Helper Methods Below
+  // Helper Methods Below
   // -----------------------
 
   private toRad(value: number): number {
@@ -401,8 +472,18 @@ export class CartService {
     };
   }
 
-  private findItemIndex(items: any[], itemId: string): number {
-    return items.findIndex(i => String(i.itemId) === itemId);
-  }
+
+  // private cartTotalsMatch(cart, totals): boolean {
+  //   return (
+  //     cart.itemTotal === totals.itemTotal &&
+  //     cart.tax === totals.tax &&
+  //     cart.total === totals.total &&
+  //     cart.subtotal === totals.subtotal &&
+  //     cart.platformFee === totals.platformFee
+  //   );
+  // }
+  
+  
+
 }
 
