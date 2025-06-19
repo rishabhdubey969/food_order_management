@@ -468,6 +468,8 @@ export class CartService {
       subtotal: itemTotal,
       tax,
       total,
+      deliveryCharges,
+      discount,
       platformFee: CartConstants.PLATFORM_FEE,
     };
   }
@@ -484,6 +486,11 @@ export class CartService {
   // }
   
   
+
+
+  private findItemIndex(items: any[], itemId: string): number {
+    return items.findIndex(i => String(i.itemId) === itemId);
+  }
 
 }
 

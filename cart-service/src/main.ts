@@ -44,6 +44,5 @@ async function bootstrap() {
 
   await app.listen(cartPort);
   console.log(`Cart service is running on port ${cartPort}`);
-
 }
 bootstrap();
