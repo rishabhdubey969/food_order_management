@@ -111,7 +111,7 @@ async getNearbyRestaurants(
   @Get('tags')
   async getByTags(@Query('tags') tags?: string) {
     const tagArray = tags ? tags.split(',') : [];
-    return this.restaurantService.findByTags(tagArray);
+    return await this.restaurantService.findByTags(tagArray);
   }
 
   /**
@@ -141,10 +141,10 @@ async getNearbyRestaurants(
    */
   @UseGuards(JwtAuthGuard, ManagerGuard)
   @ApiBearerAuth('JWT') 
-  @Post(':restaurantId/menu')
-  async createMenu(@Param('restaurantId') restaurantId: string, @Body() dto: CreateMenuItemDto, @Req() req: any) {
+  @Post('/menu')
+  async createMenu(@Body() dto: CreateMenuItemDto, @Req() req: any) {
     const managerId = req.user.sub;
-    return this.restaurantService.createMenuItem(restaurantId, dto, managerId);
+    return this.restaurantService.createMenuItem(dto, managerId);
   }
 
   /**

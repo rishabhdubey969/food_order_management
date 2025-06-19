@@ -13,7 +13,7 @@ async function bootstrap() {
     logger: WinstonModule.createLogger(winstonConfig), 
   });
 
-  // app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({
