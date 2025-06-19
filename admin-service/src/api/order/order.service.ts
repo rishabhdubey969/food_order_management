@@ -55,7 +55,7 @@ export class OrderService {
           const dayOfWeek = now.getDay();
           startDate = new Date(now);
           
-          const daysToSubtract = dayOfWeek === 0 ? 0 : dayOfWeek + 6; // Go back to previous Sunday
+          const daysToSubtract = dayOfWeek === 0 ? 0 : dayOfWeek + 6; 
           startDate.setDate(now.getDate() - daysToSubtract);
           startDate.setHours(0, 0, 0, 0);
           break;
