@@ -1,7 +1,19 @@
-import { Controller, Get, Body, Param, Delete, UsePipes, ValidationPipe, Patch, UseGuards, Req, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Body,
+  Param,
+  Delete,
+  UsePipes,
+  ValidationPipe,
+  Patch,
+  UseGuards,
+  Req,
+  Post,
+} from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { UploadMediaDto } from './dto/upload-media.dto'
+import { UploadMediaDto } from './dto/upload-media.dto';
 import { AuthGuard } from '../../guard/auth.guard';
 import { DeleteProfileSwagger, GetProfileSwagger, UpdateProfileSwagger } from 'src/swagger_doc/profile.swagger';
 
@@ -51,7 +63,13 @@ export class ProfileController {
     return this.profileService.remove(req.user.payload.sub);
   }
 
-
+  /**
+   * Uploads media files associated with the user's profile.
+   *
+   * @param req - The request object containing user information.
+   * @param uploadMediaDto - An array of media upload data transfer objects.
+   * @returns The result of the media upload operation.
+   */
   @Get('upload')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @UseGuards(AuthGuard)
@@ -59,11 +77,16 @@ export class ProfileController {
     return this.profileService.mediaUploadService(req.user.payload.sub, uploadMediaDto);
   }
 
+  /**
+   * Confirms the upload of media files associated with the user's profile.
+   *
+   * @param req - The request object containing user information.
+   * @returns The result of the upload confirmation operation.
+   */
   @Get('confirm-upload')
   @UsePipes(new ValidationPipe({ whitelist: true }))
   @UseGuards(AuthGuard)
   async confirmUpload(@Req() req: any) {
     return this.profileService.confirmUploadService(req.user.payload.sub);
   }
-
 }
