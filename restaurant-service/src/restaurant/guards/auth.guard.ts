@@ -52,7 +52,7 @@ import {
   
       const request: Request = context.switchToHttp().getRequest();
       const authHeader = request.headers['authorization'];
-  
+
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         throw new UnauthorizedException('Missing or invalid Authorization header');
       }
@@ -61,13 +61,14 @@ import {
   
       return this.authService.ValidateToken({ accessToken: token }).pipe(
         map((res) => {
+          console.log(res.isValid);
           if (!res.isValid) {
             throw new UnauthorizedException(res.message || 'Invalid token');
           }
   
           const user = res.payload;
           request['user'] = user;
-          console.log(user)
+          console.log("User ",user)
   
           if (requiredRoles && !requiredRoles.includes(user.role)) {
             throw new ForbiddenException('Insufficient permissions');

@@ -97,11 +97,12 @@ async getNearbyRestaurants(
   /**
    * Get restaurant managed by a specific manager (Admin or that Manager)
    */
-  @UseGuards(GrpcAuthGuard)
-  @Get('manager/:managerId')
-  @Roles(Role.ADMIN, Role.MANAGER)
-  async getByManager(@Param('managerId') managerId: string) {
-    return this.restaurantService.getRestaurantByManagerId(managerId);
+  @UseGuards(JwtAuthGuard, ManagerGuard)
+  @Get('manager')
+  @ApiBearerAuth('JWT') 
+  async getByManager(@Req() req: any) {
+    const managerId = req.user.sub;
+    return await this.restaurantService.getRestaurantByManagerId(managerId);
   }
 
   /**
