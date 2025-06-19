@@ -13,7 +13,6 @@ import { AuthGuard } from './guards/authGuard';
 import { CurrentPartner } from 'src/common/decorators';
 import { Types } from 'mongoose';
 import { OtpVerifiedGuard } from './guards/otpVerifiedGuard';
-import {ApiTags} from '@nestjs/swagger';
 import { AUTH_CONSTANTS } from './authConstants';
 
 import { 
@@ -25,8 +24,10 @@ import {
   ForgotPasswordSwagger,
   ResendOtpSwagger,
   VerifyOtpSwagger,
-  UpdatePasswordSwagger
+  UpdatePasswordSwagger,
+  RegisterEmailSwagger
 } from './authSwagger';
+import { RegisterEmailDto } from './dtos/registerEmailDto';
 
 
 @AuthSwagger()
@@ -38,19 +39,28 @@ export class AuthController {
   ) {}
 
 
+
+  @RegisterEmailSwagger()
+  @Post('registerEmail')
+  async handleRegisterEmail(@Body() registerEmailData: RegisterEmailDto){
+    const { email } = registerEmailData;
+    return await this.authService.handleRegisterEmail(email);
+  }
+
   @RegisterSwagger()
+  @UseGuards(OtpVerifiedGuard)
   @Post(AUTH_CONSTANTS.ENDPOINTS.REGISTER)
-  async register(@Body() createDeliveryPartnerData: RegisterPartnerDto) {
+  async register(@CurrentPartner('sub') partnerEmail: string, @Body() createDeliveryPartnerData: RegisterPartnerDto) {
     this.logger.info('Registering new delivery partner', {
       service: 'AuthController',
       method: 'register',
-      email: createDeliveryPartnerData.email,
+      email: partnerEmail
     });
 
-      const result = await this.authService.register(createDeliveryPartnerData);
+      const result = await this.authService.register(createDeliveryPartnerData, partnerEmail);
       this.logger.info('Registration successful', {
         message: AUTH_CONSTANTS.MESSAGES.SUCCESS.REGISTER,
-        email: createDeliveryPartnerData.email,
+        email: partnerEmail
       });
       return result;
   }

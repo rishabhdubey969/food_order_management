@@ -193,9 +193,9 @@ async getNearbyRestaurants(
   /**
    * Search restaurants by food item name (User role)
    */
-  @UseGuards(GrpcAuthGuard)
+  // @UseGuards(GrpcAuthGuard)
   @Get('search/food')
-  @Roles(Role.USER)
+  // @Roles(Role.USER)
   async searchByFood(@Query('q') query: string) {
     return this.restaurantService.searchRestaurantsByFood(query);
   }

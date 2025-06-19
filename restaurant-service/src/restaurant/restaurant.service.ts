@@ -67,7 +67,7 @@ export class RestaurantService implements OnModuleInit {
     throwBadRequest(MESSAGES.MANAGER_NOT_VERIFIED);
   }
 
-  const alreadyVerified =  await this.restaurantModel.find({managerId, isActiveManager: true});
+  const alreadyVerified =  await this.restaurantModel.findOne({managerId, isActiveManager: true});
 
   if(alreadyVerified){
     throwBadRequest(MESSAGES.MANAGER_ALREADY_VERIFIED);
@@ -189,12 +189,12 @@ export class RestaurantService implements OnModuleInit {
   // Get all menu items for a restaurant
   async getMenuItems(restaurantId: string) {
   this.logger.log(`Fetching menu items for restaurant ID: ${restaurantId}`);
-  const restaurant = await this.restaurantModel.findById(restaurantId).exec();
+  const restaurant = await this.restaurantModel.findById(new Types.ObjectId(restaurantId)).exec();
   if (!restaurant) {
     throwNotFound(MESSAGES.RESTAURANT_NOT_FOUND(restaurantId));
   }
 
-  return this.menuItemModel.find({ restaurantId }).exec();
+  return await this.menuItemModel.find({ restaurantId }).exec();
 }
 
 

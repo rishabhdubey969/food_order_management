@@ -22,6 +22,7 @@ export const AuthSwagger = () => ApiTags('Auth - Delivery Partner');
 
 // Register Endpoint Decorators
 export const RegisterSwagger = () => applyDecorators(
+  ApiBearerAuth('JWT'),
   ApiOperation({ 
     summary: 'Register a new delivery partner',
     description: 'Creates a new delivery partner account with the provided details.'
@@ -324,6 +325,40 @@ export const UpdatePasswordSwagger = () => applyDecorators(
       example: {
         statusCode: 400,
         message: AUTH_CONSTANTS.MESSAGES.ERROR.INVALID_PASSWORD_FORMAT,
+        error: AUTH_CONSTANTS.MESSAGES.ERROR.BAD_REQUEST
+      }
+    }
+  })
+);
+
+
+export const RegisterEmailSwagger = () => applyDecorators(
+  ApiOperation({ 
+    summary: 'Initiate Registration process',
+    description: 'Sends an OTP to the new email for email verify.'
+  }),
+  ApiBody({ 
+    type: ForgotPasswordDto,
+    description: 'Email address for Registration'
+  }),
+  ApiOkResponse({ 
+    description: AUTH_CONSTANTS.MESSAGES.SUCCESS.FORGOT_PASSWORD,
+    schema: {
+      example: {
+        success: true,
+        message: AUTH_CONSTANTS.MESSAGES.SUCCESS.FORGOT_PASSWORD,
+        data: {
+          tempToken: 'temporary.jwt.token'
+        }
+      }
+    }
+  }),
+  ApiBadRequestResponse({ 
+    description: AUTH_CONSTANTS.MESSAGES.ERROR.EMAIL_FOUND,
+    schema: {
+      example: {
+        statusCode: 400,
+        message: AUTH_CONSTANTS.MESSAGES.ERROR.EMAIL_FOUND,
         error: AUTH_CONSTANTS.MESSAGES.ERROR.BAD_REQUEST
       }
     }

@@ -325,7 +325,7 @@ export class DeliveryService {
       const skip = (page - 1) * limit;
       // const partnerObjectId = new Types.ObjectId(partnerId);
 
-      const deliveries = await this.DeliveryModel.find({ partnerId: partnerId.toString() })
+      const deliveries = await this.DeliveryModel.find({ partnerId: partnerId.toString() }, {_id: 0, })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

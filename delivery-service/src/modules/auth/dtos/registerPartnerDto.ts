@@ -74,14 +74,14 @@ export class RegisterPartnerDto {
   @IsString({ message: 'Name must be a string' })
   name: string;
 
-  @ApiProperty({
-    description: 'Email address of the delivery partner',
-    example: 'john.doe@example.com',
-    format: 'email',
-  })
-  @IsNotEmpty({ message: 'Email cannot be empty' })
-  @IsEmail({}, { message: 'Please provide a valid email address' })
-  email: string;
+  // @ApiProperty({
+  //   description: 'Email address of the delivery partner',
+  //   example: 'john.doe@example.com',
+  //   format: 'email',
+  // })
+  // @IsNotEmpty({ message: 'Email cannot be empty' })
+  // @IsEmail({}, { message: 'Please provide a valid email address' })
+  // email: string;
 
   @ApiProperty({
     description: 'Mobile number of the delivery partner',
