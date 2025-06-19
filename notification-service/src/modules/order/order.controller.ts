@@ -8,13 +8,23 @@ import { EventPattern, Payload } from '@nestjs/microservices';
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-   @EventPattern('payment_done')
-   async handlePaymentSuccess(@Payload() data: any) {
-     await this.orderService.handlePaymentSuccessService(data);
-   }
+  /**
+   * Creates a new order.
+   * @param createOrderDto - The data transfer object containing order details.
+   * @returns The created order object.
+   */
+  @EventPattern('payment_done')
+  async handlePaymentSuccess(@Payload() data: any) {
+    await this.orderService.handlePaymentSuccessService(data);
+  }
 
-    @EventPattern('payment_failed')
-   async handlePaymentFailed(@Payload() data: any) {
-     await this.orderService.handlePaymentFailedService(data);
-   }
+  /**
+   * Updates an existing order.
+   * @param updateOrderDto - The data transfer object containing updated order details.
+   * @return The updated order object.
+   */
+  @EventPattern('payment_failed')
+  async handlePaymentFailed(@Payload() data: any) {
+    await this.orderService.handlePaymentFailedService(data);
+  }
 }

@@ -77,10 +77,8 @@ export class ProfileService {
   }
 
   /**
-   * Media Persign url call from media service by using grpc
-   * @param id
-   * @param uploadMediaDto
-   * @returns
+   * Permanently delete a profile by ID.
+   * Logs the operation and throws if deletion fails.
    */
   async mediaUploadService(id: string, uploadMediaDto) {
     try {
@@ -90,6 +88,10 @@ export class ProfileService {
     }
   }
 
+  /**
+   * Confirm the upload of a media file.
+   * Logs the operation and throws if confirmation fails.
+   */
   async confirmUploadService(id: string) {
     return this.mediaClient.ConfirmUploadClient(
       'media/user/profile/684d51abab85e4eea0294410/7390b6b0-08d8-4670-b544-6ce4aa28c4c1.jpg',

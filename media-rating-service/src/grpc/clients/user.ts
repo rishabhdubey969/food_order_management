@@ -19,7 +19,7 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const protoDescriptor = grpc.loadPackageDefinition(packageDefinition) as any;
 const AuthService = protoDescriptor.auth.AuthService;
 
-// 👇 Use the same host and port as your NestJS AuthService is running on
+// Use the same host and port as your NestJS AuthService is running on
 const authClient = new AuthService(
   process.env.AUTH_GRPC_URL || 'localhost:50051',
   grpc.credentials.createInsecure()
