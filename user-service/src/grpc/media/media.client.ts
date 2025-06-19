@@ -21,7 +21,7 @@ export class MediaClient implements OnModuleInit {
     options: {
       package: MEDIA_PACKAGE_NAME,
       protoPath: join(process.cwd(), 'src/grpc/proto/media.proto'), // cleaner
-      url: '127.0.0.1:50052',
+      url: '127.0.0.1:50053',
     },
   })
   private client: ClientGrpc;

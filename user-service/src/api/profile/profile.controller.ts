@@ -77,6 +77,7 @@ export class ProfileController {
     return this.profileService.mediaUploadService(req.user.payload.sub, uploadMediaDto);
   }
 
+
   /**
    * Confirms the upload of media files associated with the user's profile.
    *
