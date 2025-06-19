@@ -48,11 +48,7 @@ async function bootstrap() {
   });
 
   // CORS
-  app.enableCors({
-    origin: ['*'],
-    // methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    // credentials: true,
-  });
+  app.enableCors();
 
   // Swagger
   const configService = app.get(ConfigService);
