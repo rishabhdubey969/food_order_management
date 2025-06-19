@@ -161,45 +161,72 @@ export class CartController {
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
   @Get('get')
+  @ApiTags('Cart')
   @ApiOperation({ summary: 'Get user’s active cart' })
   @ApiResponse({
     status: 200,
-    description: 'Item removed or quantity decreased successfully',
+    description: 'Cart retrieved successfully',
     schema: {
       example: {
-        _id: '6851b7b5786ecbff4c06e854  //THIS IS CARTId',
-        userId: '684d51abab85e4eea0294410',
-        couponCode: null,
-        couponId: null,
-        deliveryCharges: 2501,
-        discount: 0,
-        distanceInKm: 500,
-        itemTotal: 19.98,
-        items: [
-          {
-            itemId: '683d3dcb6728e2e8cc8dd6e4',
-            name: 'Margherita Pizza',
-            quantity: 2,
-            price: 9.99,
-            tax: 0.999,
-          },
-        ],
-        platformFee: 9,
-        restaurantId: '683d7adf339b913562146f00',
-        subtotal: 19.98,
-        tax: 0.999,
-        total: 2530,
+        cart: {
+          _id: '6851b7b5786ecbff4c06e854',
+          userId: '684d51abab85e4eea0294410',
+          couponCode: null,
+          couponId: null,
+          deliveryCharges: 2501,
+          discount: 0,
+          distanceInKm: 500,
+          itemTotal: 19.98,
+          items: [
+            {
+              itemId: '683d3dcb6728e2e8cc8dd6e4',
+              name: 'Margherita Pizza',
+              quantity: 2,
+              price: 9.99,
+              tax: 0.999,
+            },
+          ],
+          platformFee: 9,
+          restaurantId: '683d7adf339b913562146f00',
+          subtotal: 19.98,
+          tax: 0.999,
+          total: 2530,
+        },
+        message: 'Cart is up to date',
       },
     },
   })
-  
-  @ApiResponse({ status: 404, description: 'Cart not found for user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cart updated with latest prices, availability, taxes, and totals',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Cart is empty',
+    schema: {
+      example: {
+        cart: null,
+        message: 'Your cart is empty',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Cart not found for user',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'No active cart found',
+        error: 'Not Found',
+      },
+    },
+  })
   async getCart(@Req() req: any) {
     const userId = req.user.sub;
     this.logger.verbose(`Fetching cart for user ${userId}`, this.context);
     return this.cartService.getCartService(userId);
   }
-
+  
 
   // Get all available coupons for a restaurant
   @UseGuards(GrpcAuthGuard)

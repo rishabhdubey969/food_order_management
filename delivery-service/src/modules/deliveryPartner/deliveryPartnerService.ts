@@ -1,213 +1,4 @@
 
-
-// import { forwardRef, Inject, Injectable, NotFoundException, Logger } from '@nestjs/common';
-// import { InjectModel } from '@nestjs/mongoose';
-// import { Model, MongooseError, Types } from 'mongoose';
-// import { DeliveryPartner, DeliveryPartnerDocument } from './models/deliveryPartnerModel';
-// import { DeliveryService } from '../delivery/delivery.service';
-// import { RegisterPartnerDto } from '../auth/dtos/registerPartnerDto';
-// import { DELIVERY_PARTNER_CONSTANTS } from './deliveryPartnerConstants';
-
-
-// @Injectable()
-// export class DeliveryPartnerService {
-//   private readonly logger = new Logger(DeliveryPartnerService.name);
-
-//   constructor(
-//     @InjectModel(DeliveryPartner.name)
-//     private deliveryPartnerModel: Model<DeliveryPartnerDocument>,
-//     @Inject(forwardRef(() => DeliveryService))
-//     private deliveryService: DeliveryService
-//   ) {}
-
-//   async getProfile(partnerId: Types.ObjectId): Promise<DeliveryPartnerDocument | null> {
-//     this.logger.log(`Attempting to retrieve profile for partner ID: ${partnerId}`);
-//     try {
-//       const profile = await this.deliveryPartnerModel.findById(partnerId);
-//       if (!profile) {
-//         this.logger.warn(`Profile for partner ID: ${partnerId} not found`);
-//         throw new NotFoundException(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.PARTNER_NOT_FOUND}: ${partnerId}`);
-//       }
-//       this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.PROFILE_RETRIEVED}: ${partnerId}`);
-//       return profile;
-//     } catch (err) {
-//       if (err instanceof NotFoundException) {
-//         throw err;
-//       }
-//       this.logger.error(`Error retrieving profile for partner ID: ${partnerId}`, err.stack);
-//       throw new MongooseError(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.FAILED_PROFILE}: ${err.message}`);
-//     }
-//   }
-
-//   async create(registerPartnerDto: RegisterPartnerDto): Promise<DeliveryPartnerDocument> {
-//     this.logger.log(`Attempting to create a new delivery partner with email: ${registerPartnerDto.email}`);
-//     try {
-//       const newPartner = await this.deliveryPartnerModel.create(registerPartnerDto);
-//       this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.PARTNER_CREATED}: ${newPartner._id}`);
-//       return newPartner;
-//     } catch (err) {
-//       this.logger.error(`Error creating delivery partner with email: ${registerPartnerDto.email}`, err.stack);
-//       throw new MongooseError(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.FAILED_CREATE}: ${err.message}`);
-//     }
-//   }
-
-//   async verifyPartnerRegistration(email: string, mobileNumber: string): Promise<DeliveryPartnerDocument | null> {
-//     this.logger.log(`Verifying partner registration for email: ${email} or mobile: ${mobileNumber}`);
-//     try {
-//       const partner = await this.deliveryPartnerModel.findOne({
-//         $or: [
-//           { mobileNumber: mobileNumber },
-//           { email: email }
-//         ]
-//       });
-//       this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.VERIFICATION_COMPLETED} for email: ${email} or mobile: ${mobileNumber}`);
-//       return partner;
-//     } catch (err) {
-//       this.logger.error(`Error verifying partner registration for email: ${email} or mobile: ${mobileNumber}`, err.stack);
-//       throw new MongooseError(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.FAILED_VERIFICATION}: ${err.message}`);
-//     }
-//   }
-
-//   async findAll(): Promise<DeliveryPartnerDocument[]> {
-//     this.logger.log('Attempting to find all delivery partners');
-//     try {
-//       const partners = await this.deliveryPartnerModel.find();
-//       this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.ALL_PARTNERS_RETRIEVED}: ${partners.length}`);
-//       return partners;
-//     } catch (err) {
-//       this.logger.error('Error finding all delivery partners', err.stack);
-//       throw new MongooseError(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.FAILED_ALL_PARTNERS}: ${err.message}`);
-//     }
-//   }
-
-//   async findById(partnerId: Types.ObjectId): Promise<DeliveryPartnerDocument | null> {
-//     this.logger.log(`Attempting to find delivery partner by ID: ${partnerId}`);
-//     try {
-//       const partner = await this.deliveryPartnerModel.findById(partnerId);
-//       if (!partner) {
-//         this.logger.warn(`Delivery partner with ID: ${partnerId} not found`);
-//         throw new NotFoundException(DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.USER_NOT_FOUND);
-//       }
-//       this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.PARTNER_FOUND}: ${partnerId}`);
-//       return partner;
-//     } catch (err) {
-//       if (err instanceof NotFoundException) {
-//         throw err;
-//       }
-//       this.logger.error(`Error finding delivery partner by ID: ${partnerId}`, err.stack);
-//       throw new MongooseError(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.FAILED_FIND_BY_ID}: ${err.message}`);
-//     }
-//   }
-
-//   async findByEmail(email: string): Promise<DeliveryPartnerDocument | null> {
-//     this.logger.log(`Attempting to find delivery partner by email: ${email}`);
-//     try {
-//       const partner = await this.deliveryPartnerModel.findOne({ email });
-//       if (!partner) {
-//         this.logger.warn(`Delivery partner with email: ${email} not found`);
-//         throw new NotFoundException(DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.DELIVERY_PARTNER_NOT_FOUND);
-//       }
-//       this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.PARTNER_FOUND}: ${email}`);
-//       return partner;
-//     } catch (err) {
-//       if (err instanceof NotFoundException) {
-//         throw err;
-//       }
-//       this.logger.error(`Error finding delivery partner by email: ${email}`, err.stack);
-//       throw new MongooseError(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.FAILED_FIND_BY_EMAIL}: ${err.message}`);
-//     }
-//   }
-
-//   async findByMobileNumber(mobileNumber: string): Promise<DeliveryPartnerDocument | null> {
-//     this.logger.log(`Attempting to find delivery partner by mobile number: ${mobileNumber}`);
-//     try {
-//       const partner = await this.deliveryPartnerModel.findOne({ mobileNumber });
-//       if (!partner) {
-//         this.logger.warn(`Delivery partner with mobile number: ${mobileNumber} not found`);
-//       }
-//       this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.PARTNER_FOUND}: ${mobileNumber}`);
-//       return partner;
-//     } catch (err) {
-//       this.logger.error(`Error finding delivery partner by mobile number: ${mobileNumber}`, err.stack);
-//       throw new MongooseError(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.FAILED_FIND_BY_MOBILE}: ${err.message}`);
-//     }
-//   }
-
-//   async findStatus(partnerId: Types.ObjectId): Promise<string | null> {
-//     this.logger.log(`Attempting to find status for partner ID: ${partnerId}`);
-//     try {
-//       const result = await this.deliveryPartnerModel.findById(partnerId, { status: 1, _id: 0 });
-//       if (!result) {
-//         this.logger.warn(`Status for partner ID: ${partnerId} not found, partner does not exist`);
-//         throw new NotFoundException(DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.PARTNER_NOT_FOUND);
-//       }
-//       this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.PARTNER_FOUND}: ${partnerId}`);
-//       return result.status;
-//     } catch (err) {
-//       if (err instanceof NotFoundException) {
-//         throw err;
-//       }
-//       this.logger.error(`Error finding status for partner ID: ${partnerId}`, err.stack);
-//       throw new MongooseError(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.FAILED_STATUS}: ${err.message}`);
-//     }
-//   }
-
-//   async updateStatus(partnerId: Types.ObjectId, status: string): Promise<DeliveryPartnerDocument | null> {
-//     this.logger.log(`Attempting to update status for partner ID: ${partnerId} to ${status}`);
-//     try {
-//       const updatedPartner = await this.deliveryPartnerModel.findByIdAndUpdate(
-//         partnerId,
-//         { status },
-//         { new: true },
-//       );
-//       if (!updatedPartner) {
-//         this.logger.warn(`Partner with ID: ${partnerId} not found for status update`);
-//         throw new NotFoundException(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.PARTNER_NOT_FOUND}: ${partnerId}`);
-//       }
-//       this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.STATUS_UPDATED}: ${partnerId} to ${status}`);
-//       return updatedPartner;
-//     } catch (err) {
-//       if (err instanceof NotFoundException) {
-//         throw err;
-//       }
-//       this.logger.error(`Error updating status for partner ID: ${partnerId} to ${status}`, err.stack);
-//       throw new MongooseError(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.FAILED_UPDATE_STATUS}: ${err.message}`);
-//     }
-//   }
-
-//   async remove(partnerId: Types.ObjectId): Promise<void> {
-//     this.logger.log(`Attempting to remove delivery partner with ID: ${partnerId}`);
-//     try {
-//       const result = await this.deliveryPartnerModel.findByIdAndDelete(partnerId);
-//       if (!result) {
-//         this.logger.warn(`Partner with ID: ${partnerId} not found for removal`);
-//         throw new NotFoundException(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.PARTNER_NOT_FOUND}: ${partnerId}`);
-//       }
-//       this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.PARTNER_DELETED}: ${partnerId}`);
-//     } catch (err) {
-//       if (err instanceof NotFoundException) {
-//         throw err;
-//       }
-//       this.logger.error(`Error removing delivery partner with ID: ${partnerId}`, err.stack);
-//       throw new MongooseError(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.FAILED_REMOVE}: ${err.message}`);
-//     }
-//   }
-
-//   async getPartnerEarnings(partnerId: Types.ObjectId, period: string): Promise<number> {
-//     this.logger.log(`Attempting to get earnings for partner ID: ${partnerId} for period: ${period}`);
-//     const earnings = await this.deliveryService.getEarningsByPeriod(partnerId, period);
-//     this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.EARNINGS_CALCULATED}: ${partnerId} for period: ${period}`);
-//     return earnings;
-//   }
-
-//   async getPartnerDeliveries(partnerId: Types.ObjectId, page: number, limit: number) {
-//     this.logger.log(`Attempting to get paginated deliveries for partner ID: ${partnerId}, page: ${page}, limit: ${limit}`);
-//     const deliveries = await this.deliveryService.getPartnerDeliveries(partnerId, page, limit);
-//     this.logger.log(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.SUCCESS.DELIVERIES_RETRIEVED}: ${partnerId}, page: ${page}, limit: ${limit}`);
-//     return deliveries;
-//   }
-// }
-
 import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, MongooseError, Types } from 'mongoose';
@@ -261,25 +52,26 @@ export class DeliveryPartnerService {
     }
   }
 
-  async create(registerPartnerDto: RegisterPartnerDto): Promise<DeliveryPartnerDocument> {
+  async create(registerPartnerDto: RegisterPartnerDto, partnerEmail: string): Promise<DeliveryPartnerDocument> {
     this.logger.info('Creating new delivery partner', {
       service: 'DeliveryPartnerService',
       method: 'create',
-      email: registerPartnerDto.email
+      email: partnerEmail
     });
     
     try {
-      const newPartner = await this.deliveryPartnerModel.create(registerPartnerDto);
+      const registerData = {...registerPartnerDto, email: partnerEmail}
+      const newPartner = await this.deliveryPartnerModel.create(registerData);
       this.logger.info('Delivery partner created successfully', {
         partnerId: newPartner._id,
-        email: registerPartnerDto.email
+        email: partnerEmail
       });
       return newPartner;
     } catch (err) {
       this.logger.error('Failed to create delivery partner', {
         error: err.message,
         stack: err.stack,
-        email: registerPartnerDto.email
+        email: partnerEmail
       });
       throw new MongooseError(`${DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.FAILED_CREATE}: ${err.message}`);
     }
@@ -383,15 +175,11 @@ export class DeliveryPartnerService {
       const partner = await this.deliveryPartnerModel.findOne({ email });
       if (!partner) {
         this.logger.warn('Delivery partner not found', { email });
-        throw new NotFoundException(DELIVERY_PARTNER_CONSTANTS.MESSAGES.ERROR.DELIVERY_PARTNER_NOT_FOUND);
       }
       
       this.logger.info('Delivery partner found successfully', { email });
       return partner;
     } catch (err) {
-      if (err instanceof NotFoundException) {
-        throw err;
-      }
       this.logger.error('Failed to find delivery partner by email', {
         error: err.message,
         stack: err.stack,
