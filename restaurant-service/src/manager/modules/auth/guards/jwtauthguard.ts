@@ -8,7 +8,8 @@ import { Request, Response } from 'express';
 import { TokenService } from '../../token/token.service'; 
 
 @Injectable()
-export class JwtAuthGuard implements CanActivate {
+export class JwtAuthGuard implements CanActivate 
+{
   constructor(private readonly tokenService: TokenService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
