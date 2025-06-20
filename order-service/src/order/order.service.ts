@@ -71,10 +71,10 @@ export class OrderService {
 
     try {
       // checking cart already exist in order db or not
-        const alreadyExists= await this.OrderSchema.findOne({cartId:cartId});
-        if(alreadyExists){
-           throw new BadRequestException(alreadyExists);
-        }
+        // const alreadyExists= await this.OrderSchema.findOne({cartId:cartId});
+        // if(alreadyExists){
+        //    throw new BadRequestException(alreadyExists);
+        // }
         // calling manager service
       const data=await this.handleKitchen({cartId:cartId});
         if(typeof data === 'string'){
@@ -277,7 +277,7 @@ export class OrderService {
 
   }
   async handleKitchen(payload: { cartId: ObjectId }) {
-    return await this.kafkaService.handleEvent('isFoodAvailable', payload);
+    return await this.kafkaService.handleMessage('isFoodAvailable', payload);
   }
   @EventPattern('deliveryPatenerResponse')
   async deliveryAssigned(@Payload() payload: any, @Ctx() context: KafkaContext){
