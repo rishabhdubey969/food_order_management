@@ -13,6 +13,9 @@ export class Manager {
   password: string;
 
   @Prop()
+  restaurantId: string;
+
+  @Prop()
   accountNumber: string;
 
   @Prop()
