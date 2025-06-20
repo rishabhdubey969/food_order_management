@@ -18,12 +18,13 @@ import {
 import ManagerLoginDto from 'src/manager/modules/auth/dto/managerLogindto';
 import ManagerSignupDto from 'src/manager/modules/auth/dto/managerSignuodto';
 import { ManagerService } from './manager.service';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { JwtAuthGuard } from './modules/auth/guards/jwtauthguard';
 import { Types } from 'mongoose';
 import { OrderHandoverDto } from './modules/auth/dto/orderHandOver.dto';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
 import { ForgotPasswordDto, ResetPasswordDto } from './modules/auth/dto/reset.password.dto';
+import { AdminGuard } from 'src/restaurant/guards/admin.guard';
 
 @ApiTags('Manager')
 @ApiBearerAuth('access-token')
@@ -55,7 +56,7 @@ export class ManagerController {
   @ApiBody({ type: ManagerLoginDto })
   @ApiResponse({ status: 200, description: 'Manager logged in successfully' })
   async login(@Body() managerLoginDto: ManagerLoginDto) {
-    const res = await this.managerService.login(managerLoginDto); 
+    const res = await this.managerService.login(managerLoginDto);
     return res;
   }
 
@@ -102,7 +103,7 @@ export class ManagerController {
    * @returns - Promise containing the manager's profile or NotFoundException
    */
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth('JWT')
   @Get("")
   @ApiOperation({ summary: 'Get Manager by ID' })
@@ -126,7 +127,7 @@ export class ManagerController {
   @ApiBody({ type: ManagerSignupDto, description: 'Fields to update (partial allowed)' })
   @ApiResponse({ status: 200, description: 'Manager updated successfully' })
   async updateManager(@Req() req: any, @Body() updateData: Partial<ManagerSignupDto>) {
-    const id = req.user.sub; 
+    const id = req.user.sub;
     return this.managerService.updateManager(id, updateData);
   }
 
@@ -151,9 +152,8 @@ export class ManagerController {
  * 3. Enforces a 30-second decision timeout
  * 4. Cleans up listeners after completion
  */
-  @EventPattern('isFoodAvailable')
+  @MessagePattern('isFoodAvailable')
   async handleIsFoodAvailable(@Payload('cartId', ParseObjectIdPipe) cartId: Types.ObjectId) {
-    console.log("hii");
     return await this.managerService.handleIsFoodAvailable(cartId);
   }
 

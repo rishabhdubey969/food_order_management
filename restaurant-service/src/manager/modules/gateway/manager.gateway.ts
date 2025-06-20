@@ -54,7 +54,7 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
    * Checks the connection and emit the response through kafka
    */
   async handleIsFoodAvailable(managerId: Types.ObjectId, cartData: any): Promise<boolean> {
-    const manId = managerId.toString()
+    try{const manId = managerId.toString()
     const managerSocket = this.connectedManagers.get(manId);
     if (!managerSocket) {
       throw new Error('Manager not connected');
@@ -71,6 +71,10 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
         resolve(data.approved);
       };
       managerSocket.on('orderResponse', responseHandler);
-    });
+    });}
+    catch(err)
+    {
+      return err;
+    }
   }
 }
