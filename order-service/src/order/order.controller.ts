@@ -137,9 +137,9 @@ export class OrderController {
   }
 
 
-  @Get('/getManagerId/:managerId')
-  async getManagerId(@Param('managerId') managaerId:string,@Req() request:any){
-    return await this.orderService.getManagerId(managaerId);
+  @Get('/getManagerId/:restId')
+  async getManagerId(@Param('restId') restId:string,@Req() request:any){
+    return await this.orderService.getManagerId(restId);
   }
 
   @ApiBearerAuth('JWT')
