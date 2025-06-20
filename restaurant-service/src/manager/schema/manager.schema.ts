@@ -19,7 +19,10 @@ export class Manager {
   ifscCode: string;
 
   @Prop()
-  restaurantId: string
+  restaurantId: string;
+
+  @Prop({ required: true })
+  role: 2;
 
    @Prop()
   refreshToken: string;
@@ -45,6 +48,7 @@ export class Manager {
 export type ManagerDocument = Manager & Document;
 
 export const ManagerSchema = SchemaFactory.createForClass(Manager);
+
 ManagerSchema.index({ managerId: 1, isActiveManager: 1 });
 ManagerSchema.index({ restaurantId: 1, isActiveManager: 1 });
 ManagerSchema.index({ createdAt: -1 });
