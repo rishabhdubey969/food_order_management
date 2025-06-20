@@ -26,9 +26,4 @@ export class CreateMenuItemDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
-
-  @ApiPropertyOptional({ description: 'Coupons applicable for the menu item', type: [String] })
-  @IsOptional()
-  @IsString({ each: true })
-  copons?: string[];
 }

@@ -6,7 +6,7 @@ export class Manager {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true, unique: true ,index:true})
   email: string;
 
   @Prop({ required: true })
@@ -17,6 +17,12 @@ export class Manager {
 
   @Prop()
   ifscCode: string;
+
+  @Prop()
+  restaurantId: string
+
+   @Prop()
+  refreshToken: string;
 
   @Prop()
   bankName: string;

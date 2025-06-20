@@ -22,7 +22,7 @@ export class Restaurant extends Document {
       default: 'Point',
     },
     coordinates: {
-      type: [Number], 
+      type: [Number],
       required: true,
     },
   })

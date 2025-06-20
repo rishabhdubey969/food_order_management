@@ -25,7 +25,7 @@ server.addService(proto.MediaService.service, handlers);
 
 // Start gRPC server
 server.bindAsync(
-  "0.0.0.0:50052",
+  "0.0.0.0:50053",
   grpc.ServerCredentials.createInsecure(),
   (err, port) => {
     if (err) {

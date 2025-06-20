@@ -7,6 +7,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/ reset-password.dto';
 import { AdminGuard } from './guards/admin.guard';
 import { LoginSwagger, VerifyOtpSwagger, RefreshTokenSwagger, LogoutSwagger, ForgotPasswordSwagger, ResetPasswordSwagger } from '../swagger/auth.swagger';
+import { LoginGuard } from './guards/Login.guard';
 
 @Controller('auth/admin')
 export class AuthController {
@@ -25,11 +26,17 @@ export class AuthController {
     }
   }
 
+  @UseGuards(LoginGuard)
   @Post('verify-otp')
   @VerifyOtpSwagger()
-  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto, @Req() req: any) {
     try {
-      return await this.authService.verifyOtp(verifyOtpDto);
+  
+      const userId = req.user._id;
+      const email=req.user.email;
+    
+      const {  otp } = verifyOtpDto;
+      return await this.authService.verifyOtp(userId, otp,email);
     } catch (error) {
       throw new HttpException(
         error.message || 'OTP verification failed',

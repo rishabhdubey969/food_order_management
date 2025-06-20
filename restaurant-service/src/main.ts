@@ -13,7 +13,13 @@ async function bootstrap() {
     logger: WinstonModule.createLogger(winstonConfig), 
   });
 
-  // app.useGlobalFilters(new GlobalExceptionFilter());
+  const configService = app.get(ConfigService);
+
+  const kafkaBrokers = configService.get<string>('KAFKA_BROKERS')!;
+  const kafkaClientId = configService.get<string>('KAFKA_CLIENT_ID', 'managerConsumer'); 
+  const kafkaGroupId = configService.get<string>('KAFKA_GROUP_ID', 'managergroup'); 
+
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -31,14 +37,14 @@ async function bootstrap() {
     transport: Transport.KAFKA,
     options: {
       client: {
-        brokers: ['localhost:29092'],
-        clientId:'managerConsumer',
+        brokers: [kafkaBrokers],
+        clientId: kafkaClientId,
         retry:{
           retries:5
         },
       },
       consumer: {
-        groupId: 'managergroup',
+        groupId: kafkaGroupId,
         allowAutoTopicCreation:true
       },
       producer:{
@@ -48,14 +54,9 @@ async function bootstrap() {
   });
 
   // CORS
-  app.enableCors({
-    origin: ['*'],
-    // methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    // credentials: true,
-  });
+  app.enableCors();
 
   // Swagger
-  const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || 3005;
 
   const swaggerConfig = new DocumentBuilder()

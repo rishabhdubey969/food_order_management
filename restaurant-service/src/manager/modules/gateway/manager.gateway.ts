@@ -9,7 +9,7 @@ import { TokenService } from '../token/token.service';
   cors: {
     origin: '*',
   },
-})   
+})
 export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private logger = new Logger('ManagerGateway');
@@ -17,29 +17,32 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
   constructor(private readonly kafkaService: KafkaService,
     private readonly tokenService: TokenService
-  ){}
+  ) { }
   /**
    * Builds a connection
    */
   async handleConnection(client: Socket & { data: { manager: { id: string } } }) {
 
-    const token = client.handshake.headers.authorization?.split(' ')[1];
-    console.log(token);
-    if(!token){
-      throw new UnauthorizedException('No token provided');
+    try {
+      const token = client.handshake.headers.authorization?.split(' ')[1];
+      console.log(token);
+      if (!token) {
+        throw new UnauthorizedException('No token provided');
+      }
+      const payload = await this.tokenService.verifyToken(token, "access");
+      const managerId = payload.sub.toString();
+
+      this.connectedManagers.set(managerId, client);
+      this.logger.log(`Manager ${managerId} connected`);
+    } catch (err) {
+      client.disconnect();
     }
-    const payload = await this.tokenService.verifyToken(token, "access");
-    console.log(payload)
-    const managerId = payload.sub.toString();
-    
-    this.connectedManagers.set(managerId , client);
-    this.logger.log(`Manager ${managerId} connected`);
   }
 
   /**
    * Disconnect 
    */
-  handleDisconnect(client: Socket & { data?: { manager?: { id: string } }}) {
+  handleDisconnect(client: Socket & { data?: { manager?: { id: string } } }) {
     const managerId = client.data?.manager?.id;
     if (managerId) {
       this.connectedManagers.delete(managerId);
@@ -54,20 +57,20 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
     const manId = managerId.toString()
     const managerSocket = this.connectedManagers.get(manId);
     if (!managerSocket) {
-        throw new Error('Manager not connected');
+      throw new Error('Manager not connected');
     }
 
     return new Promise((resolve, reject) => {
-        const timeoutId = setTimeout(() => {
-            reject(new Error('Manager response timeout'));
-        }, 30000); 
-        managerSocket.emit('newOrder', cartData);
-        const responseHandler = (data: { approved: boolean }) => {
-            clearTimeout(timeoutId);
-            managerSocket.off('orderResponse', responseHandler); 
-            resolve(data.approved);
-        };
-        managerSocket.on('orderResponse', responseHandler);
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Manager response timeout'));
+      }, 30000);
+      managerSocket.emit('newOrder', cartData);
+      const responseHandler = (data: { approved: boolean }) => {
+        clearTimeout(timeoutId);
+        managerSocket.off('orderResponse', responseHandler);
+        resolve(data.approved);
+      };
+      managerSocket.on('orderResponse', responseHandler);
     });
-}
+  }
 }

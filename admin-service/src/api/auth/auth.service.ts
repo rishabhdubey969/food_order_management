@@ -6,7 +6,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
+import { Connection, StringExpression } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import Redis from 'ioredis';
@@ -127,11 +127,12 @@ export class AuthService {
       let Subject = 'Your Admin Login OTP';
       let text = `Your OTP for admin login is: ${otp} It expires in 10 minutes`;
       await this.emailService.sendEmail(email, Subject, text);
-
+      let data={_id: admin._id.toString(), email: email }
+      const accessToken = await this.jwtService.sign(data,{ expiresIn: '5m' })
       return {
         message: SUCCESS_MESSAGES.OTP,
-
-        data: { _id: admin._id.toString(), email: admin.email },
+        accessToken
+        //data: { _id: admin._id.toString(), email: admin.email },
       };
     } catch (error) {
       this.logger.error(`Admin login failed: ${error.message}`, error.stack);
@@ -142,12 +143,11 @@ export class AuthService {
     }
   }
 
-  async verifyOtp(verifyOtpDto: VerifyOtpDto) {
+  async verifyOtp(userId: string, otp: string,  email:string) {
     this.logger.log(
-      `Starting OTP verification for admin userId: ${verifyOtpDto.userId}`,
+      `Starting OTP verification for admin userId: ${email}`,
     );
     try {
-      const { userId, otp, password } = verifyOtpDto;
 
       const admin = await this.connection.collection('admins').findOne(
         {
@@ -169,10 +169,10 @@ export class AuthService {
         );
       }
 
-      if (!(await bcrypt.compare(password, admin.password))) {
-        this.logger.warn(`Invalid password for admin userId: ${userId}`);
-        throw new HttpException('Invalid password', HttpStatus.UNAUTHORIZED);
-      }
+      // if (!(await bcrypt.compare(password, admin.password))) {
+      //   this.logger.warn(`Invalid password for admin userId: ${userId}`);
+      //   throw new HttpException('Invalid password', HttpStatus.UNAUTHORIZED);
+      // }
 
       await this.connection
         .collection('admins')
@@ -188,6 +188,7 @@ export class AuthService {
         role: 'admin',
       };
       const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+      
       const refreshToken = this.jwtService.sign(payload, {
         secret: this.configService.get<string>(
           process.env.JWT_REFRESH_SECRET as string,

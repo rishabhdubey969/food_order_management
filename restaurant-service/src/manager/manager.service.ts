@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   InternalServerErrorException,
   Inject,
+  Req,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types, isValidObjectId } from 'mongoose';
@@ -33,10 +34,10 @@ export class ManagerService {
     private readonly kafkaService: KafkaService,
     @Inject('NOTIFICATION_SERVICE') private readonly client: ClientProxy,
     private readonly logger: WinstonLogger,
-  ) {}
-    /**
-   * Register a manager
-   */
+  ) { }
+  /**
+ * Register a manager
+ */
   async Signup(managerSignupDto: ManagerSignupDto) {
     try {
       const { email, password } = managerSignupDto;
@@ -66,7 +67,6 @@ export class ManagerService {
       return {
         message: SUCCESS_MESSAGES.MANAGER_SIGNUP,
         data: {
-          id: savedManager._id,
           name: savedManager.name,
           email: savedManager.email,
           accountNumber: savedManager.accountNumber,
@@ -80,9 +80,9 @@ export class ManagerService {
       throw new InternalServerErrorException(ERROR_MESSAGES.REGISTRATION_FAILED);
     }
   }
-   /**
-   * Login a manager
-   */
+  /**
+  * Login a manager
+  */
   async login(managerLoginDto: ManagerLoginDto) {
     try {
       const { email, password } = managerLoginDto;
@@ -115,7 +115,6 @@ export class ManagerService {
         accessToken,
         refreshToken,
         data: {
-          id: manager._id,
           name: manager.name,
           email: manager.email,
         },
@@ -125,10 +124,10 @@ export class ManagerService {
       throw error;
     }
   }
-   
-   /**
-   * InitiatePasswordReset of a manager
-   */
+
+  /**
+  * InitiatePasswordReset of a manager
+  */
   async initiatePasswordReset(email: string) {
     try {
       if (!email) {
@@ -142,14 +141,14 @@ export class ManagerService {
         return { message: SUCCESS_MESSAGES.RESET_LINK_SENT };
       }
 
-      const resetToken = uuidv4();
+      const token = uuidv4();
       const resetTokenExpiry = addHours(new Date(), 1);
-      manager.resetToken = resetToken;
+      manager.resetToken = token;
       manager.resetTokenExpiry = resetTokenExpiry;
       await manager.save();
 
-      this.client.emit('reset_link', { email: manager.email, resetToken });
-      await this.sendPasswordResetEmail(manager.email, resetToken);
+      this.client.emit('reset_link', { email: manager.email, token  });
+      await this.sendPasswordResetEmail(manager.email, token);
 
       this.logger.log(`Password reset link generated and emailed to: ${email}`);
       return { message: SUCCESS_MESSAGES.RESET_LINK_SENT };
@@ -158,7 +157,7 @@ export class ManagerService {
       throw new UnauthorizedException(ERROR_MESSAGES.RESET_PASSWORD_FAILED);
     }
   }
-  
+
   /**
    * A link will be send to reset password of manager
    */
@@ -223,28 +222,54 @@ export class ManagerService {
   /**
    * Get a manger by it's id
    */
-  async getManagerById(id: string) {
+  async getManagerById(managerId: string) {
     try {
-      const manager = await this.managerModel.findById(id);
+      const manager = await this.managerModel.findById(new Types.ObjectId(managerId));
       if (!manager) {
-        this.logger.warn(`Get manager failed: Manager not found with ID ${id}`);
+        this.logger.warn(`Manager not found with ID ${managerId}`);
         throw new NotFoundException(ERROR_MESSAGES.MANAGER_NOT_FOUND);
       }
 
-      this.logger.log(`Manager fetched successfully: ${id}`);
+      this.logger.log(`Manager profile fetched successfully: ${managerId}`);
       return {
         message: SUCCESS_MESSAGES.MANAGER_FOUND,
         data: {
-          id: manager._id,
           name: manager.name,
           email: manager.email,
-        },
+          restaurant: manager.restaurantId,
+        }
       };
     } catch (error) {
-      this.logger.error(`Failed to fetch manager by ID: ${id}`, error.stack);
-      throw error;
+      this.logger.error('Failed to fetch manager profile', error.stack);
+      if (error instanceof UnauthorizedException ||
+        error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to fetch profile');
     }
   }
+  // async getManagerById(id: string) {
+  //   try {
+  //     const manager = await this.managerModel.findById(id);
+  //     if (!manager) {
+  //       this.logger.warn(`Get manager failed: Manager not found with ID ${id}`);
+  //       throw new NotFoundException(ERROR_MESSAGES.MANAGER_NOT_FOUND);
+  //     }
+
+  //     this.logger.log(`Manager fetched successfully: ${id}`);
+  //     return {
+  //       message: SUCCESS_MESSAGES.MANAGER_FOUND,
+  //       data: {
+  //         id: manager._id,
+  //         name: manager.name,
+  //         email: manager.email,
+  //       },
+  //     };
+  //   } catch (error) {
+  //     this.logger.error(`Failed to fetch manager by ID: ${id}`, error.stack);
+  //     throw error;
+  //   }
+  // }
 
   /**
    * update a manager by it's id
@@ -324,7 +349,7 @@ export class ManagerService {
       throw new InternalServerErrorException(`Failed to ${decision} order`);
     }
   }
-  
+
   /**
    * When the order is handovered to the delivery boy
    */

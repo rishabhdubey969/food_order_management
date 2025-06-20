@@ -2,15 +2,6 @@ import { Observable } from 'rxjs';
 
 export const MEDIA_PACKAGE_NAME = 'media';
 export const MEDIA_SERVICE_NAME = 'MediaService';
-
-// export interface PresignRequest {
-//   service: string;
-//   resourceType: string;
-//   resourceId: string;
-//   fileExtension: string;
-//   contentType: string;
-// }
-
 export interface FileMeta {
   fileExtension: string;
   contentType: string;
@@ -23,11 +14,6 @@ export interface PresignRequest {
   files: FileMeta[]; // Support multiple files
 }
 
-// export interface PresignResponse {
-//   presignedUrl: string;
-//   key: string;
-// }
-
 export interface PresignedFile {
   presignedUrl: string;
   key: string;
@@ -36,7 +22,6 @@ export interface PresignedFile {
 export interface PresignResponse {
   urls: PresignedFile[]; 
 }
-
 
 export interface ConfirmRequest {
   key: string;
