@@ -24,6 +24,7 @@ export class KafkaService implements OnModuleInit{
     async handleMessage(eventName: string, payload: any){
         try{
             const data = await lastValueFrom(this.clientKafka.send(eventName, payload));
+            console.log("hii");
             return data;
         }catch(err){
             throw new Exception(err.Message)

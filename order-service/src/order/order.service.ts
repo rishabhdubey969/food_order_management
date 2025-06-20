@@ -76,10 +76,11 @@ export class OrderService {
         //    throw new BadRequestException(alreadyExists);
         // }
         // calling manager service
-      const data=await this.handleKitchen({cartId:cartId});
-        if(typeof data === 'string'){
-          throw new InternalServerErrorException(data);
-        }
+      // const data= await this.handleKitchen({cartId:cartId});
+      // console.log(data);
+      //   if(typeof data === 'string'){
+      //     throw new InternalServerErrorException(data);
+      //   }
     
       const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id: new ObjectId(cartId) });
       if (!cartData) {
