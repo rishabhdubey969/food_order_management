@@ -117,7 +117,11 @@ export class ManagerService {
         data: {
           name: manager.name,
           email: manager.email,
+<<<<<<< HEAD
           restaurantId: this.managerGateway.restaurantId ? manager.restaurantId : ""
+=======
+          restaurantId: manager.restaurantId,
+>>>>>>> f0b8fcb4d084cfae1efcc4ef31f0a2af03fed137
         },
       };
     } catch (error) {

@@ -172,6 +172,7 @@ export const GetPartnerEarningsSwagger = () => applyDecorators(
       example: {
         period: DELIVERY_PARTNER_CONSTANTS.PERIODS.WEEKLY,
         earnings: 1250.50,
+        deliveryCount: 3,
         currency: DELIVERY_PARTNER_CONSTANTS.CURRENCY.DEFAULT
       }
     }

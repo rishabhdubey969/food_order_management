@@ -283,8 +283,8 @@ export class RestaurantController {
  * @returns A list of menu item objects associated with the specified restaurant.
  */
 
-  @UseGuards(JwtAuthGuard, ManagerGuard)
-  @ApiBearerAuth('JWT')
+  // @UseGuards(JwtAuthGuard, ManagerGuard)
+  // @ApiBearerAuth('JWT')
   @Get(':restaurantId/menu')
   async getMenuItems(@Param('restaurantId') restaurantId: string) {
     return this.restaurantService.getMenuItems(restaurantId);

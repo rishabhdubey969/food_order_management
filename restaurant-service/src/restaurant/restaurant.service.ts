@@ -83,13 +83,17 @@ export class RestaurantService implements OnModuleInit {
         throwBadRequest(MESSAGES.MANAGER_ALREADY_VERIFIED); 
       }
 
-      // 5. Create and save the new restaurant
+      // Create and save the new restaurant
       const newRestaurant = new this.restaurantModel({
         ...createRestaurantDto,
         managerId: new Types.ObjectId(managerId), 
       });
 
       const savedRestaurant = await newRestaurant.save();
+
+      const  restaurantId = savedRestaurant._id;
+      // Update Manager document
+      await this.managerModel.findByIdAndUpdate({_id: new Types.ObjectId(managerId)}, {restaurantId} );
       this.logger.log(`Restaurant created successfully for manager ${managerId}. Restaurant ID: ${savedRestaurant._id}`);
       return savedRestaurant;
 
