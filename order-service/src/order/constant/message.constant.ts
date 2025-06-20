@@ -19,6 +19,7 @@ export const ERROR = {
     FAILED_INVOICE:"Failed to generate invoice",
     FAILED_DOWNLOAD:"Failed to download",
     FAILED_MANAGER:"Failed to find manager",
+    ALREADY_EXIST:"order with this cartId already exists",
   };
   
   export const SUCCESS = {

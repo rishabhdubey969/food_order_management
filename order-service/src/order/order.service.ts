@@ -70,7 +70,17 @@ export class OrderService {
     const startTime = Date.now();
 
     try {
-      await this.handleKitchen({cartId:cartId});
+      // checking cart already exist in order db or not
+        // const alreadyExists= await this.OrderSchema.findOne({cartId:cartId});
+        // if(alreadyExists){
+        //    throw new BadRequestException(alreadyExists);
+        // }
+        // calling manager service
+      const data=await this.handleKitchen({cartId:cartId});
+        if(typeof data === 'string'){
+          throw new InternalServerErrorException(data);
+        }
+    
       const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id: new ObjectId(cartId) });
       if (!cartData) {
         throw new NotFoundException(ERROR.NOT_EXIST);
@@ -267,7 +277,7 @@ export class OrderService {
 
   }
   async handleKitchen(payload: { cartId: ObjectId }) {
-    await this.kafkaService.handleEvent('isFoodAvailable', payload);
+    return await this.kafkaService.handleEvent('isFoodAvailable', payload);
   }
   @EventPattern('deliveryPatenerResponse')
   async deliveryAssigned(@Payload() payload: any, @Ctx() context: KafkaContext){
