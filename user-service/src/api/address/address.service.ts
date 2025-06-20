@@ -5,7 +5,7 @@ import { Address, AddressDocument } from './entities/address.entity';
 import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { ADDRESS, WINSTON_LOGGER_ADDRESS } from 'constants/address.const';
 
 @Injectable()
@@ -102,7 +102,8 @@ export class AddressService {
     this.logger.info(`${WINSTON_LOGGER_ADDRESS.DELETE_ADDRESS}: ${id}`);
     if (!id) throw new HttpException(ADDRESS.ID_NOT_FOUND, HttpStatus.FORBIDDEN);
 
-    const deletedData = await this.addressModel.findByIdAndDelete(id);
+    const deletedData = await this.addressModel.findByIdAndDelete(new Types.ObjectId(id));
+    console.log(deletedData);
     if (!deletedData) throw new HttpException(ADDRESS.NOT_FOUND, HttpStatus.FORBIDDEN);
 
     return { message: ADDRESS.DELETE_SUCCESS, data: deletedData };
