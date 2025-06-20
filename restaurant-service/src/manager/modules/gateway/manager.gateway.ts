@@ -14,6 +14,7 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
   @WebSocketServer() server: Server;
   private logger = new Logger('ManagerGateway');
   private connectedManagers = new Map<string, Socket>();
+  restaurantId: any;
 
   constructor(private readonly kafkaService: KafkaService,
     private readonly tokenService: TokenService

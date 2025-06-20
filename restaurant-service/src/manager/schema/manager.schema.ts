@@ -6,7 +6,7 @@ export class Manager {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ required: true, unique: true ,index:true})
+  @Prop({ required: true, unique: true})
   email: string;
 
   @Prop({ required: true })
@@ -45,3 +45,6 @@ export class Manager {
 export type ManagerDocument = Manager & Document;
 
 export const ManagerSchema = SchemaFactory.createForClass(Manager);
+ManagerSchema.index({ managerId: 1, isActiveManager: 1 });
+ManagerSchema.index({ restaurantId: 1, isActiveManager: 1 });
+ManagerSchema.index({ createdAt: -1 });

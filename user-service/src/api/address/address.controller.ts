@@ -47,19 +47,19 @@ export class AddressController {
    * @param id Address ID
    * @param updateAddressDto Data for updating the address
    */
-  @Put()
+  @Put(':id')
   @UpdateAddressByIdDoc()
-  async update(@Req() req: any, @Body() updateAddressDto: UpdateAddressDto) {
-    return this.addressService.updateAddressService(req.user.payload.sub, updateAddressDto);
+  async update(@Param('id') id: string, @Body() updateAddressDto: UpdateAddressDto) {
+    return this.addressService.updateAddressService(id, updateAddressDto);
   }
 
   /**
    * Delete an address by its ID.
    * @param id Address ID
    */
-  @Delete()
+  @Delete(':id')
   @DeleteAddressByIdDoc()
-  async remove(@Req() req: any) {
-    return this.addressService.deleteAddressService(req.user.payload.sub);
+  async remove(@Param('id') id: string) {
+    return this.addressService.deleteAddressService(id);
   }
 }

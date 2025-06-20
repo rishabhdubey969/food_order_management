@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsMongoId, IsIn } from 'class-validator';
-import { PaymentMethod } from '../schema/order.schema';
+import { PaymentMethod } from 'src/order/constant/enum.constant';
+
 
 export class PlaceOrderDto {
   @ApiProperty({
