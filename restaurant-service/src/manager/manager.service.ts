@@ -22,6 +22,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { v4 as uuidv4 } from 'uuid';
 import { addHours } from 'date-fns';
 import { WinstonLogger } from 'src/logger/winston-logger.service';
+import { Restaurant } from './schema/restaurant.schema';
 
 @Injectable()
 export class ManagerService {
@@ -117,6 +118,7 @@ export class ManagerService {
         data: {
           name: manager.name,
           email: manager.email,
+          restaurantId: this.managerGateway.restaurantId? manager.restaurantId : ""
         },
       };
     } catch (error) {

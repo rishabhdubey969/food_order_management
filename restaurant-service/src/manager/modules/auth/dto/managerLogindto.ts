@@ -12,11 +12,6 @@ export default class ManagerLoginDto {
   @IsNotEmpty()
   password: string;
 
-  @ApiProperty({ example: 'restaurant123' })
-  @IsString()
-  @IsNotEmpty()
-  restaurantId: string;
-
   @ApiProperty({ example: true })
   @IsBoolean()
   rememberMe: boolean;
