@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { OrderStatus, PaymentMethod, PaymentStatus } from '../schema/order.schema';
+import { OrderStatus, PaymentMethod, PaymentStatus } from 'src/order/constant/enum.constant';
+
 
 export class OrderDto {
   @ApiProperty({ description: 'Order ID' })

@@ -6,6 +6,7 @@ import { CartSchema } from './schema/cart.schema';
 import { RedisModule } from 'src/redis/redis.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { WinstonLogger } from '../logger/winston-logger.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 
 @Module({
@@ -14,15 +15,19 @@ import { WinstonLogger } from '../logger/winston-logger.service';
     RedisModule,
 
     // gRPC Auth Client Setup
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'AUTH_SERVICE',
-        transport: Transport.GRPC,
-        options: {
-          package: 'auth', 
-          protoPath: "src/cart/grpc/proto/auth.proto", 
-          url: 'localhost:50051', 
-        },
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: async (configService: ConfigService) => ({
+          transport: Transport.GRPC,
+          options: {
+            package: 'auth',
+            protoPath: 'src/cart/grpc/proto/auth.proto',
+            url: configService.get<string>('AUTH_GRPC_URL', 'localhost:50051'), 
+          },
+        }),
       },
     ]),
   ],

@@ -21,7 +21,7 @@ const AuthService = protoDescriptor.auth.AuthService;
 
 // Use the same host and port as your NestJS AuthService is running on
 const authClient = new AuthService(
-  process.env.AUTH_GRPC_URL || 'localhost:50051',
+  process.env.AUTH_GRPC_URL,
   grpc.credentials.createInsecure()
 );
 

@@ -40,3 +40,8 @@ export class Auth {
 
 // Create the Mongoose schema
 export const AuthenticationSchema = SchemaFactory.createForClass(Auth);
+
+// For additional indexing for performance
+AuthenticationSchema.index({ email: 1 });
+AuthenticationSchema.index({ is_active: 1 });
+AuthenticationSchema.index({ phone: 1 });

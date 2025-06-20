@@ -27,7 +27,11 @@ export class AuthService {
   /**
    * @description Send OTP to user email
    * @param email
-   * @returns
+   * @returns     { message: string }
+   * @throws BadRequestException if there is an error in sending the OTP    
+   * @throws NotFoundException if user with the given email already exists
+   * @throws HttpException if there is an error in the OTP service
+   * @throws HttpException if there is an error emitting the OTP event
    */
   async sendOtpService(email: string) {
     try {
@@ -50,7 +54,15 @@ export class AuthService {
    * @description Sign up service for user registration
    * @param createAuthDto
    * @param req
-   * @returns
+   * @returns access tokens and refresh tokens for the newly created user
+   * @returns { message: string, data: { accessToken: string, refreshToken: string } }
+   * @throws HttpException if there is an error in the sign-up process
+   * @throws HttpException if there is an error during the sign-up process
+   * @throws HttpException if user with the same email or phone already exists
+   * @throws HttpException if OTP validation fails
+   * @throws HttpException if there is an error saving the user to the database
+   * @throws HttpException if there is an error generating access tokens
+   * @throws HttpException if there is an error emitting the user created event   
    */
   async signUpService(createAuthDto: CreateAuthDto, req: any) {
     this.logger.info(WINSTON_LOGGER_CONST.SIGNUP_START);
@@ -96,7 +108,9 @@ export class AuthService {
   /**
    * @description Send reset password link to user email
    * @param email
-   * @returns
+   * @returns returns a message and token
+   * @throws BadRequestException if there is an error in sending the reset link    
+   * @throws NotFoundException if user is not found
    */
   async forgotPassword(email: string) {
     try {
@@ -118,7 +132,11 @@ export class AuthService {
    * @description Reset user password
    * @param token
    * @param resetPasswordDto
-   * @returns
+   * @returns { message: string }
+   * @throws BadRequestException if the token is invalid or expired, or if there is
+   * an error in updating the password  
+   * @throws NotFoundException if the user is not found
+   * @throws HttpException if there is an error in the reset password process
    */
   async resetPassword(token: string, resetPasswordDto: ResetPasswordDto) {
     try {

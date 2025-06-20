@@ -1,13 +1,21 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
 @Module({
   providers: [
     {
       provide: 'REDIS_CLIENT',
-      useFactory: () => {
-        return new Redis({ host: 'localhost', port: 6379 });
+      useFactory: (configService: ConfigService) => {
+        const host = configService.get<string>('REDIS_HOST') || 'localhost';
+        const port = configService.get<number>('REDIS_PORT') || 6379;
+
+        return new Redis({
+          host,
+          port,
+        });
       },
+      inject: [ConfigService],
     },
   ],
   exports: ['REDIS_CLIENT'],

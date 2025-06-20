@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuthenticationDocument, Auth } from '../auth/entities/auth.entity';
+import { Profile, ProfileDocument } from './entities/profile.entity';
 import { Logger as WinstonLogger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { InjectModel } from '@nestjs/mongoose';
@@ -11,8 +12,8 @@ import { MediaClient } from 'src/grpc/media/media.client';
 @Injectable()
 export class ProfileService {
   constructor(
-    @InjectModel(Auth.name)
-    private profileModel: Model<AuthenticationDocument>,
+    @InjectModel(Profile.name)
+    private profileModel: Model<ProfileDocument>,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: WinstonLogger,
     private readonly mediaClient: MediaClient,
   ) {}
