@@ -10,5 +10,6 @@ export const MESSAGES = {
   MANAGER_ALREADY_VERIFIED: `Manager already have verified restaurant`,
   ITEM_NOT_FOUND: 'Item is not found with given ID',
   VALIDATION_FAILED: (error: any) => `Unable to verify because of ${error}`,
-  RESTAURANT_NOT_FOUND_FOR_MANAGER : `Restaurant not found for manager`
+  RESTAURANT_NOT_FOUND_FOR_MANAGER : `Restaurant not found for manager`,
+  DUPLICATE_ENTRY : 'The entry is duplicate'
 }

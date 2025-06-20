@@ -5,7 +5,6 @@ import {
   UnauthorizedException,
   InternalServerErrorException,
   Inject,
-  Req,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types, isValidObjectId } from 'mongoose';
@@ -22,6 +21,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { v4 as uuidv4 } from 'uuid';
 import { addHours } from 'date-fns';
 import { WinstonLogger } from 'src/logger/winston-logger.service';
+import { Restaurant } from './schema/restaurant.schema';
 
 @Injectable()
 export class ManagerService {
@@ -117,6 +117,7 @@ export class ManagerService {
         data: {
           name: manager.name,
           email: manager.email,
+          restaurantId: this.managerGateway.restaurantId? manager.restaurantId : ""
         },
       };
     } catch (error) {
@@ -248,29 +249,6 @@ export class ManagerService {
       throw new InternalServerErrorException('Failed to fetch profile');
     }
   }
-  // async getManagerById(id: string) {
-  //   try {
-  //     const manager = await this.managerModel.findById(id);
-  //     if (!manager) {
-  //       this.logger.warn(`Get manager failed: Manager not found with ID ${id}`);
-  //       throw new NotFoundException(ERROR_MESSAGES.MANAGER_NOT_FOUND);
-  //     }
-
-  //     this.logger.log(`Manager fetched successfully: ${id}`);
-  //     return {
-  //       message: SUCCESS_MESSAGES.MANAGER_FOUND,
-  //       data: {
-  //         id: manager._id,
-  //         name: manager.name,
-  //         email: manager.email,
-  //       },
-  //     };
-  //   } catch (error) {
-  //     this.logger.error(`Failed to fetch manager by ID: ${id}`, error.stack);
-  //     throw error;
-  //   }
-  // }
-
   /**
    * update a manager by it's id
    */

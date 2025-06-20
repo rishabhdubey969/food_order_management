@@ -14,6 +14,7 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
   @WebSocketServer() server: Server;
   private logger = new Logger('ManagerGateway');
   private connectedManagers = new Map<string, Socket>();
+  restaurantId: any;
 
   constructor(private readonly kafkaService: KafkaService,
     private readonly tokenService: TokenService
@@ -25,7 +26,6 @@ export class ManagerGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
     try {
       const token = client.handshake.headers.authorization?.split(' ')[1];
-      console.log(token);
       if (!token) {
         throw new UnauthorizedException('No token provided');
       }

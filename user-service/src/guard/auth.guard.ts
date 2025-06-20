@@ -43,7 +43,6 @@ export class AuthGuard implements CanActivate {
     }
 
     const token = parts[1];
-
     try {
       // Validate the token using the AuthClient service
       const user = await this.authClient.ValidateTokenAuthService(token);
@@ -52,8 +51,7 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException(user?.message || 'Invalid token');
       }
 
-      if (user.payload.role === 1) {
-        // 1 is user role
+      if (user.payload.role === 1) { // 1 is user role
         // Attach user info to the request object for downstream use
         request.user = user;
         return true;
