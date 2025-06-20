@@ -43,7 +43,86 @@ $ npm run start:dev
 # production mode
 $ npm run start:prod
 ```
+# Order Service
 
+A microservice for handling order management in a food delivery system, built with NestJS and MongoDB.
+
+## Features
+
+- Create new orders with items from user's cart
+- Process payments (Cash on Delivery & Online)
+- Update order status
+- Cancel orders (with time constraints)
+- Generate PDF invoices
+- Get order details and history
+- Integration with:
+  - Payment Service (gRPC)
+  - Kafka for event streaming
+  - Notification Service
+
+## Tech Stack
+
+- **Framework**: NestJS
+- **Database**: MongoDB
+- **Event Streaming**: Kafka
+- **RPC**: gRPC
+- **PDF Generation**: Puppeteer
+- **Testing**: Jest (to be implemented)
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/order-service.git
+   cd order-service
+
+
+## Environment Variables
+MONGODB_URI: MongoDB connection string
+
+KAFKA_BROKERS: Comma-separated Kafka broker addresses
+
+PAYMENT_GRPC_URL: gRPC payment service URL
+
+PORT: Service port (default: 3000)
+
+## API Endpoints
+
+## Order Management
+POST /order - Create a new order
+
+GET /order/:id - Get order details
+
+GET /order/user/:userId - Get user's order history
+
+PUT /order/:id/cancel - Cancel an order
+
+POST /order/place - Place an order (process payment)
+
+GET /order/:id/invoice - Generate order invoice PDF
+
+## Kafka Topics Consumed
+
+deliveryPatenerResponse - For delivery partner assignment updates
+
+Kafka Topics Produced
+newOrder - Notify delivery service of new orders
+
+orderCreated - Clear user's cart after order creation
+
+isFoodAvailable - Check kitchen inventory
+
+## Error Handling
+
+The service throws appropriate HTTP exceptions:
+
+BadRequestException for invalid requests
+
+NotFoundException for missing resources
+
+RequestTimeoutException for time-sensitive operations
+
+InternalServerErrorException for unexpected errors
 ## Run tests
 
 ```bash
