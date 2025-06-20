@@ -61,32 +61,57 @@ export class RestaurantService implements OnModuleInit {
 
   // Create a restaurant and assign it to a verified manager
   async createRestaurant(createRestaurantDto: CreateRestaurantDto, managerId: string) {
-    const manager = await this.managerModel.findOne({ _id: new Types.ObjectId(managerId) });
-    console.log(manager);
-    if (!manager) {
-      throwNotFound(MESSAGES.MANAGER_NOT_FOUND);
-    }
-    if (!manager.isActiveManager) {
-      console.log(manager.isActiveManager)
-      throwBadRequest(MESSAGES.MANAGER_NOT_VERIFIED);
-    }
-
-    const alreadyVerified = await this.restaurantModel.findOne({ managerId, isActiveManager: true });
-
-    if (alreadyVerified) {
-      throwBadRequest(MESSAGES.MANAGER_ALREADY_VERIFIED);
-    }
+    this.logger.log(`Attempting to create restaurant for manager ${managerId}`);
 
     try {
-      const newRestaurant = new this.restaurantModel({ ...createRestaurantDto, managerId });
-      this.logger.log(`Creating restaurant for manager ${managerId}`);
-      return await newRestaurant.save();
+    
+      const manager = await this.managerModel.findOne({ _id: new Types.ObjectId(managerId) });
+      if (!manager) {
+        this.logger.warn(`Manager not found with ID: ${managerId}`);
+        throwNotFound(MESSAGES.MANAGER_NOT_FOUND);
+      }
+
+      if (!manager.isActiveManager) {
+        this.logger.warn(`Manager ${managerId} is not active.`);
+        throwBadRequest(MESSAGES.MANAGER_NOT_VERIFIED);
+      }
+
+      // Check if Manager already has a verified restaurant
+      const alreadyVerifiedRestaurant = await this.restaurantModel.findOne({ managerId, /* isActiveRestaurant: true */ }); // Add condition if restaurant also has an 'isActive' status
+      if (alreadyVerifiedRestaurant) {
+        this.logger.warn(`Manager ${managerId} already has an existing restaurant.`);
+        throwBadRequest(MESSAGES.MANAGER_ALREADY_VERIFIED); 
+      }
+
+      // 5. Create and save the new restaurant
+      const newRestaurant = new this.restaurantModel({
+        ...createRestaurantDto,
+        managerId: new Types.ObjectId(managerId), 
+      });
+
+      const savedRestaurant = await newRestaurant.save();
+      this.logger.log(`Restaurant created successfully for manager ${managerId}. Restaurant ID: ${savedRestaurant._id}`);
+      return savedRestaurant;
+
     } catch (error) {
-      this.logger.error(`Error creating restaurant: ${error.message}`, error.stack);
+      this.logger.error(`Error creating restaurant for manager ${managerId}: ${error.message}`, error.stack);
+
+      // Re-throw custom exceptions that were already formatted (e.g., 404, 400)
+      if (error.name === 'NotFoundError' || error.name === 'BadRequestError') {
+        throw error;
+      }
+
+      // Handle Mongoose validation errors (e.g., missing required fields in DTO)
+      if (error.name === 'ValidationError') {
+        const messages = Object.values(error.errors).map((err: any) => err.message).join(', ');
+        this.logger.warn(`Mongoose Validation Error: ${messages}`);
+        throwBadRequest(`Validation failed: ${messages}`);
+      }
+
+      // Generic catch-all for any other unexpected errors
       throwInternal(MESSAGES.UNKNOWN_ERROR);
     }
   }
-
   // Update a restaurant by its ID
   async updateRestaurant(id: string, dto: UpdateRestaurantDto) {
     this.logger.log(`Updating restaurant with ID: ${id}`);
@@ -259,22 +284,22 @@ export class RestaurantService implements OnModuleInit {
     try {
       const restaurant = await this.restaurantModel.findOne({ managerId });
 
-    if (!restaurant) {
-      this.logger.warn(`Restaurant not found for manager ID: ${managerId}`);
-      throwNotFound(MESSAGES.RESTAURANT_NOT_FOUND_FOR_MANAGER);
-    }
-   
-    const restaurantIdAsObjectId = restaurant._id as Types.ObjectId;
-    const menuItems = await this.menuItemModel.find({ restaurantId: restaurantIdAsObjectId.toString() });
+      if (!restaurant) {
+        this.logger.warn(`Restaurant not found for manager ID: ${managerId}`);
+        throwNotFound(MESSAGES.RESTAURANT_NOT_FOUND_FOR_MANAGER);
+      }
 
-    if (!menuItems || menuItems.length === 0) { 
-      this.logger.error(`No menu items found for restaurant ID: ${restaurant._id}`);
-      return []; 
-      
-    }
+      const restaurantIdAsObjectId = restaurant._id as Types.ObjectId;
+      const menuItems = await this.menuItemModel.find({ restaurantId: restaurantIdAsObjectId.toString() });
 
-    return menuItems; 
-    }catch(error){
+      if (!menuItems || menuItems.length === 0) {
+        this.logger.error(`No menu items found for restaurant ID: ${restaurant._id}`);
+        return [];
+
+      }
+
+      return menuItems;
+    } catch (error) {
       this.logger.error(`Menu item can't be found ${error}`);
       throwInternal(MESSAGES.UNKNOWN_ERROR);
     }
