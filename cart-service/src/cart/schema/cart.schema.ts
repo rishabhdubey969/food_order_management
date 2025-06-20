@@ -1,4 +1,3 @@
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
@@ -29,15 +28,15 @@ export class Cart {
   }[];
 
   @Prop({ default: 0 })
-  itemTotal: number; 
+  itemTotal: number;
 
   @Prop({ default: 0 })
-  subtotal: number; 
+  subtotal: number;
 
   @Prop({ default: 0 })
-  tax: number; 
+  tax: number;
   @Prop({ default: 0 })
-  platformFee: number; 
+  platformFee: number;
 
   @Prop({ default: 0 })
   deliveryCharges: number;
@@ -46,15 +45,14 @@ export class Cart {
   discount: number;
 
   @Prop({ default: 0 })
-  total: number; 
+  total: number;
   @Prop({ default: 0 })
-  distanceInKm: number; 
+  distanceInKm: number;
   @Prop({ default: null })
   couponCode: string;
 
-  @Prop({ default: null }) 
-  couponId: Types.ObjectId
-
+  @Prop({ default: null })
+  couponId: Types.ObjectId;
 }
 
 export const CartSchema = SchemaFactory.createForClass(Cart);
