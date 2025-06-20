@@ -6,6 +6,7 @@ import { PrePlaceOrderDto } from 'src/dto/prePlaceOrder.dto';
 import { PlaceOrderDto } from 'src/dto/placeOrder.dto';
 import { OrderDto } from 'src/dto/order.dto';
 import { Response } from 'express'
+import { ERROR } from './constant/message.constant';
 
 
 
@@ -136,6 +137,10 @@ export class OrderController {
   }
 
 
+  @Get('/getManagerId/:managerId')
+  async getManagerId(@Param('managerId') managaerId:string,@Req() request:any){
+    return await this.orderService.getManagerId(managaerId);
+  }
 
   @ApiBearerAuth('JWT')
   @UseGuards(jwtGuard)
@@ -160,7 +165,7 @@ export class OrderController {
 
       return res.send(pdfBuffer);
     } catch (err) {
-      throw new InternalServerErrorException('Failed to download');
+      throw new InternalServerErrorException(ERROR.FAILED_DOWNLOAD);
     }
   }
 

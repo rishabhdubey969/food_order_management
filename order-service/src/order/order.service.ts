@@ -2,7 +2,7 @@ import { BadRequestException, HttpException, Inject, Injectable, InternalServerE
 import { InjectConnection, InjectModel, ParseObjectIdPipe } from '@nestjs/mongoose';
 import mongoose, { Connection, Model, Mongoose, MongooseError, Types } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import { Address, Order, OrderStatus, PaymentMethod, PaymentStatus, ProductItem } from 'src/schema/order.schema';
+import { Address, Order, ProductItem } from 'src/schema/order.schema';
 import puppeteer from 'puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -10,6 +10,8 @@ import { PlaceOrderDto } from 'src/dto/placeOrder.dto';
 import { PaymentClient } from 'src/grpc/payment/payment.client';
 import { KafkaService } from 'src/kafka/kafka.service';
 import { ClientProxy, Ctx, EventPattern, KafkaContext, Payload } from '@nestjs/microservices';
+import { ERROR } from './constant/message.constant';
+import { OrderStatus, PaymentMethod, PaymentStatus } from './constant/enum.constant';
 
 
 
@@ -71,30 +73,30 @@ export class OrderService {
       await this.handleKitchen({cartId:cartId});
       const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id: new ObjectId(cartId) });
       if (!cartData) {
-        throw new NotFoundException('Cart not found');
+        throw new NotFoundException(ERROR.NOT_EXIST);
       }
       if (!cartData.items || cartData.items.length === 0) {
-        throw new BadRequestException('Cart is empty');
+        throw new BadRequestException(ERROR.NO_ITEMS);
       }
-
       const items = this.createItems(cartData.items);
+
       const restaurantData = await this.connection.collection(this.roleCollections.RESTAURANT).findOne({ _id: new ObjectId(cartData.restaurantId) });
 
       if (!restaurantData) {
-        throw new NotFoundException('Restaurant not found');
+        throw new NotFoundException(ERROR.NO_REST);
       }
       const restaurantAddress = this.createRestaurantAddress(restaurantData);
       const userAddressData = await this.connection.collection(this.roleCollections.ADDRESS)
         .findOne({_id:new ObjectId(addressId)});
       
       if (!userAddressData) {
-        throw new NotFoundException('User address not found');
+        throw new NotFoundException(ERROR.NO_USER_ADD);
       }
       const userAddress = this.createUserAddress(userAddressData);
       if (isNaN(cartData.subtotal) || isNaN(cartData.total) ||
         isNaN(cartData.tax) || isNaN(cartData.deliveryCharges) ||
         isNaN(cartData.platformFee) || isNaN(cartData.discount)) {
-        throw new BadRequestException('Invalid financial values in cart');
+        throw new BadRequestException(ERROR.INVALID_DETAILS);
       }
 
 
@@ -125,7 +127,7 @@ export class OrderService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException('Failed to create order');
+      throw new InternalServerErrorException(ERROR.FAILED_ORDER);
     }
   }
   async updateOrder(orderId, paymentId, paymentStatus, paymentMethod, OrderStatus) {
@@ -143,14 +145,14 @@ export class OrderService {
         { new: true, runValidators: true }
       );
       if (!updatedOrder) {
-        throw new NotFoundException('Order not found');
+        throw new NotFoundException(ERROR.NOT_EXIST);
       }
       return { "orderInfo": updatedOrder };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error
       }
-      throw new InternalServerErrorException('Failed to update order');
+      throw new InternalServerErrorException(ERROR.FAILED_UPDATE);
     }
   }
   
@@ -164,7 +166,7 @@ export class OrderService {
         return await this.updateOrder(data.orderId, "NILL", PaymentStatus.PENDING, PaymentMethod.CASH_ON_DELIVERY, OrderStatus.PREPARING);
       } catch (error) {
         await this.updateOrder(data.orderId,"NILL",PaymentStatus.FAILED,PaymentMethod.CASH_ON_DELIVERY,OrderStatus.FAILED);
-        throw new Error('Failed to process cash on delivery order');
+        throw new Error(ERROR.FAILED_COD);
       }
     } 
     else if (data.modeOfPayment == "online") {
@@ -184,7 +186,7 @@ export class OrderService {
         }
       } catch (error) {
         await this.updateOrder(data.orderId,"NILL",PaymentStatus.FAILED,PaymentMethod.UPI,OrderStatus.FAILED);
-        throw new Error('Failed to process online payment order');
+        throw new Error(ERROR.FAILED_ONLINE);
       }
     }
 
@@ -196,20 +198,20 @@ export class OrderService {
     try {
       const cancelledOrder = await this.OrderSchema.findById(orderId);
       if (!cancelledOrder) {
-        throw new NotFoundException('Order not found');
+        throw new NotFoundException(ERROR.NOT_EXIST);
       }
       const currentTime = Math.floor(Date.now() / 1000);
       const orderCreatedTime = new Number(cancelledOrder.timestamp);
       const difference = currentTime - orderCreatedTime.valueOf();
       if ((difference) > 60) {
-        throw new RequestTimeoutException("cannot cancel order");
+        throw new RequestTimeoutException(ERROR.CANNOT_CANCEL);
       }
       cancelledOrder.status = OrderStatus.CANCELLED;
       await cancelledOrder.save();
       return { "cancelled": cancelledOrder };
     }
     catch (error) {
-      throw new InternalServerErrorException('Failed to cancel order');
+      throw new InternalServerErrorException(ERROR.FAILED_CANCEL);
     }
 
   }
@@ -218,12 +220,12 @@ export class OrderService {
     try {
       const order = await this.OrderSchema.findById(orderId);
       if (!order) {
-        throw new NotFoundException('Order not found');
+        throw new NotFoundException(ERROR.NOT_EXIST);
       }
       return order;
     }
     catch (error) {
-      throw new InternalServerErrorException('Failed to find order by id');
+      throw new InternalServerErrorException(ERROR.FAILED_TO_FIND);
     }
   }
 
@@ -235,16 +237,27 @@ export class OrderService {
         .limit(query.limit)
         .sort({ createdAt: 1 });
       if (!allOrder) {
-        throw new NotFoundException('order does not exits');
+        throw new NotFoundException(ERROR.NOT_EXIST);
       }
       return allOrder;
     }
     catch (error) {
-      throw new InternalServerErrorException('Failed to find order');
+      throw new InternalServerErrorException(ERROR.FAILED_TO_FIND);
     }
 
   }
-
+  async getManagerId(restaurantId){
+      try{
+        const data= await this.connection.collection(this.roleCollections.RESTAURANT).findOne({_id: new ObjectId( restaurantId)});
+         if(!data){
+           throw new NotFoundException(ERROR.NO_REST);
+         }
+         return {"managerId":data.managerId};
+      }
+      catch(error){
+         throw new NotFoundException(ERROR.FAILED_MANAGER);
+      }
+  } 
 
   async handleDelivery(payload: { orderId: string }) {
     await this.kafkaService.handleEvent('newOrder', payload);
@@ -257,8 +270,7 @@ export class OrderService {
     await this.kafkaService.handleEvent('isFoodAvailable', payload);
   }
   @EventPattern('deliveryPatenerResponse')
-  async deliveryAssigned(@Payload() payload: any, @Ctx() context: KafkaContext) {
-    console.log("recieved message");
+  async deliveryAssigned(@Payload() payload: any, @Ctx() context: KafkaContext){
     const consumer = context.getConsumer();
     const topic = context.getTopic();
     const partition = context.getPartition();
@@ -278,7 +290,7 @@ export class OrderService {
     const startTime = Date.now();
     const order = await this.OrderSchema.findOne({_id:orderId,userId:request.sub});
     if (!order || !orderId) {
-      throw new Error('Invalid order data');
+      throw new Error(ERROR.FAILED_TO_FIND);
     }
     let browser;
     try {
@@ -333,7 +345,7 @@ export class OrderService {
       return pdfBuffer;
 
     } catch (err) {
-      throw new InternalServerErrorException('Failed to generate invoice');
+      throw new InternalServerErrorException(ERROR.FAILED_INVOICE);
     } finally {
       if (browser) {
         await browser.close();
@@ -414,7 +426,7 @@ private generateInvoiceHTML(order: any,request:any): string {
 
               .totals div {
                 margin: 5px 0;
-              }
+              }wait this.handleCart({ userId: request.sub});
 
               .totals .grand-total {
                 background-color: #008000;
