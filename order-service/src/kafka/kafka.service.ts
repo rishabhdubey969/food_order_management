@@ -11,6 +11,7 @@ export class KafkaService implements OnModuleInit{
     ){}
 
     async onModuleInit() {
+        await this.clientKafka.subscribeToResponseOf('isFoodAvailable')
         await this.clientKafka.connect();
     }
 
