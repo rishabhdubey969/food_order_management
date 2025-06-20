@@ -92,7 +92,6 @@ export class Order {
 
   @Prop({ required: true, min: 0 })
   discount: number;
-  // coup
 
   @Prop({ required: true, min: 0 })
   total: number;
