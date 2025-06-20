@@ -8,7 +8,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { WinstonLogger } from '../logger/winston-logger.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: 'Cart', schema: CartSchema }]),
@@ -25,7 +24,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           options: {
             package: 'auth',
             protoPath: 'src/cart/grpc/proto/auth.proto',
-            url: configService.get<string>('AUTH_GRPC_URL', 'localhost:50051'), 
+            url: configService.get<string>('AUTH_GRPC_URL', 'localhost:50051'),
           },
         }),
       },

@@ -22,9 +22,8 @@ import { winstonLoggerConfig } from './logger/logger.config';
     }),
     WinstonModule.forRoot(winstonLoggerConfig),
 
-    
     CartModule,
-    
+
     RedisModule,
   ],
 })
