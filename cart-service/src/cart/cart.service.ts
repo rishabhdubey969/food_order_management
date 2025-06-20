@@ -17,7 +17,7 @@ import { AddCartDto } from './dto/addCart.dto';
 import { RemoveItemDto } from './dto/removeItem.dto';
 import { ResponseMessages } from './constant/response.message';
 import { MultipleItemDto } from './dto/multipleItem.dto';
-import { CouponDto, RestaurantDto } from './dto/param.dto';
+
 
 @Injectable()
 export class CartService {
@@ -253,7 +253,7 @@ export class CartService {
 
   async getCartService(userId: string) {
     try {
-      this.logger.verbose(`Fetching cart for user ${userId}`, CartService.name);
+      this.logger.log(`Fetching cart for user ${userId}`, CartService.name);
       const userObjId = new ObjectId(userId);
 
       let cart = await this.carts.findOne({ userId: userObjId });
@@ -346,9 +346,8 @@ export class CartService {
    * @throws NotFoundException - If the cart or coupon is not found.
    * @throws BadRequestException - If a coupon is already applied, expired, invalid for the cart, or order total is too low.
    */
-  async applyCouponService(userId: string, couponDto: CouponDto) {
+  async applyCouponService(userId: string, couponId:string) {
     try {
-      const { couponId } = couponDto;
       this.logger.log(`Applying coupon ${couponId} to user ${userId}`, CartService.name);
 
       const userObjId = new ObjectId(userId);
@@ -422,9 +421,10 @@ export class CartService {
    * @throws NotFoundException - If no coupons are found for the given restaurant.
    * @throws InternalServerErrorException - If an unexpected error occurs during the operation.
    */
-  async viewCouponsService(restaurantDto: RestaurantDto) {
+  async viewCouponsService(restaurantId: string) {
     try {
-      const { restaurantId } = restaurantDto; // Extract restaurantId from the DTO
+      // console.log("inside coupon")
+      // console.log(restaurantId)
       this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`, CartService.name);
       const coupons = await this.coupons.find({ restaurantId: new ObjectId(restaurantId) }).toArray();
       console.log(coupons);
