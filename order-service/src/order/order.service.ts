@@ -71,10 +71,10 @@ export class OrderService {
 
     try {
       // checking cart already exist in order db or not
-        // const alreadyExists= await this.OrderSchema.findOne({cartId:cartId});
-        // if(alreadyExists){
-        //    throw new BadRequestException(alreadyExists);
-        // }
+        const alreadyExists= await this.OrderSchema.findOne({cartId:cartId});
+        if(alreadyExists){
+           throw new BadRequestException(alreadyExists);
+        }
         // calling manager service
       const data=await this.handleKitchen({cartId:cartId});
         if(typeof data === 'string'){
