@@ -8,6 +8,7 @@ import { WinstonLogger } from '../logger/winston-logger.service';
 import { AddCartDto } from './dto/addCart.dto';
 import { RemoveItemDto } from './dto/removeItem.dto';
 import { MultipleItemDto } from './dto/multipleItem.dto';
+import { CouponDto, RestaurantDto } from './dto/param.dto';
 
 @ApiTags('Cart')
 @Controller('cart')
@@ -343,7 +344,7 @@ export class CartController {
     status: 404,
     description: 'Restaurant or coupons not found',
   })
-  async getCoupons(@Param('restaurantId') restaurantId: string) {
+  async getCoupons(@Param('restaurantId') restaurantId: RestaurantDto) {
     this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`, this.context);
     return this.cartService.viewCouponsService(restaurantId);
   }
@@ -400,7 +401,7 @@ export class CartController {
     status: 400,
     description: 'Coupon not applicable or already applied',
   })
-  async applyCoupon(@Param('couponId') couponId: string, @Req() req: any) {
+  async applyCoupon(@Param('couponId') couponId: CouponDto, @Req() req: any) {
     const userId = req.user.sub;
     this.logger.log(`Applying coupon ${couponId} to user ${userId}'s cart`, this.context);
     return this.cartService.applyCouponService(userId, couponId);

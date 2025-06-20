@@ -17,6 +17,7 @@ import { AddCartDto } from './dto/addCart.dto';
 import { RemoveItemDto } from './dto/removeItem.dto';
 import { ResponseMessages } from './constant/response.message';
 import { MultipleItemDto } from './dto/multipleItem.dto';
+import { CouponDto, RestaurantDto } from './dto/param.dto';
 
 @Injectable()
 export class CartService {
@@ -283,14 +284,14 @@ export class CartService {
       const validItems = items.filter(Boolean);
 
       // If no valid items are left, mark cart as empty
-    if (validItems.length === 0) {
-      await this.carts.deleteOne({ userId: userObjId });
+      if (validItems.length === 0) {
+        await this.carts.deleteOne({ userId: userObjId });
 
-      return {
-        cart: null,
-        message: 'Your cart has been deleted as all items are unavailable or removed.',
-      };
-    }
+        return {
+          cart: null,
+          message: 'Your cart has been deleted as all items are unavailable or removed.',
+        };
+      }
 
       // If anything was updated (price or removed), save changes
       if (updated) {
@@ -345,8 +346,9 @@ export class CartService {
    * @throws NotFoundException - If the cart or coupon is not found.
    * @throws BadRequestException - If a coupon is already applied, expired, invalid for the cart, or order total is too low.
    */
-  async applyCouponService(userId: string, couponId: string) {
+  async applyCouponService(userId: string, couponDto: CouponDto) {
     try {
+      const { couponId } = couponDto;
       this.logger.log(`Applying coupon ${couponId} to user ${userId}`, CartService.name);
 
       const userObjId = new ObjectId(userId);
@@ -420,8 +422,9 @@ export class CartService {
    * @throws NotFoundException - If no coupons are found for the given restaurant.
    * @throws InternalServerErrorException - If an unexpected error occurs during the operation.
    */
-  async viewCouponsService(restaurantId: string) {
+  async viewCouponsService(restaurantDto: RestaurantDto) {
     try {
+      const { restaurantId } = restaurantDto; // Extract restaurantId from the DTO
       this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`, CartService.name);
       const coupons = await this.coupons.find({ restaurantId: new ObjectId(restaurantId) }).toArray();
       console.log(coupons);
