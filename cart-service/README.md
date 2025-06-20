@@ -1,98 +1,147 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🛒 Cart Service – Food Order Management System
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+The **Cart Service** is a core microservice in the Food Order Management platform. It allows users to manage their shopping carts by adding items, modifying quantities, applying/removing coupons, and calculating totals including taxes and delivery charges.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 📚 Features Overview
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+| Feature                   | Description                                                                  |
+|---------------------------|------------------------------------------------------------------------------|
+| ➕ Add Item to Cart        | Add a menu item to the cart and auto-increment if it already exists          |
+| ➖ Remove Item             | Decrease quantity or remove an item entirely from the cart                   |
+| 🆕 Update Cart            | Replace or update multiple items in the cart with new quantities             |
+| ❌ Delete Cart            | Manually or automatically delete the cart if it becomes empty                |
+| 🧾 View Cart              | View all items in the cart with latest price, tax, and availability info     |
+| 🏷️ Apply/Remove Coupon   | Apply or remove a coupon, recalculate discount and totals                    |
+| 🏬 View Available Coupons | Fetch all valid and active coupons for a restaurant                         |
+| 📍 Distance-Based Charges | Calculates delivery charges using Haversine formula from Redis-cached address |
 
-## Project setup
+---
+
+## 🚀 Tech Stack
+
+| Tech           | Purpose                                       |
+|----------------|-----------------------------------------------|
+| 🧠 **NestJS**     | Backend framework                            |
+| 🐳 **MongoDB**    | Cart data persistence                        |
+| 📍 **Redis**      | Caching user geo-coordinates                 |
+| 🧾 **Swagger**    | API documentation                            |
+| 🛡️ **gRPC**       | Auth communication via microservices         |
+| 🔐 **JWT (via gRPC)** | User auth guard using gRPC-based token validation |
+| 🛠️ **Winston**    | Centralized logging                          |
+| 🧵 **Kafka**      | Event streaming and pub/sub messaging       |
+
+
+---
+
+## 📦 API Endpoints
+
+| Method | Route                          | Description                                     |
+|--------|--------------------------------|-------------------------------------------------|
+| POST   | `/cart/add`                    | Add item to cart (increment if exists)          |
+| POST   | `/cart/remove`                 | Decrease quantity or remove item from cart      |
+| POST   | `/cart/updateCart`             | Replace cart items with new data                |
+| DELETE | `/cart/delete`                 | Delete user’s active cart                       |
+| GET    | `/cart/get`                    | Retrieve user’s cart with latest validation     |
+| GET    | `/cart/coupons/:restaurantId`  | Fetch all valid coupons for a restaurant        |
+| POST   | `/cart/applyCoupon/:couponId`  | Apply a coupon to the cart                      |
+| POST   | `/cart/removeCoupon`           | Remove applied coupon from the cart             |
+
+> Full Swagger documentation available at `/api`
+
+---
+
+## 🧠 Key Logic & Helpers
+
+| Method                   | Purpose                                                                 |
+|--------------------------|-------------------------------------------------------------------------|
+| `calculateDistance()`    | Computes distance (in KM) between user and restaurant (Haversine formula) |
+| `calculateDeliveryCharges()` | ₹5 per km distance charge; uses Redis geo-coordinates              |
+| `calculateTax()`         | Calculates 5% tax on item total                                         |
+| `calculateCartTotals()`  | Combines item total, tax, delivery charges, platform fee, discount     |
+| `validateCart()`         | In GET API – removes invalid/unavailable items, updates prices/taxes   |
+| `validateCoupon()`       | Ensures coupon exists, is active, not expired, and matches cart rules  |
+
+
+---
+
+## 📦 Sample Cart JSON
+
+```json
+{
+    "_id": "685456555d88a5efcacf2000",
+    "userId": "684d51abab85e4eea0290000",
+    "deliveryCharges": 8690,
+    "distanceInKm": 1737.94,
+    "itemTotal": 7000,
+    "items": [
+        {
+            "itemId": "684acd94e22a8c3658c40000",
+            "name": "Paneer",
+            "quantity": 3,
+            "price": 1000,
+            "tax": 150
+        },
+        {
+            "itemId": "684acd94e22a8c3658c40000",
+            "name": "Briyani",
+            "quantity": 4,
+            "price": 1000,
+            "tax": 200
+        }
+    ],
+    "platformFee": 9,
+    "restaurantId": "684ab19bd5e1127595270000",
+    "subtotal": 7000,
+    "tax": 350,
+    "total": 16049,
+    "couponCode": null,
+    "couponId": null,
+    "discount": 0
+}
+
+
+
+---
+
+### 🛠️ 1. Clone the Repository
 
 ```bash
-$ npm install
+git clone https://github.com/your-org/food-order-management.git
+cd food-order-management
 ```
 
-## Compile and run the project
+## 📦 2. Install Dependencies For Service
+Each service is located inside the services/ folder. To run any service, you must install its dependencies separately.
 
 ```bash
-# development
-$ npm run start
+cd cart-service   
+npm install
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
 ```
 
-## Run tests
+### ▶️ 3. Run  Service
+
+To run a service in development mode:
 
 ```bash
-# unit tests
-$ npm run test
+cd cart-service  
+npm run start:dev
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
 ```
 
-## Deployment
+### 🔐 4. Environment Setup (.env files)
+Each service requires its own .env file located in its root directory.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 📄 Example: services/auth/.env
 
 ```bash
-$ npm install -g mau
-$ mau deploy
-```
+PORT=3002
+MONGO_URI=mongodb://localhost:27017/cart-db
+REDIS_HOST=localhost
+REDIS_PORT=6379
+KAFKA_BROKER=localhost:9092
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
-## Resources
 
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
