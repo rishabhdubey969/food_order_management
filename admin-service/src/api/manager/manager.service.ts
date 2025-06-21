@@ -125,6 +125,7 @@ export class ManagerService {
 
     const message = `${messages.join(' and ')} have been blocked`;
     this.logger.log(message);
+    return message;
 
    
   }
@@ -235,7 +236,7 @@ export class ManagerService {
 
 
 
-    return { message };
+    return {message};
  
   }
 
@@ -277,9 +278,12 @@ export class ManagerService {
     }
 
     await Promise.all(updates);
-     const message = `${messages.join(' and ')} have been validated`;
-    this.logger.log(message);
-     return { message };
+  const message = true;
+    
+
+
+
+    return message;
   } 
   
   
@@ -321,8 +325,205 @@ export class ManagerService {
     }
 
     await Promise.all(updates);
-    const message = `${messages.join(' and ')} have been invalidated`;
-    this.logger.log(message);
-     return { message };
+     const message = false;
+
+    return message;
+  }
+  async getRestaurants(
+    adminId: string,
+    filters: {
+      startDate?: string;
+      endDate?: string;
+      isActive?: boolean;
+      isBlocked?: boolean;
+      search?: string;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+      page?: number;
+      limit?: number;
+    },
+  ) {
+    const logger = { log: console.log, error: console.error }; // Replace with actual logger
+    logger.log(`Admin ${adminId} fetching restaurants with filters: ${JSON.stringify(filters)}`);
+    try {
+      const {
+        startDate,
+        endDate,
+        isActive,
+        isBlocked,
+        search,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        page = 1,
+        limit = 10,
+      } = filters;
+
+      const query: any = {};
+
+      // Date range filter
+      if (startDate || endDate) {
+        query.createdAt = {};
+        if (startDate) query.createdAt.$gte = new Date(startDate);
+        if (endDate) query.createdAt.$lte = new Date(endDate);
+      }
+
+      // is_active filter
+      if (isActive !== undefined) {
+        query.isActive = isActive;
+      }
+
+      // blocked filter
+      if (isBlocked !== undefined) {
+        query.isBlocked = isBlocked;
+      }
+
+      // Search filter (name or description)
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+        ];
+      }
+
+      // Sorting
+      const sort: any = {};
+      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+      // Pagination
+      const skip = (page - 1) * limit;
+
+      const [restaurants, totalRestaurants] = await Promise.all([
+        this.connection
+          .collection('restaurants')
+          .find(query, { projection: { managerId: 1, name: 1, description: 1, address: 1, phone: 1, is_active: 1, blocked: 1, createdAt: 1, updatedAt: 1 } }) // Include relevant fields
+          .sort(sort)
+          .skip(skip)
+          .limit(limit)
+          .toArray(),
+        this.connection.collection('restaurants').countDocuments(query),
+      ]);
+
+      const totalPages = Math.ceil(totalRestaurants / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+
+      logger.log(`Admin ${adminId} fetched ${restaurants.length} restaurants (page ${page})`);
+      return {
+        restaurants,
+        totalRestaurants,
+        page,
+        limit,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        filters: { startDate, endDate, isActive, isBlocked, search, sortBy, sortOrder },
+      };
+    } catch (error) {
+      logger.error(`Admin ${adminId} failed to fetch restaurants: ${error.message}`, error.stack);
+      throw new HttpException(
+        error.message || 'Failed to fetch restaurants',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+  async getManagers(
+    adminId: string,
+    filters: {
+      startDate?: string;
+      endDate?: string;
+  
+      isblocked?: boolean;
+      isActiveManager?: boolean; // Additional filter for manager status
+      search?: string;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+      page?: number;
+      limit?: number;
+    },
+  ) {
+    const logger = { log: console.log, error: console.error }; // Replace with actual logger
+    logger.log(`Admin ${adminId} fetching managers with filters: ${JSON.stringify(filters)}`);
+    try {
+      const {
+        startDate,
+        endDate,
+     
+        isblocked,
+        isActiveManager,
+        search,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        page = 1,
+        limit = 10,
+      } = filters;
+
+      const query: any = {};
+
+      // Date range filter
+      if (startDate || endDate) {
+        query.createdAt = {};
+        if (startDate) query.createdAt.$gte = new Date(`${startDate}T00:00:00.000Z`);
+        if (endDate) query.createdAt.$lte = new Date(`${endDate}T00:00:00.000Z`);
+      }
+
+     
+      // blocked filter
+      if (isblocked !== undefined) {
+        query.isblocked = isblocked;
+      }
+
+      // isActiveManager filter
+      if (isActiveManager !== undefined) {
+        query.isActiveManager = isActiveManager;
+      }
+
+      // Search filter (name or email)
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+        ];
+      }
+
+      // Sorting
+      const sort: any = {};
+      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+      // Pagination
+      const skip = (page - 1) * limit;
+
+      const [managers, totalManagers] = await Promise.all([
+        this.connection
+          .collection('managers')
+          .find(query, { projection: { password: 0 } }) // Exclude sensitive fields
+          .sort(sort)
+          .skip(skip)
+          .limit(limit)
+          .toArray(),
+        this.connection.collection('managers').countDocuments(query),
+      ]);
+
+      const totalPages = Math.ceil(totalManagers / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+
+      logger.log(`Admin ${adminId} fetched ${managers.length} managers (page ${page})`);
+      return {
+        managers,
+        totalManagers,
+        page,
+        limit,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        filters: { startDate, endDate, isblocked, isActiveManager, search, sortBy, sortOrder },
+      };
+    } catch (error) {
+      logger.error(`Admin ${adminId} failed to fetch managers: ${error.message}`, error.stack);
+      throw new HttpException(
+        error.message || 'Failed to fetch managers',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

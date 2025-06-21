@@ -11,12 +11,22 @@ export class KafkaService implements OnModuleInit{
     ){}
 
     async onModuleInit() {
+        await this.clientKafka.subscribeToResponseOf('isFoodAvailable')
         await this.clientKafka.connect();
     }
 
     async handleEvent(eventName: string, payload: any){
         try{
             this.clientKafka.emit(eventName, payload);
+        }catch(err){
+            throw new Exception(err.Message)
+        }
+    }
+    async handleMessage(eventName: string, payload: any){
+        try{
+            const data = await lastValueFrom(this.clientKafka.send(eventName, payload));
+            console.log("hii");
+            return data;
         }catch(err){
             throw new Exception(err.Message)
         }

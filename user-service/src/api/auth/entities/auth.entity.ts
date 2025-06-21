@@ -45,3 +45,5 @@ export const AuthenticationSchema = SchemaFactory.createForClass(Auth);
 AuthenticationSchema.index({ email: 1 });
 AuthenticationSchema.index({ is_active: 1 });
 AuthenticationSchema.index({ phone: 1 });
+AuthenticationSchema.index({ username: 1 });
+AuthenticationSchema.index({ createdAt: -1 });

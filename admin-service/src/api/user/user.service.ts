@@ -123,7 +123,7 @@ export class UserService {
       const skip = (pageNum - 1) * limitNum;
 
       let users = await this.connection.collection("users")
-        .find({ role: 2, is_active: true, is_deleted: false })
+        .find({ role: 1, is_active: true, is_deleted: false })
         .project({ _id: 1, email: 1, username: 1 })
         .skip(skip)
         .limit(limitNum)
@@ -145,6 +145,125 @@ export class UserService {
       };
     } catch (error) {
       this.logger.error(`Failed to fetch users: ${error.message}`, error.stack);
+      throw new HttpException(
+        error.message || 'Failed to fetch users',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+async getUserById(adminId: string, userId: string) {
+    const logger = { log: console.log, error: console.error }; // Replace with actual logger
+    logger.log(`Admin ${adminId} fetching user ${userId}`);
+    try {
+      const user = await this.connection
+        .collection('users')
+        .findOne({ _id: new ObjectId(userId)}, { projection: { password: 0, otp: 0 } });
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+      logger.log(`Admin ${adminId} fetched user ${userId}`);
+      return user;
+    } catch (error) {
+      logger.error(
+        `Admin ${adminId} failed to fetch user ${userId}: ${error.message}`,
+        error.stack,
+      );
+      throw new HttpException(
+        error.message || 'Failed to fetch user',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+async getUsers(token: string, 
+    adminId: string,
+    filters: {
+      startDate?: string;
+      endDate?: string;
+      isActive?: boolean;
+     
+      search?: string;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+      page?: number;
+      limit?: number;
+    },
+  ) {
+    const logger = { log: console.log, error: console.error }; // Replace with actual logger
+    logger.log(`Admin ${adminId} fetching users with filters: ${JSON.stringify(filters)}`);
+    
+    try {
+      let payload = await this.authService.verifyJwtToken(token);
+
+      if (payload.role !== 'admin') {
+        this.logger.warn(`Unauthorized access attempt by role: ${payload.role}`);
+        throw new UnauthorizedException('Only admins can access this endpoint');
+      }
+      const {
+        startDate,
+        endDate,
+        isActive,
+        search,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        page = 1,
+        limit = 10,
+      } = filters;
+
+      const query: any = {};
+
+      // Date range filter
+      if (startDate || endDate) {
+        query.createdAt = {};
+        if (startDate) query.createdAt.$gte = new Date(`${startDate}T00:00:00.000Z`);
+        if (endDate) query.createdAt.$lte = new Date(`${endDate}T00:00:00.000Z`);;
+      }
+
+      // is_active filter
+      if (isActive !== undefined) {
+        query.is_active = isActive;
+      }
+
+      
+      // Search filter (email only, based on schema)
+      if (search) {
+        query.$or = [{ email: { $regex: search, $options: 'i' } }];
+      }
+
+      // Sorting
+      const sort: any = {};
+      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+      // Pagination
+      const skip = (page - 1) * limit;
+
+      const [users, totalUsers] = await Promise.all([
+        this.connection
+          .collection('users')
+          .find(query, { projection: { password: 0, otp: 0 } }) // Exclude sensitive fields
+          .sort(sort)
+          .skip(skip)
+          .limit(limit)
+          .toArray(),
+        this.connection.collection('users').countDocuments(query),
+      ]);
+
+      const totalPages = Math.ceil(totalUsers / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+
+      logger.log(`Admin ${adminId} fetched ${users.length} users (page ${page})`);
+      return {
+        users,
+        totalUsers,
+        page,
+        limit,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        filters: { startDate, endDate, isActive, search, sortBy, sortOrder },
+      };
+    } catch (error) {
+      logger.error(`Admin ${adminId} failed to fetch users: ${error.message}`, error.stack);
       throw new HttpException(
         error.message || 'Failed to fetch users',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,

@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, Post, Req, UseGuards, Body } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, Req, UseGuards, Body, ValidationPipe } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { Roles } from './decorator/role.decorator';
@@ -8,6 +8,7 @@ import { WinstonLogger } from '../logger/winston-logger.service';
 import { AddCartDto } from './dto/addCart.dto';
 import { RemoveItemDto } from './dto/removeItem.dto';
 import { MultipleItemDto } from './dto/multipleItem.dto';
+
 
 @ApiTags('Cart')
 @Controller('cart')
@@ -287,7 +288,7 @@ export class CartController {
   })
   async getCart(@Req() req: any) {
     const userId = req.user.sub;
-    this.logger.verbose(`Fetching cart for user ${userId}`, this.context);
+    this.logger.log(`Fetching cart for user ${userId}`, this.context);
     return this.cartService.getCartService(userId);
   }
 
@@ -343,9 +344,9 @@ export class CartController {
     status: 404,
     description: 'Restaurant or coupons not found',
   })
-  async getCoupons(@Param('restaurantId') restaurantId: string) {
-    this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`, this.context);
-    return this.cartService.viewCouponsService(restaurantId);
+  async getCoupons(@Param('restaurantId', ValidationPipe) restaurantDto: string) {
+    this.logger.debug(`Fetching coupons for restaurant ${restaurantDto}`, this.context);
+    return this.cartService.viewCouponsService(restaurantDto);
   }
 
   /**

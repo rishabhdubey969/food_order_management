@@ -104,7 +104,7 @@ export class ManagerService {
         throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
       }
 
-      const payload = { sub: manager._id, email: manager.email, role: 'manager' };
+      const payload = { sub: manager._id, email: manager.email, role: '2' };
       const accessToken = this.tokenService.signAccessToken(payload);
       const refreshToken = this.tokenService.signRefreshToken(payload);
 
@@ -148,7 +148,7 @@ export class ManagerService {
       manager.resetTokenExpiry = resetTokenExpiry;
       await manager.save();
 
-      this.client.emit('reset_link', { email: manager.email, token  });
+      this.client.emit('reset_link', { email: manager.email, token });
       await this.sendPasswordResetEmail(manager.email, token);
 
       this.logger.log(`Password reset link generated and emailed to: ${email}`);
@@ -276,7 +276,7 @@ export class ManagerService {
    */
   async handleIsFoodAvailable(cartId: Types.ObjectId) {
     try {
-      if (!cartId || !isValidObjectId(cartId)) {
+      if (!cartId || !isValidObjectId(cartId)) {   
         this.logger.warn('Invalid cart ID');
         throw new BadRequestException('Invalid cart ID');
       }
@@ -303,7 +303,7 @@ export class ManagerService {
       return await this.managerGateway.handleIsFoodAvailable(manager._id, cartData);
     } catch (error) {
       this.logger.error(`Error processing cart ${cartId}`, error.stack);
-      throw new InternalServerErrorException('Failed to process new order');
+      return error;
     }
   }
 

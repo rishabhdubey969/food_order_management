@@ -18,6 +18,7 @@ import { RemoveItemDto } from './dto/removeItem.dto';
 import { ResponseMessages } from './constant/response.message';
 import { MultipleItemDto } from './dto/multipleItem.dto';
 
+
 @Injectable()
 export class CartService {
   private readonly carts: Collection;
@@ -252,7 +253,7 @@ export class CartService {
 
   async getCartService(userId: string) {
     try {
-      this.logger.verbose(`Fetching cart for user ${userId}`, CartService.name);
+      this.logger.log(`Fetching cart for user ${userId}`, CartService.name);
       const userObjId = new ObjectId(userId);
 
       let cart = await this.carts.findOne({ userId: userObjId });
@@ -283,14 +284,14 @@ export class CartService {
       const validItems = items.filter(Boolean);
 
       // If no valid items are left, mark cart as empty
-    if (validItems.length === 0) {
-      await this.carts.deleteOne({ userId: userObjId });
+      if (validItems.length === 0) {
+        await this.carts.deleteOne({ userId: userObjId });
 
-      return {
-        cart: null,
-        message: 'Your cart has been deleted as all items are unavailable or removed.',
-      };
-    }
+        return {
+          cart: null,
+          message: 'Your cart has been deleted as all items are unavailable or removed.',
+        };
+      }
 
       // If anything was updated (price or removed), save changes
       if (updated) {
@@ -345,7 +346,7 @@ export class CartService {
    * @throws NotFoundException - If the cart or coupon is not found.
    * @throws BadRequestException - If a coupon is already applied, expired, invalid for the cart, or order total is too low.
    */
-  async applyCouponService(userId: string, couponId: string) {
+  async applyCouponService(userId: string, couponId:string) {
     try {
       this.logger.log(`Applying coupon ${couponId} to user ${userId}`, CartService.name);
 
@@ -422,6 +423,8 @@ export class CartService {
    */
   async viewCouponsService(restaurantId: string) {
     try {
+      // console.log("inside coupon")
+      // console.log(restaurantId)
       this.logger.debug(`Fetching coupons for restaurant ${restaurantId}`, CartService.name);
       const coupons = await this.coupons.find({ restaurantId: new ObjectId(restaurantId) }).toArray();
       console.log(coupons);
