@@ -24,6 +24,7 @@ import { UpdateMenuItemDto } from './dto/updateMenuItem.dto';
 import { types } from 'util';
 import { Type } from 'class-transformer';
 import { throwError } from 'rxjs';
+import { SearchFoodDto } from './dto/search-food.dto';
 
 interface MediaService {
   getSignedUrl(key: string): Promise<string>;
@@ -357,8 +358,14 @@ export class RestaurantService implements OnModuleInit {
     }
   }
 
+  // Delete coupon
+  async deleteCoupon(couponId: string){
+    await this.couponModel.findByIdAndDelete(new Types.ObjectId(couponId));
+    this.logger.log(`Coupon deleted`);
+  }
+
   // Search restaurants based on food keywords in menu items
-  async searchRestaurantsByFood(query: string) {
+  async searchRestaurantsByFood(query: SearchFoodDto) {
     this.logger.log(`Searching restaurants by food keyword: "${query}"`);
     try {
       const results = await this.menuItemModel.aggregate([
