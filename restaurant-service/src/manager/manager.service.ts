@@ -41,7 +41,7 @@ export class ManagerService {
   async Signup(managerSignupDto: ManagerSignupDto) {
     try {
       const { email, password } = managerSignupDto;
-
+      console.log(email, password);
       if (!email || !password) {
         this.logger.warn('Signup failed: Missing email or password');
         throw new BadRequestException(ERROR_MESSAGES.EMAIL_PASSWORD_REQUIRED);
@@ -57,7 +57,9 @@ export class ManagerService {
       const newManager = new this.managerModel({
         ...managerSignupDto,
         password: hashedPassword,
+        role: 2,
       });
+
 
       const savedManager = await newManager.save();
       this.client.emit('user_created', savedManager);
@@ -117,11 +119,7 @@ export class ManagerService {
         data: {
           name: manager.name,
           email: manager.email,
-<<<<<<< HEAD
           restaurantId: this.managerGateway.restaurantId ? manager.restaurantId : ""
-=======
-          restaurantId: manager.restaurantId,
->>>>>>> f0b8fcb4d084cfae1efcc4ef31f0a2af03fed137
         },
       };
     } catch (error) {
@@ -156,7 +154,7 @@ export class ManagerService {
       await this.sendPasswordResetEmail(manager.email, token);
 
       this.logger.log(`Password reset link generated and emailed to: ${email}`);
-      return { message: SUCCESS_MESSAGES.RESET_LINK_SENT };
+      return { message: SUCCESS_MESSAGES.RESET_LINK_SENT, token: token };
     } catch (error) {
       this.logger.error(`Password reset initiation failed for ${email}`, error.stack);
       throw new UnauthorizedException(ERROR_MESSAGES.RESET_PASSWORD_FAILED);

@@ -1,4 +1,3 @@
-// src/manager/manager.module.ts
 import { Module } from '@nestjs/common';
 import { ManagerService } from './manager.service';
 import { ManagerController } from './manager.controller';
@@ -40,12 +39,13 @@ import { LoggerModule } from 'src/logger/logger.module';
           queue: 'notification_queue',
           queueOptions: { durable: false },
         },
-      },
+      }, 
     ]),
     TokenModule,
     ComplaintModule,
     KafkaModule,
     LoggerModule
+    
   ],
   controllers: [ManagerController],
   providers: [ManagerGateway, ManagerService],

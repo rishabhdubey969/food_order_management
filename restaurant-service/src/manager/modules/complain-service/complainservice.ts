@@ -4,50 +4,34 @@ import {
   BadRequestException,
   InternalServerErrorException,
   ForbiddenException,
+  Inject,
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection, Types, isValidObjectId } from 'mongoose';
 import { UpdateComplaintStatusDto } from 'src/manager/modules/complain-service/dto/update.complainStatusdto';
 import { TokenService } from '../token/token.service';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from 'src/manager/constants/errorand success';
-import { CreateComplaintDto } from './dto/create-complaint.dto';
 import { WinstonLogger } from 'src/logger/winston-logger.service';
 import { RabbitMQService } from 'src/rabbitmq/rabbitmq.service';
+import { ClientGrpc } from '@nestjs/microservices';
+import { async } from 'rxjs';
 
-@Injectable()
+interface AuthServiceClient {
+  validateToken(request: { token: string }): Promise<{ userId: string }>;
+}
+ @Injectable()
 export class ComplaintService {
+   authService: AuthServiceClient;
+
   constructor(
     @InjectConnection() private readonly connection: Connection,
+    @Inject('AUTH_PACKAGE') private readonly clientGrpc: ClientGrpc,
     private readonly tokenService: TokenService,
     private readonly logger: WinstonLogger,
     private readonly rabbitMQService: RabbitMQService,
-  ) {}
-
-  /**
-   * A user creates a complaint
-   */
-  async createComplaint(dto: CreateComplaintDto, userId: string, managerId: string) {
-    try {
-      const complaint = {
-        ...dto,
-        managerId,
-        status: 'pending',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      const result = await this.connection.collection('complaints').insertOne(complaint);
-
-      this.logger.log(`Complaint created successfully by user ${userId} for manager ${managerId}`);
-
-      return {
-        message: SUCCESS_MESSAGES.COMPLAINT_CREATED,
-        data: result.insertedId,
-      };
-    } catch (error) {
-      this.logger.error(`Failed to create complaint by user ${userId}`, error.stack);
-      throw new InternalServerErrorException('Failed to create complaint');
-    }
+  ) {
+    // Initialize gRPC client for auth service
+    this.authService = this.clientGrpc.getService<AuthServiceClient>('AuthService');
   }
 
   
@@ -214,4 +198,24 @@ export class ComplaintService {
     }
   }
 }
+
+// function Inject(arg0: string): (target: typeof ComplaintService, propertyKey: undefined, parameterIndex: 1) => void {
+//   throw new Error('Function not implemented.');
+// }
+
+// function updateComplaintStatus(complaintId: any, string: any, dto: any, UpdateComplaintStatusDto: typeof UpdateComplaintStatusDto, userId: any, string1: any) {
+//   throw new Error('Function not implemented.');
+// }
+
+// function emitComplaintNotification(managerId: any, string: any, userId: any, string1: any, status: string, string2: any) {
+//   throw new Error('Function not implemented.');
+// }
+
+// function getComplaintsForManager(managerId: any, string: any) {
+//   throw new Error('Function not implemented.');
+// }
+
+// function getAllComplaints(token: any, string: any) {
+//   throw new Error('Function not implemented.');
+//}
 

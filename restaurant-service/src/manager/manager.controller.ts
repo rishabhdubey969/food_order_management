@@ -39,12 +39,79 @@ export class ManagerController {
    * @returns Promise containing the created manager profile and authentication tokens
    */
   @Post('signup')
-  @ApiOperation({ summary: 'Signup as a Manager' })
-  @ApiBody({ type: ManagerSignupDto })
-  @ApiResponse({ status: 201, description: 'Manager signed up successfully' })
-  async signup(@Body() managerSignupDto: ManagerSignupDto) {
-    return this.managerService.Signup(managerSignupDto);
-  }
+@ApiOperation({ summary: 'Signup as a Manager' })
+@ApiBody({ type: ManagerSignupDto })
+@ApiResponse({
+  status: 201,
+  description: 'Manager signed up successfully',
+  schema: {
+    example: {
+      message: 'Manager signup successful',
+      data: {
+        name: 'pppp Gupta',
+        email: 'aaapppw@example.com',
+        accountNumber: '123456789012',
+        ifscCode: 'ABC01234567',
+        bankName: 'HDFC Bank',
+      },
+    },
+  },
+})
+@ApiResponse({
+  status: 400,
+  description: 'Bad Request - Validation failed',
+  schema: {
+    example: {
+      statusCode: 400,
+      timestamp: '2025-06-20T12:34:56.789Z',
+      path: '/manager/signup',
+      error: 'BadRequestException',
+      message: 'Validation failed',
+      details: {
+        message: ['email must be an email', 'password must be longer than or equal to 8 characters'],
+        error: 'Bad Request',
+        statusCode: 400,
+      },
+    },
+  },
+})
+@ApiResponse({
+  status: 409,
+  description: 'Conflict - Manager already exists',
+  schema: {
+    example: {
+      statusCode: 409,
+      timestamp: '2025-06-20T12:34:56.789Z',
+      path: '/manager/signup',
+      error: 'DatabaseError',
+      message: 'email already exists',
+      details: {
+        code: 11000,
+        message: 'E11000 duplicate key error collection: manager index: email_1 dup key: { email: "aaapppw@example.com" }',
+      },
+    },
+  },
+})
+@ApiResponse({
+  status: 500,
+  description: 'Internal server error',
+  schema: {
+    example: {
+      statusCode: 500,
+      timestamp: '2025-06-20T12:34:56.789Z',
+      path: '/manager/signup',
+      error: 'InternalServerError',
+      message: 'Internal server error',
+      details: {
+        stack: 'TypeError: Cannot read property of undefined...',
+      },
+    },
+  },
+})
+async signup(@Body() managerSignupDto: ManagerSignupDto) {
+  return this.managerService.Signup(managerSignupDto);
+}
+
 
   /**Login a manager
    * 
@@ -52,13 +119,79 @@ export class ManagerController {
    * @returns An object containing access token and refresh token
    */
   @Post('login')
-  @ApiOperation({ summary: 'Login as a Manager' })
-  @ApiBody({ type: ManagerLoginDto })
-  @ApiResponse({ status: 200, description: 'Manager logged in successfully' })
-  async login(@Body() managerLoginDto: ManagerLoginDto) {
-    const res = await this.managerService.login(managerLoginDto);
-    return res;
-  }
+@ApiOperation({ summary: 'Login as a Manager' })
+@ApiBody({ type: ManagerLoginDto })
+@ApiResponse({
+  status: 201,
+  description: 'Manager login successful',
+  schema: {
+    example: {
+      message: 'Manager login successful',
+      accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      data: {
+        name: 'Riya',
+        email: 'riya@example.com',
+        restaurantId: ''
+      }
+    },
+  },
+})
+@ApiResponse({
+  status: 400,
+  description: 'Bad Request - Validation failed',
+  schema: {
+    example: {
+      statusCode: 400,
+      timestamp: '2025-06-20T12:34:56.789Z',
+      path: '/manager/login',
+      error: 'BadRequestException',
+      message: 'Validation failed',
+      details: {
+        message: ['email must be an email', 'password must not be empty'],
+        error: 'Bad Request',
+        statusCode: 400,
+      },
+    },
+  },
+})
+@ApiResponse({
+  status: 401,
+  description: 'Unauthorized - Invalid email or password',
+  schema: {
+    example: {
+      statusCode: 401,
+      timestamp: '2025-06-20T12:34:56.789Z',
+      path: '/manager/login',
+      error: 'UnauthorizedException',
+      message: 'Invalid email or password',
+      details: {
+        error: 'Unauthorized',
+        statusCode: 401,
+      },
+    },
+  },
+})
+@ApiResponse({
+  status: 500,
+  description: 'Internal server error',
+  schema: {
+    example: {
+      statusCode: 500,
+      timestamp: '2025-06-20T12:34:56.789Z',
+      path: '/manager/login',
+      error: 'InternalServerError',
+      message: 'Internal server error',
+      details: {
+        stack: 'TypeError: Cannot read property of undefined...',
+      },
+    },
+  },
+})
+async login(@Body() managerLoginDto: ManagerLoginDto) {
+  const res = await this.managerService.login(managerLoginDto);
+  return res;
+}
 
   /**Initiates password reset process for a manager
    * 
