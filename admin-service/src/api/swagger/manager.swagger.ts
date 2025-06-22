@@ -228,10 +228,10 @@ export const SoftDeleteManagerAndRestaurantSwagger = () => applyDecorators(
   ApiOperation({ summary: 'Soft delete a manager and their associated restaurant' }),
   ApiBearerAuth('JWT'),
   ApiParam({
-    name: 'restaurantId',
+    name: 'managerId',
     type: String,
     required: true,
-    description: 'ID of the restaurant to soft delete',
+    description: 'ID of the manager to soft delete',
     example: '67890',
   }),
   ApiResponse({ status: 200, description: 'Manager and restaurant successfully soft deleted' }),

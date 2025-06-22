@@ -208,22 +208,48 @@ export class ManagerService {
     }
   }
 
-  async softDeleteRestaurant(restaurantId: string) {
-    this.logger.log(`Attempting to soft delete restaurant ${restaurantId}`);
+async softDeleteManagerAndRestaurant(managerId: string): Promise<boolean> {
+  this.logger.log(`Attempting to soft delete manager ${managerId}`);
 
+  const manager = await this.connection
+    .collection('managers')
+    .findOne({ _id: new ObjectId(managerId) });
+
+  if (!manager) {
+    this.logger.warn(`Manager ${managerId} not found`);
+    throw new HttpException('Manager not found', HttpStatus.NOT_FOUND);
+  }
+
+  const updates: Promise<any>[] = [];
+
+  // Soft delete the manager if not already deleted
+  if (!manager.isdeleted) {
+    updates.push(
+      this.connection.collection('managers').updateOne(
+        { _id: new ObjectId(managerId) },
+        {
+          $set: {
+            isdeleted: true,
+            deletedAt: new Date(),
+          },
+        },
+      ),
+    );
+    this.logger.log(`Manager ${managerId} will be soft deleted`);
+  } else {
+    this.logger.log(`Manager ${managerId} is already soft deleted, skipping`);
+  }
+
+  // Soft delete the corresponding restaurant
+  const restaurantId = manager.restaurantId;
+  if (restaurantId) {
     const restaurant = await this.connection
       .collection('restaurants')
       .findOne({ _id: new ObjectId(restaurantId) });
 
     if (!restaurant) {
-      this.logger.warn(`Restaurant ${restaurantId} not found `);
-      throw new HttpException('Restaurant not found ', HttpStatus.NOT_FOUND);
-    }
-
-    const updates: Promise<any>[] = [];
-    const messages: string[] = [];
-
-    if (!restaurant.isDeleted) {
+      this.logger.warn(`Restaurant ${restaurantId} not found`);
+    } else if (!restaurant.isDeleted) {
       updates.push(
         this.connection.collection('restaurants').updateOne(
           { _id: new ObjectId(restaurantId) },
@@ -235,31 +261,27 @@ export class ManagerService {
           },
         ),
       );
-      messages.push(`restaurant ${restaurantId}`);
+      this.logger.log(`Restaurant ${restaurantId} will be soft deleted`);
     } else {
-      this.logger.log(
-        `Restaurant ${restaurantId} is already deactivated, skipping`,
-      );
+      this.logger.log(`Restaurant ${restaurantId} is already soft deleted, skipping`);
     }
-
-    if (updates.length === 0) {
-      this.logger.warn(`Restaurant ${restaurantId} are already deleted`);
-      throw new HttpException(
-        'Restaurant are already deleted',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    await Promise.all(updates);
-
-    const message = `${messages.join(' and ')} have been soft deleted`;
-    this.logger.log(message);
-
-
-
-    return true;
- 
+  } else {
+    this.logger.warn(`Manager ${managerId} has no associated restaurantId`);
   }
+
+  if (updates.length === 0) {
+    this.logger.warn(`Manager ${managerId} and their restaurant are already soft deleted`);
+    throw new HttpException(
+      'Manager and restaurant are already deleted',
+      HttpStatus.BAD_REQUEST,
+    );
+  }
+
+  await Promise.all(updates);
+
+  this.logger.log(`Successfully soft deleted manager ${managerId} and/or their restaurant`);
+  return true;
+}
 
   async ValidateManager(managerId: string) {
     this.logger.log(`Attempting to Validate  MAnager ${managerId}`);

@@ -166,16 +166,15 @@ const result = await this.managerService.InValidateManager(managerId)
   }
 
   @UseGuards(AdminGuard)
-  @Delete(':restaurantId')
+  @Delete(':managerId')
   @SoftDeleteManagerAndRestaurantSwagger()
   async softDeleteManagerAndRestaurant(
-    @Param('restaurantId') restaurantId: string,
+    @Param('managerId') managerId: string,
   ) {
-  
-       const result = await this.managerService.softDeleteRestaurant(restaurantId);;
+   const result = await this.managerService.softDeleteManagerAndRestaurant(managerId);
+  return { success: result }; 
  
- 
-         return { success: result }
+        
       
     
   }
