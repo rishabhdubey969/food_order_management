@@ -10,7 +10,7 @@ import { RedisModule } from './redis/redis.module';
 import { LoggerModule } from 'src/logger/logger.module';
 import { ManagerSchema } from 'src/manager/schema/manager.schema';
 import { Manager } from './schema/manager.schema';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [MongooseModule.forFeature([
@@ -33,15 +33,19 @@ import { ConfigService } from '@nestjs/config';
         }),
         inject: [ConfigService],
       } as ClientsProviderAsyncOptions,
-      // {
-  //     name: 'MEDIA_SERVICE',
-  //     transport: Transport.GRPC,
-  //     options: {
-  //       package: 'media', 
-  //       protoPath:  '../proto/media.proto',
-  //       url: 'localhost:50051', 
-  //     },
-  //   },
+      {
+        name: 'MEDIA_SERVICE',
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: async (configService: ConfigService) => ({
+          transport: Transport.GRPC,
+          options: {
+            package: 'media',
+            protoPath: 'src/restaurant/proto/media.proto',
+            url: configService.get<string>('MEDIA_SERVICE_URL') || 'localhost:50053',
+          },
+        }),
+      },
   ]),
 
   ],

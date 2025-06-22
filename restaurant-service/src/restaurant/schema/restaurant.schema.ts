@@ -41,6 +41,9 @@ export class Restaurant extends Document {
   @Prop({ default: [] })
   tags: string[];
 
+  @Prop({default: ''})
+  imageKey: string;
+
   @Prop({ default: false})
   isBlocked: boolean;
 

@@ -731,13 +731,13 @@ async getMenuImageSignedUrl(@Body() body: { fileName: string; fileType: string }
    * @returns The newly created menu item object.
    */
   @UseGuards(JwtAuthGuard, ManagerGuard)
-  @ApiBearerAuth('JWT') // Indicates that this endpoint requires a JWT token
-  @Post('/menu') // The path for creating a menu item
+  @ApiBearerAuth('JWT') 
+  @Post('/menu') 
   @ApiOperation({ summary: 'Create a new menu item for the authenticated manager\'s restaurant' })
   @ApiBody({
     type: CreateMenuItemDto,
     description: 'Data for creating a new menu item.',
-    examples: { // Provide an example payload for clarity
+    examples: { 
       aValidMenuItem: {
         summary: 'Example Menu Item Creation',
         value: {
@@ -926,7 +926,7 @@ async getMenuImageSignedUrl(@Body() body: { fileName: string; fileType: string }
 * @returns The successfully updated menu item.
 */
 @Put('menuItem/:itemId')
-@ApiOperation({ summary: 'Update an existing menu item' }) // Overall description of the endpoint
+@ApiOperation({ summary: 'Update an existing menu item' }) 
 @ApiParam({
   name: 'itemId',
   description: 'The ID of the menu item to update',
@@ -1336,7 +1336,7 @@ async deleteItem(@Param('itemId', MongoIdValidationPipe) itemId: string) {
     name: 'couponId',
     type: String,
     description: 'The unique identifier (MongoDB ObjectId) of the coupon to update.',
-    example: '65e23c72b212f0a1c9d2f3c9', // Example Coupon ID
+    example: '65e23c72b212f0a1c9d2f3c9', 
   })
   @ApiBody({
     type: UpdateCoponDto,
@@ -1346,13 +1346,13 @@ async deleteItem(@Param('itemId', MongoIdValidationPipe) itemId: string) {
         summary: 'Update coupon discount percentage',
         value: {
           discountPercentage: 25,
-        } as UpdateCoponDto, // Type assertion for example clarity
+        } as UpdateCoponDto, 
       },
       deactivateCoupon: {
         summary: 'Deactivate a coupon',
         value: {
           isActive: false,
-          expirationDate: '2025-06-20T18:30:00.000Z' // Setting expiration to now for deactivation
+          expirationDate: '2025-06-20T18:30:00.000Z'
         } as UpdateCoponDto,
       },
     },
