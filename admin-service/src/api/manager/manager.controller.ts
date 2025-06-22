@@ -124,13 +124,14 @@ export class ManagerController {
   @Patch('block')
   @BlockManagerAndRestaurantSwagger()
   async blockManagerAndRestaurant(
-    @Query('restaurantId') restaurantId: string,
+    @Query('managerId') managerId: string,
   ) {
-    if (!restaurantId) {
+    if (!managerId) {
       throw new Error('managerId and restaurantId are required');
     }
-
-    return this.managerService.blockRestaurant(restaurantId);
+ const result = await this.managerService.blockManagerAndRestaurant(managerId);
+  return { success: result }
+    
   } 
   
   @UseGuards(AdminGuard)
@@ -143,7 +144,10 @@ export class ManagerController {
       throw new Error('managerId is required');
     }
 
-    return this.managerService.ValidateManager(managerId);
+    const result =  await this.managerService.ValidateManager(managerId);
+  return { success: result }
+   
+    
   } 
   
   
@@ -156,29 +160,23 @@ export class ManagerController {
     if (!managerId) {
       throw new Error('managerId is required');
     }
-
-    return this.managerService.InValidateManager(managerId);
+const result = await this.managerService.InValidateManager(managerId)
+  return { success: result }
+   
   }
 
   @UseGuards(AdminGuard)
-  @Delete(':restaurantId')
+  @Delete(':managerId')
   @SoftDeleteManagerAndRestaurantSwagger()
   async softDeleteManagerAndRestaurant(
-    @Param('restaurantId') restaurantId: string,
+    @Param('managerId') managerId: string,
   ) {
-    try {
-      const result =
-        await this.managerService.softDeleteRestaurant(restaurantId);
-      return {
-        statusCode: HttpStatus.OK,
-        message: result.message,
-      };
-    } catch (error) {
-      throw new HttpException(
-        error.message || 'Failed to soft delete manager and restaurant',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+   const result = await this.managerService.softDeleteManagerAndRestaurant(managerId);
+  return { success: result }; 
+ 
+        
+      
+    
   }
 
   // @Post('signup')
