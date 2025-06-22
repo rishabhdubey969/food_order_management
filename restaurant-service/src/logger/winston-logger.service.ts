@@ -1,17 +1,33 @@
 import { ConsoleLogger, Injectable } from '@nestjs/common';
 import * as winston from 'winston';
+import { createLogger, format, transports } from 'winston';
+import * as DailyRotateFile from 'winston-daily-rotate-file';
 
 @Injectable()
 export class WinstonLogger extends ConsoleLogger {
-  private logger = winston.createLogger({
+  logger = createLogger({
     level: 'info',
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.printf(({ timestamp, level, message }) => {
-        return `[${timestamp}] ${level.toUpperCase()}: ${message}`;
-      })
+    format: format.combine(
+      format.timestamp(),
+      format.printf(
+        ({ timestamp, level, message }) => `${timestamp} [${level}] ${message}`,
+      ),
     ),
-    transports: [new winston.transports.Console()],
+    transports: [
+      new DailyRotateFile({
+        filename: 'logs/error-%DATE%.log',
+        level: 'error',
+        datePattern: 'YYYY-MM-DD',
+        maxFiles: '7d',
+      }),
+      new DailyRotateFile({
+        filename: 'logs/combined-%DATE%.log',
+        datePattern: 'YYYY-MM-DD',
+        maxFiles: '7d',
+      }),
+      
+      new transports.Console(),
+    ],
   });
 
   log(message: string) {

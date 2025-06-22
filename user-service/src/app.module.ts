@@ -10,6 +10,7 @@ import { winstonLogger } from 'logger/winston.logger';
 import { AddressModule } from './api/address/address.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ChatbotModule } from './api/chatbot/chatbot.module';
+import { ComplainModule } from './api/complain/complain.module';
 
 @Module({
   imports: [
@@ -22,7 +23,8 @@ import { ChatbotModule } from './api/chatbot/chatbot.module';
     }),
     WinstonModule.forRoot(winstonLogger),
     MongooseModule.forRoot(process.env.MONGO_CONNECTION as string),
-    ChatbotModule, // Mongo Connection
+    ChatbotModule,
+    ComplainModule, // Mongo Connection
   ],
   controllers: [AppController],
   providers: [AppService],

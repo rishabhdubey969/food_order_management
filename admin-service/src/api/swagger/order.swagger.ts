@@ -62,3 +62,78 @@ export const GetUserOrdersSwagger = () => applyDecorators(
   ApiResponse({ status: 404, description: 'User not found' }),
   ApiResponse({ status: 500, description: 'Internal Server Error' }),
 );
+
+export const GetOrdersSwagger = () =>
+  applyDecorators(
+    ApiOperation({ summary: 'Get orders with filters, sorting, and pagination' }),
+    ApiBearerAuth('JWT'),
+    ApiQuery({
+      name: 'startDate',
+      type: String,
+      required: false,
+      description: 'Start date for filtering orders by creation date (ISO format)',
+      example: '2025-06-01',
+    }),
+    ApiQuery({
+      name: 'endDate',
+      type: String,
+      required: false,
+      description: 'End date for filtering orders by creation date (ISO format)',
+      example: '2025-06-30',
+    }),
+    ApiQuery({
+      name: 'status',
+      type: String,
+      required: false,
+      description: 'Filter orders by status (e.g., preparing, delivered)',
+      example: 'preparing',
+    }),
+    ApiQuery({
+      name: 'paymentStatus',
+      type: String,
+      required: false,
+      description: 'Filter orders by payment status (e.g., pending, completed)',
+      example: 'pending',
+    }),
+    ApiQuery({
+      name: 'search',
+      type: String,
+      required: false,
+      description: 'Search by userId, restaurantId, or paymentMethod',
+      example: '683d3571a0fe3b4852019ff',
+    }),
+    ApiQuery({
+      name: 'sortBy',
+      type: String,
+      required: false,
+      description: 'Field to sort by',
+      example: 'createdAt',
+      enum: ['createdAt', 'updatedAt', 'subtotal', 'tax', 'total', 'timestamp', 'status'],
+    }),
+    ApiQuery({
+      name: 'sortOrder',
+      type: String,
+      required: false,
+      description: 'Sort order',
+      example: 'desc',
+      enum: ['asc', 'desc'],
+    }),
+    ApiQuery({
+      name: 'page',
+      type: Number,
+      required: false,
+      description: 'Page number for pagination',
+      example: 1,
+    }),
+    ApiQuery({
+      name: 'limit',
+      type: Number,
+      required: false,
+      description: 'Number of orders per page',
+      example: 10,
+    }),
+    ApiResponse({ status: 200, description: 'Successfully retrieved orders' }),
+    ApiResponse({ status: 400, description: 'Bad Request - Invalid parameters' }),
+    ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token, or non-admin role' }),
+    ApiResponse({ status: 500, description: 'Internal Server Error' }),
+  );

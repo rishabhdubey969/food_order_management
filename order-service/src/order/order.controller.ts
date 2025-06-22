@@ -34,7 +34,6 @@ export class OrderController {
   @ApiResponse({
     status: 201,
     description: 'Order prepared successfully',
-    type: OrderDto
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

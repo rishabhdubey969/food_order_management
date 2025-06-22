@@ -1,7 +1,7 @@
-import { Controller, Get, Query, UseGuards, Request, Param } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Request, Param, HttpException, HttpStatus } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
-import { GetTotalOrdersSwagger, GetUserOrdersSwagger } from '../swagger/order.swagger';
+import { GetOrdersSwagger, GetTotalOrdersSwagger, GetUserOrdersSwagger } from '../swagger/order.swagger';
 
 @Controller('order')
 export class OrderController {
@@ -37,4 +37,32 @@ export class OrderController {
     const limitNum = parseInt(limit, 10);
     return this.orderService.getUserOrders(adminId, userId, pageNum, limitNum);
   }
+  @Get('orders')
+  @GetOrdersSwagger()
+  async getOrders(
+    @Request() req,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('status') status?: string,
+    @Query('paymentStatus') paymentStatus?: string,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+   
+    return this.orderService.getOrders(req.orderId, {
+      startDate,
+      endDate,
+      status,
+      paymentStatus,
+      search,
+      sortBy,
+      sortOrder,
+      page,
+      limit,
+    });
+  }
+
 }

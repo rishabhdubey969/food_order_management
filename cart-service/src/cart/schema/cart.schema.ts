@@ -46,8 +46,10 @@ export class Cart {
 
   @Prop({ default: 0 })
   total: number;
+
   @Prop({ default: 0 })
   distanceInKm: number;
+
   @Prop({ default: null })
   couponCode: string;
 

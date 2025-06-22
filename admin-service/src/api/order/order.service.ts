@@ -223,4 +223,109 @@ export class OrderService {
       );
     }
   }
+  async getOrders(
+    adminId: string,
+    filters: {
+      startDate?: string;
+      endDate?: string;
+      status?: string;
+      paymentStatus?: string;
+      search?: string;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+      page?: number;
+      limit?: number;
+    },
+  ) {
+    const logger = { log: console.log, error: console.error }; // Replace with actual logger
+    logger.log(`Admin ${adminId} fetching orders with filters: ${JSON.stringify(filters)}`);
+    try {
+      const {
+        startDate,
+        endDate,
+        status,
+        paymentStatus,
+        search,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        page = 1,
+        limit = 10,
+      } = filters;
+
+      const query: any = {};
+
+      // Date range filter
+      if (startDate || endDate) {
+        query.createdAt = {};
+        if (startDate) query.createdAt.$gte = new Date(`${startDate}T00:00:00.000Z`);
+        if (endDate) query.createdAt.$lte = new Date(`${endDate}T00:00:00.000Z`);
+      }
+
+      // status filter
+      if (status) {
+        query.status = status;
+      }
+
+      // paymentStatus filter
+      if (paymentStatus) {
+        query.paymentStatus = paymentStatus;
+      }
+
+      // Search filter (userId, restaurantId, or paymentMethod)
+      if (search) {
+        query.$or = [
+          { userId: { $regex: search, $options: 'i' } },
+          { restaurantId: { $regex: search, $options: 'i' } },
+          { paymentMethod: { $regex: search, $options: 'i' } },
+        ];
+      }
+
+      // Define allowable sort fields
+      const sortableFields = ['createdAt', 'updatedAt', 'subtotal', 'tax', 'total', 'timestamp', 'status'];
+      if (!sortableFields.includes(sortBy)) {
+        throw new HttpException(`Invalid sortBy field. Allowed fields are: ${sortableFields.join(', ')}`, HttpStatus.BAD_REQUEST);
+      }
+
+      // Sorting
+      const sort: any = {};
+      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+      // Pagination
+      const skip = (page - 1) * limit;
+
+      const [orders, totalOrders] = await Promise.all([
+        this.connection
+          .collection('orders')
+          .find(query, { projection: { password: 0, paymentId: 0, cartId: 0 } }) // Exclude sensitive or redundant fields
+          .sort(sort)
+          .skip(skip)
+          .limit(limit)
+          .toArray(),
+        this.connection.collection('orders').countDocuments(query),
+      ]);
+
+      const totalPages = Math.ceil(totalOrders / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+
+      logger.log(`Admin ${adminId} fetched ${orders.length} orders (page ${page})`);
+      return {
+        orders,
+        totalOrders,
+        page,
+        limit,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        filters: { startDate, endDate, status, paymentStatus, search, sortBy, sortOrder },
+      };
+    } catch (error) {
+      logger.error(`Admin ${adminId} failed to fetch orders: ${error.message}`, error.stack);
+      throw new HttpException(
+        error.message || 'Failed to fetch orders',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
 }

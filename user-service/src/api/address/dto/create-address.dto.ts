@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsInt, IsOptional, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsString, IsInt, IsOptional, IsNumber, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAddressDto {
@@ -26,6 +26,9 @@ export class CreateAddressDto {
   @ApiProperty({ example: 498549, description: 'user pin_code information' })
   @IsNotEmpty()
   @IsInt()
+  @Matches(/^\d{6}$/, {
+    message: 'Postal code must be exactly 6 digits',
+  })
   readonly postal_code: number;
 
   @ApiProperty({ example: 'city', description: 'user city address' })
