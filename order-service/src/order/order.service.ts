@@ -71,16 +71,15 @@ export class OrderService {
 
     try {
       // checking cart already exist in order db or not
-        // const alreadyExists= await this.OrderSchema.findOne({cartId:cartId});
-        // if(alreadyExists){
-        //    throw new BadRequestException(alreadyExists);
-        // }
+        const alreadyExists= await this.OrderSchema.findOne({cartId:cartId});
+        if(alreadyExists){
+           throw new BadRequestException(alreadyExists);
+        }
         // calling manager service
-      // const data= await this.handleKitchen({cartId:cartId});
-      // console.log(data);
-      //   if(typeof data === 'string'){
-      //     throw new InternalServerErrorException(data);
-      //   }
+      const data= await this.handleKitchen({cartId:cartId});
+        if(typeof data === 'string'|| data.approved===false){
+          throw new BadRequestException("can't place order");
+        }
   
       const cartData = await this.connection.collection(this.roleCollections.CART).findOne({ _id: new ObjectId(cartId) });
       if (!cartData) {
@@ -242,10 +241,10 @@ export class OrderService {
 
   async getAllOrder(userId: string, query) {
     try {
-      const skip = ((query.page) - 1) * (query.limit);
+      const skip = ((query.page) - 1) * (10);
       const allOrder = await this.OrderSchema.find({ userId: userId })
         .skip(skip)
-        .limit(query.limit)
+        .limit(10)
         .sort({ createdAt: 1 });
       if (!allOrder) {
         throw new NotFoundException(ERROR.NOT_EXIST);
@@ -257,6 +256,7 @@ export class OrderService {
     }
 
   }
+
   async getManagerId(restaurantId){
       try{
         const data= await this.connection.collection(this.roleCollections.RESTAURANT).findOne({_id: new ObjectId( restaurantId)});
@@ -270,6 +270,64 @@ export class OrderService {
       }
   } 
 
+  async getTime(time:string){
+    const now = new Date();
+    let startDate: Date, endDate: Date;
+  
+    switch (time) {
+      case 'week':
+        const day = now.getDay();
+        const diffToMonday = (day + 6) % 7;
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - diffToMonday);
+        startDate.setHours(0, 0, 0, 0);
+  
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
+        break;
+  
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        break;
+  
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+        break;
+  
+      default:
+        throw new Error('Invalid type');
+    }
+  
+    const start = Math.floor(startDate.getTime() / 1000);
+    const end = Math.floor(endDate.getTime() / 1000);
+    return {start, end};
+  }
+  async filter(time:string,userId:string){ 
+    try {
+      const {start,end}=await this.getTime(time); 
+      const query={page:1,limit:10};
+      const skip = ((query.page) - 1) * (query.limit);
+      const allOrder = await this.OrderSchema.find({ userId: userId,timestamp:{$gte:start, $lte:end} })
+        .skip(skip)
+        .limit(query.limit)
+        .sort({ createdAt: 1 });
+      if (!allOrder) {
+        throw new NotFoundException(ERROR.NOT_EXIST);
+      }
+      return allOrder;
+    }
+    catch (error) {
+      throw new InternalServerErrorException(ERROR.FAILED_TO_FIND);
+    }
+    
+  
+  }
+  
+  
+
   async handleDelivery(payload: { orderId: string }) {
     await this.kafkaService.handleEvent('newOrder', payload);
   }
@@ -280,23 +338,7 @@ export class OrderService {
   async handleKitchen(payload: { cartId: ObjectId }) {
     return await this.kafkaService.handleMessage('isFoodAvailable', payload);
   }
-  @EventPattern('deliveryPatenerResponse')
-  async deliveryAssigned(@Payload() payload: any, @Ctx() context: KafkaContext){
-    const consumer = context.getConsumer();
-    const topic = context.getTopic();
-    const partition = context.getPartition();
-    const offset = context.getMessage().offset;
-
-    await consumer.commitOffsets([
-      {
-        topic,
-        partition,
-        offset: (Number(offset) + 1).toString(),
-      }
-    ]);
-    console.log(payload);
-  }
-
+  
   async generateInvoice(orderId: string, options: any = {},request:any): Promise<Buffer> {
     const startTime = Date.now();
     const order = await this.OrderSchema.findOne({_id:orderId,userId:request.sub});
