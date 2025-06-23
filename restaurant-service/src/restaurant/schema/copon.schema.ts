@@ -14,13 +14,13 @@ export class Coupon {
   @Prop({ required: true })
   maxDiscount: number;
 
-  @Prop({ required: true })
+  @Prop({ required: true, index: true})
   expiryDate: Date;
 
   @Prop({ required: true })
   minOrderAmount: number;
 
-  @Prop({ type: Types.ObjectId, ref: 'Restaurant', required: false })
+  @Prop({ type: Types.ObjectId, ref: 'Restaurant', required: false, index: true })
   restaurantId?: Types.ObjectId; 
 
   @Prop({ default: true })

@@ -9,11 +9,35 @@ import { Order, OrderSchema } from '../../schema/order.schema';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { LoggerModule } from 'src/logger/logger.module';
 import { RabbitMQModule } from 'src/rabbitmq/rabbitmq.module';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema },
       { name: Complaint.name, schema: ComplaintSchema }]),
+      ClientsModule.registerAsync([
+            {
+              name: 'AUTH_PACKAGE',
+              useFactory: (configService: ConfigService) => {
+                const grpcPackage = configService.get<string>('AUTH_GRPC_PACKAGE');
+                const grpcProtoPath = configService.get<string>('AUTH_GRPC_PROTO_PATH');
+                const grpcUrl = configService.get<string>('AUTH_GRPC_URL');
+                if (!grpcPackage || !grpcProtoPath || !grpcUrl) {
+                  throw new Error('Missing required gRPC configuration for AUTH_PACKAGE');
+                }
+                return {
+                  transport: Transport.GRPC,
+                  options: {
+                    package: grpcPackage,
+                    protoPath: grpcProtoPath,
+                    url: grpcUrl,
+                  },
+                };
+              },
+              inject: [ConfigService],
+            },
+          ]),
     TokenModule,
     MailerModule,
     LoggerModule,

@@ -14,7 +14,15 @@ export class ChatbotController {
   @Post('message')
   async handleMessage(@Body('message') message: string) {
    // console.log(message);
-    const reply = await this.chatbotService.getResponse(message);
-    return { reply };
+    // const reply = await this.chatbotService.getResponse(message);
+    // return { reply };
+
+     const prompt = `
+    You are a food expert.
+    Only answer questions about food—recipes, nutrition, ingredients, cooking.
+    If the user asks anything else, reply: "⚠️ I can only answer food‑related questions."
+    Question: ${message}
+  `;
+  return { reply: await this.chatbotService.getResponse(message) };
   }
 }

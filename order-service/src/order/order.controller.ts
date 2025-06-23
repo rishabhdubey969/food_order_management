@@ -7,6 +7,7 @@ import { PlaceOrderDto } from 'src/dto/placeOrder.dto';
 import { OrderDto } from 'src/dto/order.dto';
 import { Response } from 'express'
 import { ERROR } from './constant/message.constant';
+import { Ctx, EventPattern, KafkaContext, Payload } from '@nestjs/microservices';
 
 
 
@@ -134,12 +135,77 @@ export class OrderController {
     const userId = request.user.payload.sub;
     return await this.orderService.getAllOrder(userId, data);
   }
+ 
 
+  @ApiBearerAuth('JWT')
+  @UseGuards(jwtGuard)
+  @Get('/filters/:time')
+  @ApiOperation({ 
+    summary: 'Get orders filtered by time',
+    description: 'Retrieves orders based on a time filter, paginated by page number'
+  })
+  @ApiParam({
+    name: 'time',
+    description: 'Time period to filter orders',
+    example: 'week||month||year',
+    required: true
+  })
+  @ApiQuery({
+    name: 'page',
+    description: 'Page number for pagination',
+    example: 1,
+    required: false,
+    type: Number
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Successfully retrieved filtered orders' 
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Unauthorized' 
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'No orders found for the given filter' 
+  })
+  async getOrderByFilter(@Param('time') time:string,@Query('page') page:Number,@Req() request:any){
+    return await this.orderService.filter(time,request.user.payload.sub);
+  }
 
+  
+
+  @ApiBearerAuth('JWT')
+  @UseGuards(jwtGuard)
+  @Get('/getManagerId/:restId')
+  @ApiOperation({
+    summary: 'Get manager ID by restaurant ID',
+    description: 'Retrieves the manager ID associated with a specific restaurant'
+  })
+  @ApiParam({
+    name: 'restId',
+    description: 'ID of the restaurant to find the manager for',
+    example: '65d4d0212615b3c053ab3ef2',
+    required: true,
+    type: String
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved manager ID',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing authentication token'
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Restaurant not found or no manager assigned'
+  })
   @Get('/getManagerId/:restId')
   async getManagerId(@Param('restId') restId:string,@Req() request:any){
     return await this.orderService.getManagerId(restId);
   }
+  
 
   @ApiBearerAuth('JWT')
   @UseGuards(jwtGuard)
@@ -168,4 +234,21 @@ export class OrderController {
     }
   }
 
+   
+  @EventPattern('deliveryPatenerResponse')
+  async deliveryAssigned(@Payload() payload: any, @Ctx() context: KafkaContext){
+    console.log(payload);
+    const consumer = context.getConsumer();
+    const topic = context.getTopic();
+    const partition = context.getPartition();
+    const offset = context.getMessage().offset;
+
+    await consumer.commitOffsets([
+      {
+        topic,
+        partition,
+        offset: (Number(offset) + 1).toString(),
+      }
+    ]);
+  }
 }

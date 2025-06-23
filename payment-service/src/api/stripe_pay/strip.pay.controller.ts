@@ -8,6 +8,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { PaymmentDoc, RetryDoc } from 'src/swagger/stripe_pay.swagger';
 import { ROUTE } from './constant/message.constant';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiBearerAuth('JWT')
 @ApiTags('Payment')
@@ -25,6 +26,7 @@ export class StripePayController {
 
   @UseGuards(AuthGuard)
   @Post(ROUTE.CHECKOUT)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @PaymmentDoc()
   async createSession(@Body() payload: CreatePaymentDto) {
     return await this.paymentService.createCheckoutSession(payload);

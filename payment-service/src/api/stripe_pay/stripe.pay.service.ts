@@ -12,6 +12,7 @@ import {
   PaymentDocument,
   paymentHistory,
   paymentHistoryDocument,
+  PaymentStatus,
 } from './Schema/stripe.pay.schema';
 import { ConfigService } from '@nestjs/config';
 import { StripeConfigService } from '../../config/stripe.config';
@@ -41,20 +42,44 @@ export class StripePayService {
       if (!payload.orderId) {
         throw new BadRequestException(ERROR.NOT_PROVIDED);
       }
+
       const orderId = payload.orderId;
       if (!ObjectId.isValid(orderId)) {
         throw new BadRequestException(ERROR.INVALID);
       }
+
       const orderData = await this.connection
         .collection('orders')
         .findOne({ _id: new ObjectId(orderId) });
       if (!orderData) {
         throw new BadRequestException(ERROR.NOT_EXIST);
       }
-      const total_amount = orderData?.total;
+
+      const cartId = orderData.cartId;
+
+      const total_amount = orderData.total;
+      
+      const cartData = await this.connection.collection('carts').findOne({_id:new ObjectId(cartId)});
+      
+
+
+      const duplicatePayment = await this.paymentModel.findOne({orderId:orderId});
+      if(duplicatePayment && duplicatePayment.status==PaymentStatus.PAID){
+        throw new BadRequestException(ERROR.PAYMENT_ALREADY_DONE);
+      }
+
+      if(duplicatePayment && duplicatePayment.status==PaymentStatus.PENDING){
+        throw new BadRequestException(ERROR.PAYMENT_REQUIRED);
+      }
+
       const userId = orderData.userId;
+
       if (!total_amount || isNaN(total_amount)) {
-        throw new BadRequestException('Invalid order amount');
+        throw new BadRequestException(ERROR.AMOUNT_INVALID);
+      }
+      
+      if(cartData?.total != total_amount){
+        throw new BadRequestException(ERROR.TAMPERED_AMOUNT)
       }
 
       const session = await this.stripe.checkout.sessions.create({
@@ -90,7 +115,7 @@ export class StripePayService {
         amount: total_amount,
         currency: 'usd',
         sessionId: session.id,
-        status: 'pending',
+        status: PaymentStatus.PENDING,
       });
 
       await payment.save();
@@ -100,7 +125,7 @@ export class StripePayService {
         amount: total_amount,
         currency: 'usd',
         sessionId: session.id,
-        status: 'pending',
+        status: PaymentStatus.PENDING,
         userId: userId,
       });
 
@@ -115,6 +140,7 @@ export class StripePayService {
       );
       Logger.error('Error creating checkout session:', error);
       if (error instanceof Stripe.errors.StripeError) {
+        
         throw new BadRequestException(
           `Payment processing error: ${error.message}`,
         );
@@ -126,31 +152,16 @@ export class StripePayService {
     }
   }
 
-  async updatePaymentStatus(sessionId: string, status: string) {
-    // const pay = this.paymentModel.findOne({sessionId:sessionId})
-    // if(!pay){
-    //   // const orderData = await this.connection.collection('order').findOne({se})
-    //   const paymentHistory = new this.paymentHistoryModel({
-    //     orderId: pay.orderId,
-    //     amount: total_amount,
-    //     currency: 'usd',
-    //     sessionId: session.id,
-    //     status: 'pending',
-    //     userId:userId
-    //   })
-
-    //   await paymentHistory.save();
-    // }
+  async updatePaymentStatus(sessionId: string, status: PaymentStatus) {
     const payment = await this.paymentModel.findOneAndUpdate(
       { sessionId: sessionId },
       { status: status },
       { new: true },
     );
-
     return payment;
   }
 
-  async updatePaymentHistory(sessionId: string, status: string) {
+  async updatePaymentHistory(sessionId: string, status: PaymentStatus) {
     const paymentHistory = await this.paymentHistoryModel.findOneAndUpdate(
       { sessionId: sessionId },
       { status: status },
@@ -256,7 +267,7 @@ export class StripePayService {
         amount: total_amount,
         currency: 'usd',
         sessionId: session.id,
-        status: 'pending',
+        status: PaymentStatus.PENDING,
       });
 
       await payment.save();
@@ -266,7 +277,7 @@ export class StripePayService {
         amount: total_amount,
         currency: 'usd',
         sessionId: session.id,
-        status: 'pending',
+        status: PaymentStatus.PENDING,
         userId: userId,
       });
 

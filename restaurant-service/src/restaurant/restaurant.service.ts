@@ -24,6 +24,8 @@ import { UpdateMenuItemDto } from './dto/updateMenuItem.dto';
 import { types } from 'util';
 import { Type } from 'class-transformer';
 import { throwError } from 'rxjs';
+import { SearchFoodDto } from './dto/search-food.dto';
+import { ClientGrpc } from '@nestjs/microservices';
 
 interface MediaService {
   getSignedUrl(key: string): Promise<string>;
@@ -41,11 +43,12 @@ export class RestaurantService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly redisSerice: RedisService,
     private readonly logger: WinstonLogger,
+    @Inject('MEDIA_SERVICE') private readonly client: ClientGrpc
   ) { }
 
   // Lifecycle hook to initialize mediaService via gRPC (if applicable)
   onModuleInit() {
-    this.mediaService;
+    this.mediaService = this.client.getService<MediaService>('MediaService');
   }
 
   // Get restaurant by ID
@@ -55,6 +58,9 @@ export class RestaurantService implements OnModuleInit {
     if (!restaurant) {
       throwNotFound(MESSAGES.RESTAURANT_NOT_FOUND(id));
     }
+
+    (restaurant as any).imageUrl = await this.mediaService.getSignedUrl(restaurant.imageKey);
+
     return restaurant;
   }
 
@@ -169,6 +175,14 @@ export class RestaurantService implements OnModuleInit {
       if (!results.length) {
         throwNotFound(MESSAGES.NO_RESTAURANTS_FOUND_NEARBY);
       }
+
+      await Promise.all(
+        results.map(async (restaurant) => {
+          if (restaurant.imageKey) {
+            (restaurant as any).imageUrl = await this.mediaService.getSignedUrl(restaurant.imageKey);
+          }
+        })
+      );
 
       return results;
     } catch (error) {
@@ -357,8 +371,14 @@ export class RestaurantService implements OnModuleInit {
     }
   }
 
+  // Delete coupon
+  async deleteCoupon(couponId: string){
+    await this.couponModel.findByIdAndDelete(new Types.ObjectId(couponId));
+    this.logger.log(`Coupon deleted`);
+  }
+
   // Search restaurants based on food keywords in menu items
-  async searchRestaurantsByFood(query: string) {
+  async searchRestaurantsByFood(query: SearchFoodDto) {
     this.logger.log(`Searching restaurants by food keyword: "${query}"`);
     try {
       const results = await this.menuItemModel.aggregate([

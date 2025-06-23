@@ -32,7 +32,7 @@ export class Restaurant extends Document {
     coordinates: number[];
   };
 
-  @Prop({ type: Types.ObjectId, ref: 'Manager' }) // One manager per restaurant
+  @Prop({ type: Types.ObjectId, ref: 'Manager', index: true }) // One manager per restaurant
   managerId: Types.ObjectId;
 
   @Prop({ default: true })
@@ -40,6 +40,9 @@ export class Restaurant extends Document {
 
   @Prop({ default: [] })
   tags: string[];
+
+  @Prop({default: ''})
+  imageKey: string;
 
   @Prop({ default: false})
   isBlocked: boolean;
@@ -55,3 +58,4 @@ export const RestaurantSchema = SchemaFactory.createForClass(Restaurant);
 
 // Enable geospatial index
 RestaurantSchema.index({ location: '2dsphere' });
+RestaurantSchema.index({ name: 'text' });

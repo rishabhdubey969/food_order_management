@@ -15,7 +15,7 @@ export class MenuItem extends Document {
   @Prop()
   imageUrl: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Restaurant', required: true })
+  @Prop({ type: Types.ObjectId, ref: 'Restaurant', required: true, index: true })
   restaurantId: Types.ObjectId;
 
   @Prop({ default: true })
@@ -26,3 +26,5 @@ export class MenuItem extends Document {
 }
 
 export const MenuItemSchema = SchemaFactory.createForClass(MenuItem);
+
+MenuItemSchema.index({ name: 'text' });

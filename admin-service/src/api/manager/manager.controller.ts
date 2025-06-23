@@ -27,7 +27,9 @@ import {
   GetAllManagersSwagger,
   BlockManagerAndRestaurantSwagger,
   SoftDeleteManagerAndRestaurantSwagger,
-  SignupSwagger,InValidateManagerSwagger,ValidateManagerSwagger
+  SignupSwagger,InValidateManagerSwagger,ValidateManagerSwagger,
+  GetRestaurantsSwagger,
+  GetManagersSwagger
 } from '../swagger/manager.swagger';
 
 export class GetSignUpReques {
@@ -60,18 +62,76 @@ export class ManagerController {
     const limitNum = parseInt(limit, 10);
     return await this.managerService.getAllManagers(token, pageNum, limitNum);
   }
+  @Get('managers')
+  @GetManagersSwagger()
+  async getManagers(
+    @Request() req,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  
+    @Query('isblocked') isblocked?: boolean,
+    @Query('isActiveManager') isActiveManager?: boolean,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+   
+    return this.managerService.getManagers(req.managerId, {
+      startDate,
+      endDate,
+    
+      isblocked,
+      isActiveManager,
+      search,
+      sortBy,
+      sortOrder,
+      page,
+      limit,
+    });
+  }
+  @Get('restaurants')
+  @GetRestaurantsSwagger()
+  async getRestaurants(
+    @Request() req,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('is_active') isActive?: boolean,
+    @Query('isBlocked') isBlocked?: boolean,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+   
+    return this.managerService.getRestaurants(req.restaurantId, {
+      startDate,
+      endDate,
+      isActive,
+      isBlocked,
+      search,
+      sortBy,
+      sortOrder,
+      page,
+      limit,
+    });
+  }
+  
 
   @UseGuards(AdminGuard)
   @Patch('block')
   @BlockManagerAndRestaurantSwagger()
   async blockManagerAndRestaurant(
-    @Query('restaurantId') restaurantId: string,
+    @Query('managerId') managerId: string,
   ) {
-    if (!restaurantId) {
+    if (!managerId) {
       throw new Error('managerId and restaurantId are required');
     }
-
-    return this.managerService.blockRestaurant(restaurantId);
+ const result = await this.managerService.blockManagerAndRestaurant(managerId);
+  return { success: result }
+    
   } 
   
   @UseGuards(AdminGuard)
@@ -84,7 +144,10 @@ export class ManagerController {
       throw new Error('managerId is required');
     }
 
-    return this.managerService.ValidateManager(managerId);
+    const result =  await this.managerService.ValidateManager(managerId);
+  return { success: result }
+   
+    
   } 
   
   
@@ -97,29 +160,23 @@ export class ManagerController {
     if (!managerId) {
       throw new Error('managerId is required');
     }
-
-    return this.managerService.InValidateManager(managerId);
+const result = await this.managerService.InValidateManager(managerId)
+  return { success: result }
+   
   }
 
   @UseGuards(AdminGuard)
-  @Delete(':restaurantId')
+  @Delete(':managerId')
   @SoftDeleteManagerAndRestaurantSwagger()
   async softDeleteManagerAndRestaurant(
-    @Param('restaurantId') restaurantId: string,
+    @Param('managerId') managerId: string,
   ) {
-    try {
-      const result =
-        await this.managerService.softDeleteRestaurant(restaurantId);
-      return {
-        statusCode: HttpStatus.OK,
-        message: result.message,
-      };
-    } catch (error) {
-      throw new HttpException(
-        error.message || 'Failed to soft delete manager and restaurant',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+   const result = await this.managerService.softDeleteManagerAndRestaurant(managerId);
+  return { success: result }; 
+ 
+        
+      
+    
   }
 
   // @Post('signup')
