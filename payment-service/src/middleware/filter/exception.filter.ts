@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { I18nContext } from 'nestjs-i18n';
+import { MongoError } from 'mongodb';
+import { Error as MongooseError } from 'mongoose';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -15,6 +17,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost) {
+    console.log('hello', exception)
     const ctx = host.switchToHttp();
     let status =
       exception instanceof HttpException
@@ -27,6 +30,35 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let msgType;
     const { httpAdapter } = this.httpAdapterHost;
     const path = httpAdapter.getRequestUrl(ctx.getRequest());
+
+    // Custom handling for MongoError duplicate key
+    if (exception instanceof MongoError && exception.code === 11000) {
+      status = HttpStatus.CONFLICT;
+      const responseBody = {
+        statusCode: status,
+        message: 'Duplicate entry found',
+        errorCode: 'DUPLICATE_KEY',
+        fields: (exception as any).keyValue,
+      };
+      this.logger.error(responseBody);
+      return httpAdapter.reply(ctx.getResponse(), responseBody, status);
+    } else if (exception instanceof MongooseError.ValidationError) {
+      status = HttpStatus.UNPROCESSABLE_ENTITY;
+      const details = Object.values(exception.errors).map((err: any) => ({
+        field: err.path,
+        message: err.message,
+      }));
+
+      const responseBody = {
+        statusCode: status,
+        message: 'Validation error',
+        errorCode: 'VALIDATION_ERROR',
+        details,
+      };
+      this.logger.error(responseBody);
+      return httpAdapter.reply(ctx.getResponse(), responseBody, status);
+    }
+
     if (exception instanceof HttpException) {
       const res = exception.getResponse();
       status = res['statusCode'] ? res['statusCode'] : status;
@@ -62,3 +94,4 @@ export class AllExceptionsFilter implements ExceptionFilter {
     httpAdapter.reply(ctx.getResponse(), errorBody, status);
   }
 }
+

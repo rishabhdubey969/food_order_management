@@ -5,6 +5,10 @@ export const ERROR = {
   INVALID: 'OrderId provided is invalid',
   NOT_PROVIDED: 'OrderId is not provided',
   AMOUNT_INVALID: 'Order Amount is invalid',
+  TAMPERED_AMOUNT:'Amount is tampered',
+  PAYMENT_ALREADY_DONE: 'Can not Proceed,Payment already done for this OrderId',
+  PAYMENT_REQUIRED:'Incomplete payment already for this Order ID',
+  
 };
 
 export const SUCCESS = {
