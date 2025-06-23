@@ -1,5 +1,5 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiBody, ApiTags } from '@nestjs/swagger';
 import { GetSignUpReques, GetSignUpRespons } from '../manager/manager.controller';
 
 export const GetAllManagersSwagger = () => applyDecorators(
@@ -249,3 +249,26 @@ export const SignupSwagger = () => applyDecorators(
   ApiResponse({ status: 409, description: 'Conflict - User with this email already exists' }),
   ApiResponse({ status: 500, description: 'Internal Server Error' }),
 );
+
+export const CartSwagger = () => applyDecorators(
+ 
+    ApiTags('cart'),
+    ApiBearerAuth('JWT'),
+    ApiQuery({ name: 'page', required: false, type: Number, example: 1 }),
+    ApiQuery({ name: 'limit', required: false, type: Number, example: 10 }),
+    ApiResponse({ status: 200, description: 'Successfully retrieved cart items', type: Object }),
+    ApiResponse({ status: 401, description: 'Unauthorized' }),
+    ApiResponse({ status: 500, description: 'Internal server error' }),
+  );
+
+export const RestaurantSwagger = () => {
+  return applyDecorators(
+    ApiTags('restaurant'),
+    ApiBearerAuth('JWT'),
+    ApiQuery({ name: 'page', required: false, type: Number, example: 1 }),
+    ApiQuery({ name: 'limit', required: false, type: Number, example: 10 }),
+    ApiResponse({ status: 200, description: 'Successfully retrieved restaurants', type: Object }),
+    ApiResponse({ status: 401, description: 'Unauthorized' }),
+    ApiResponse({ status: 500, description: 'Internal server error' }),
+  );
+};
