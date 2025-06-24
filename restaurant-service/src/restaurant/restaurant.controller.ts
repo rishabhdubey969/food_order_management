@@ -418,10 +418,9 @@ export class RestaurantController {
    * @param dto The data transfer object containing the updated restaurant details.
    * @returns The successfully updated restaurant object.
    */
-  @UseGuards(GrpcAuthGuard) 
+  @UseGuards(JwtAuthGuard, ManagerGuard) 
   @ApiBearerAuth('JWT') 
   @Put(':id')
-  @Roles(Role.ADMIN, Role.MANAGER) 
   @ApiOperation({ summary: 'Update an existing restaurant by ID' })
   @ApiParam({
     name: 'id',
