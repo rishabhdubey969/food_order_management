@@ -240,9 +240,13 @@ export class ManagerService {
           name: manager.name,
           email: manager.email,
           restaurant: manager.restaurantId,
+          accountNumber: manager.accountNumber,
+          ifscCode: manager.ifscCode,
+          bankName: manager.bankName
+}
         }
-      };
-    } catch (error) {
+      }
+     catch (error) {
       this.logger.error('Failed to fetch manager profile', error.stack);
       if (error instanceof UnauthorizedException ||
         error instanceof NotFoundException) {
