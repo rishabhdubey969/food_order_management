@@ -33,5 +33,8 @@ export const ERROR_MESSAGES = {
   INVALID_OR_EXPIRED_TOKEN: 'Invalid or expired password reset token',
   REQUIRED_FIELDS_EMPTY:'Token and new password are required',
   REGISTRATION_FAILED:'The manager registration failed',
-  EMAIL_PASSWORD_REQUIRED:'Email and password are required'
+  EMAIL_PASSWORD_REQUIRED:'Email and password are required',
+  TOKEN_NOT_FOUND:'No token provided',
+  MANAGER_NOT_CONNECTED:'Manager not connected',
+  MANAGER_RESPONSE_TIMEOUT:'Manager response timeout'
 };

@@ -236,7 +236,7 @@ async login(@Body() managerLoginDto: ManagerLoginDto) {
    * @returns - Promise containing the manager's profile or NotFoundException
    */
 
-  @UseGuards(JwtAuthGuard, AdminGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT')
   @Get("")
   @ApiOperation({ summary: 'Get Manager by ID' })
@@ -287,7 +287,13 @@ async login(@Body() managerLoginDto: ManagerLoginDto) {
  */
   @MessagePattern('isFoodAvailable')
   async handleIsFoodAvailable(@Payload('cartId', ParseObjectIdPipe) cartId: Types.ObjectId) {
-    return await this.managerService.handleIsFoodAvailable(cartId);
+    try{
+         return await this.managerService.handleIsFoodAvailable(cartId);
+    }
+    catch(err){
+      return err;
+    }
+   
   }
 
   /**

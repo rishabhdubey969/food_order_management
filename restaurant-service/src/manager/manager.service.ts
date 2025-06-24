@@ -277,7 +277,6 @@ export class ManagerService {
    * Handling whether the order is available 
    */
   async handleIsFoodAvailable(cartId: Types.ObjectId) {
-    try {
       if (!cartId || !isValidObjectId(cartId)) {   
         this.logger.warn('Invalid cart ID');
         throw new BadRequestException('Invalid cart ID');
@@ -303,10 +302,6 @@ export class ManagerService {
 
       this.logger.log(`New order processed for manager: ${manager._id}`);
       return await this.managerGateway.handleIsFoodAvailable(manager._id, cartData);
-    } catch (error) {
-      this.logger.error(`Error processing cart ${cartId}`, error.stack);
-      return error;
-    }
   }
 
   /**

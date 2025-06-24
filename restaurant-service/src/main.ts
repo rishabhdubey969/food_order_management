@@ -38,13 +38,13 @@ async function bootstrap() {
     options: {
       client: {
         brokers: [kafkaBrokers],
-        clientId: kafkaClientId,
+        clientId: "managerConsumer",
         retry:{
           retries:5
         },
       },
       consumer: {
-        groupId: kafkaGroupId,
+        groupId: "managerGroup",
         allowAutoTopicCreation:true
       },
       producer:{
