@@ -1,4 +1,4 @@
-import {  Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import {
@@ -15,6 +15,9 @@ import { StripeConfigService } from '../../config/stripe.config';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { AuthClient } from 'src/grpc/authentication/auth.client';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -34,9 +37,21 @@ import { AuthClient } from 'src/grpc/authentication/auth.client';
         }),
       ],
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000, 
+      limit: 5, 
+    }])
   ],
   controllers: [StripePayController],
-  providers: [StripePayService, StripeConfigService, AuthClient],
+  providers: [
+    StripePayService, 
+    StripeConfigService, 
+    AuthClient,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard
+    }
+  ],
   exports: [StripePayService],
 })
 export class StripePayModule {}

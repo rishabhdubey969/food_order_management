@@ -569,4 +569,116 @@ async softDeleteManagerAndRestaurant(managerId: string): Promise<boolean> {
       );
     }
   }
+  async getAllItems(token: string, page: number = 1, limit: number = 10) {
+    this.logger.log(
+      `Fetching list of cart items with pagination - page: ${page}, limit: ${limit}`,
+    );
+    try {
+      let payload;
+      payload = await this.authService.verifyJwtToken(token);
+      if (payload.role !== 'admin') {
+        this.logger.warn(
+          `Unauthorized access attempt by role: ${payload.role}`,
+        );
+        throw new UnauthorizedException('Only admins can access this endpoint');
+      }
+
+      let pageNum, limitNum;
+      pageNum = Math.max(1, page);
+      limitNum = Math.max(1, Math.min(limit, 100));
+      const skip = (pageNum - 1) * limitNum;
+
+      let items;
+      items = await this.connection
+        .collection('carts')
+        .find({})
+        .project({ _id: 1, userId: 1, restaurantId: 1, items: 1, subtotal: 1, tax: 1, platformFee: 1, deliveryCharges: 1, discount: 1, total: 1, couponCode: 1, createdAt: 1, updatedAt: 1 })
+        .skip(skip)
+        .limit(limitNum)
+        .toArray();
+
+      let total;
+      total = await this.connection
+        .collection('carts')
+        .countDocuments({});
+
+      let totalPages;
+      totalPages = Math.ceil(total / limitNum);
+
+      return {
+        data: items,
+        pagination: {
+          currentPage: pageNum,
+          totalPages,
+          totalItems: total,
+          limit: limitNum,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch cart items: ${error.message}`,
+        error.stack,
+      );
+      throw new HttpException(
+        error.message || 'Failed to fetch cart items',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }}
+    async getAllRestaurants(token: string, page: number = 1, limit: number = 10) {
+    this.logger.log(
+      `Fetching list of restaurants with pagination - page: ${page}, limit: ${limit}`,
+    );
+    try {
+      let payload;
+      payload = await this.authService.verifyJwtToken(token);
+      if (payload.role !== 'admin') {
+        this.logger.warn(
+          `Unauthorized access attempt by role: ${payload.role}`,
+        );
+        throw new UnauthorizedException('Only admins can access this endpoint');
+      }
+
+      let pageNum, limitNum;
+      pageNum = Math.max(1, page);
+      limitNum = Math.max(1, Math.min(limit, 100));
+      const skip = (pageNum - 1) * limitNum;
+
+      let restaurants;
+      restaurants = await this.connection
+        .collection('restaurants')
+        .find({})
+        .project({ _id: 1, name: 1, address: 1, contact: 1, isActive: 1 })
+        .skip(skip)
+        .limit(limitNum)
+        .toArray();
+
+      let total;
+      total = await this.connection
+        .collection('restaurants')
+        .countDocuments({});
+
+      let totalPages;
+      totalPages = Math.ceil(total / limitNum);
+
+      return {
+     
+        data: restaurants,
+        pagination: {
+          currentPage: pageNum,
+          totalPages,
+          totalItems: total,
+          limit: limitNum,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch restaurants: ${error.message}`,
+        error.stack,
+      );
+      throw new HttpException(
+        error.message || 'Failed to fetch restaurants',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

@@ -29,7 +29,9 @@ import {
   SoftDeleteManagerAndRestaurantSwagger,
   SignupSwagger,InValidateManagerSwagger,ValidateManagerSwagger,
   GetRestaurantsSwagger,
-  GetManagersSwagger
+  GetManagersSwagger,
+  CartSwagger,
+  RestaurantSwagger
 } from '../swagger/manager.swagger';
 
 export class GetSignUpReques {
@@ -60,8 +62,10 @@ export class ManagerController {
 
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
-    return await this.managerService.getAllManagers(token, pageNum, limitNum);
+ 
+    return await this.managerService.getAllManagers( token,pageNum, limitNum);
   }
+
   @Get('managers')
   @GetManagersSwagger()
   async getManagers(
@@ -177,6 +181,47 @@ const result = await this.managerService.InValidateManager(managerId)
         
       
     
+  }
+   @Get('list')
+  
+  @RestaurantSwagger() 
+  async getAllRestaurants(
+      @Request() req,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+  ) {
+ 
+    const token = req.headers.authorization?.split(' ')[1];
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    try {
+      return await this.managerService.getAllRestaurants(token, pageNum, limitNum);
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to fetch restaurants',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+   @Get('items')
+ @CartSwagger()
+  async getAllItems(
+       @Request() req,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+  
+  ) {
+     const token = req.headers.authorization?.split(' ')[1];
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    try {
+      return await this.managerService.getAllItems(token, pageNum, limitNum);
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to fetch cart items',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   // @Post('signup')

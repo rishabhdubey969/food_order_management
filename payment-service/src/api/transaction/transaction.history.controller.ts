@@ -1,4 +1,4 @@
-import { Controller,  UseGuards, Get } from '@nestjs/common';
+import { Controller, UseGuards, Get } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { TransactionHistoryService } from './transaction.history.service';
 

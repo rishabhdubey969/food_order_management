@@ -17,6 +17,7 @@ import { WinstonLogger, WinstonModule } from 'nest-winston';
 import { winstonConfig } from './api/logger/winston.config';
 
 
+
 @Module({
   
   imports: [  
@@ -43,7 +44,8 @@ import { winstonConfig } from './api/logger/winston.config';
     SeederModule,
     ManagerModule,
     OrderModule,
-    RedisModule
+    RedisModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService,WinstonLogger],

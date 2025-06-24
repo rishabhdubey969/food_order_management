@@ -1,10 +1,11 @@
-import { Body, Controller, Post, Req, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginAuthDto } from './dto/login.dto';
 import { CONSTANTS } from 'config/constant';
 import { GenerateTokenRequest, TokenRequest } from 'src/grpc/interfaces/auth-interface';
 import { GrpcMethod } from '@nestjs/microservices';
 import { LoginSwagger, LogoutAllSwagger, LogoutSwagger, RefreshTokenSwagger } from 'src/doc/auth.swagger';
+import { AuthGuard } from 'src/guard/google-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -52,9 +53,10 @@ export class AuthController {
    * @returns Success message or status.
    */
   @Post('logout-all')
+  @UseGuards(AuthGuard)
   @LogoutAllSwagger()
-  async logoutAll(@Req() req) {
-    return this.authService.logoutAll(req.user.sub);
+  async logoutAll(@Req() req: Request & { user: any }) {
+    return this.authService.logoutAll(req.user.payload.sub);
   }
 
   /**

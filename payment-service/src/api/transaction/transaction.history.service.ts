@@ -1,6 +1,4 @@
-import {
-  Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { StripePayService } from '../stripe_pay/stripe.pay.service';
 
 @Injectable()

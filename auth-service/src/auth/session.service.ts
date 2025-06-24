@@ -36,6 +36,7 @@ export class SessionService {
     if (cache) return JSON.parse(cache);
 
     const session = await this.sessionModel.findOne({ sessionId }).lean();
+    console.log('Session retrieved from MongoDB:', session);
     if (session) {
       await this.redisService.set(`session:${sessionId}`, JSON.stringify(session), 'EX', this.redisTTL);
     }

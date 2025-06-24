@@ -1,38 +1,40 @@
 import { Injectable } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { lastValueFrom } from 'rxjs';
+import { GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
+import { ConfigService } from '@nestjs/config';
+import { marked } from 'marked';
 
+const GEMINI_MODEL = 'gemini-1.5-flash';
 @Injectable()
 export class ChatbotService {
-  private readonly witToken = 'YEBCOIMRD3UBUGJYXZRLNWKLUZCMQNON';
+  private readonly googleAI: GoogleGenerativeAI;
+  private readonly model: GenerativeModel;
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(configService: ConfigService) {
+    const geminiApiKey = configService.get('SECRECT_KEY_GEMINI');
+    this.googleAI = new GoogleGenerativeAI(geminiApiKey);
+    this.model = this.googleAI.getGenerativeModel({
+      model: GEMINI_MODEL,
+    });
+  }
 
-  async getResponse(message: string): Promise<string> {
-    const encodedMessage = encodeURIComponent(message);
-    const url = `https://api.wit.ai/message?v=20230401&q=${encodedMessage}`;
+  async getResponse(message) {
+    const prompt = `Is this message food-related? Respond with only "yes" or "no": "${message}"`;
+    const result = await this.model.generateContent(prompt);
+    const isFood = result.response.text().trim().toLowerCase() === 'yes';
+    if (!isFood) {
+      return '🍽️ Hello! I’m your food assistant. I can help with menu items, dish details, or anything food-related. Please ask me something about food!';
+    } else {
+      const result = await this.model.generateContent(message);
+      const responseText = result.response.text().trim();
+       const isTable = responseText.includes('|') && responseText.includes('\n');
+      const isMarkdown = responseText.includes('*') || responseText.includes('**') || responseText.includes('-');
 
-    try {
-      const response = await lastValueFrom(
-        this.httpService.get(url, {
-          headers: { Authorization: `Bearer ${this.witToken}` },
-        }),
-      );
-
-      console.log('Wit.ai response:', response.data);
-
-      const intents = response?.data?.intents;
-      console.log('Intents:', intents);
-
-      if (intents && intents.length > 0) {
-        const intentName = intents[0].name;
-        return `I understood your intent is: ${intentName}`;
+      if (isTable || isMarkdown) {
+        const htmlContent = marked.parse(responseText);
+        return  htmlContent;
       }
 
-      return "Sorry, I didn't understand that. Can you rephrase?";
-    } catch (error) {
-      console.error('Wit.ai API error', error);
-      return 'Sorry, I am having trouble understanding you right now.';
+      return responseText;
     }
   }
 }

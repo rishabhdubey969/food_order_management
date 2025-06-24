@@ -1,6 +1,6 @@
-import { Controller, Delete, Get, Param, Post, Req, UseGuards, Body, ValidationPipe } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, Req, UseGuards, Body, ValidationPipe, HttpStatus } from '@nestjs/common';
 import { CartService } from './cart.service';
-import { ApiTags, ApiOperation, ApiParam, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiResponse, ApiBody, ApiBearerAuth, ApiBadRequestResponse, ApiNotFoundResponse, ApiConflictResponse, ApiInternalServerErrorResponse, ApiUnauthorizedResponse, ApiForbiddenResponse } from '@nestjs/swagger';
 import { Roles } from './decorator/role.decorator';
 import { GrpcAuthGuard } from './guards/auth.guard';
 import { Role } from './common/role.enum';
@@ -8,6 +8,8 @@ import { WinstonLogger } from '../logger/winston-logger.service';
 import { AddCartDto } from './dto/addCart.dto';
 import { RemoveItemDto } from './dto/removeItem.dto';
 import { MultipleItemDto } from './dto/multipleItem.dto';
+
+
 
 
 @ApiTags('Cart')
@@ -39,33 +41,29 @@ export class CartController {
    */
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
+  @ApiBearerAuth('JWT')
   @Post('add')
   @ApiOperation({ summary: 'Add an item to the cart' })
   @ApiBody({
-    description: 'Payload to add an item to the cart',
-    schema: {
-      type: 'object',
-      properties: {
-        restaurantId: {
-          type: 'string',
-          description: 'The ID of the restaurant',
-          example: '64a51abab85e4eea0294410',
-        },
-        itemId: {
-          type: 'string',
-          description: 'The ID of the item to be added to the cart',
-          example: '63d3dcb6728e2e8cc8dd6e4',
+    type: AddCartDto,
+    examples: {
+      default: {
+        summary: 'Sample add-to-cart payload',
+        value: {
+          restaurantId: '64a51abab85e4eea0294410',
+          itemId: '63d3dcb6728e2e8cc8dd6e4',
         },
       },
     },
   })
   @ApiResponse({
-    status: 201,
+    status: HttpStatus.CREATED,
     description: 'Item added to cart successfully',
     schema: {
       example: {
-        _id: '6851b7b5786ecbff4c06e854 //THIS IS CARTId',
+        _id: '6851b7b5786ecbff4c06e854',
         userId: '684d51abab85e4eea0294410',
+        restaurantId: '683d7adf339b913562146f00',
         couponCode: null,
         couponId: null,
         deliveryCharges: 2501,
@@ -82,15 +80,62 @@ export class CartController {
           },
         ],
         platformFee: 9,
-        restaurantId: '683d7adf339b913562146f00',
         subtotal: 29.97,
         tax: 1.4985,
         total: 2541,
+        createdAt: '2024-06-20T10:00:00.000Z',
+        updatedAt: '2024-06-20T10:00:00.000Z',
       },
     },
   })
-  @ApiResponse({ status: 404, description: 'Item or restaurant not found' })
-  @ApiResponse({ status: 409, description: 'Cart already exists for a different restaurant' })
+  @ApiBadRequestResponse({
+    description: 'Validation failed for input DTO',
+    schema: {
+      example: {
+        statusCode: 400,
+        timestamp: '2025-06-11T10:00:00.000Z',
+        path: '/cart/add',
+        method: 'POST',
+        message: ['restaurantId must be a valid MongoDB ObjectId', 'itemId should not be empty'],
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'Item or restaurant not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        timestamp: '2025-06-11T10:00:00.000Z',
+        path: '/cart/add',
+        method: 'POST',
+        message: 'Restaurant not found',
+      },
+    },
+  })
+  @ApiConflictResponse({
+    description: 'Cart alreday exit for another restaurant first clear it',
+    schema: {
+      example: {
+        statusCode: 409,
+        timestamp: '2025-06-11T10:00:00.000Z',
+        path: '/cart/add',
+        method: 'POST',
+        message: 'Item is currently unavailable',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Unexpected internal server error',
+    schema: {
+      example: {
+        statusCode: 500,
+        timestamp: '2025-06-11T10:00:00.000Z',
+        path: '/cart/add',
+        method: 'POST',
+        message: 'Failed to fetch cart after update',
+      },
+    },
+  })
   async addToCart(@Body() addToCartDTO: AddCartDto, @Req() req: any) {
     const userId = req.user.sub;
     this.logger.log(`Adding item ${addToCartDTO.itemId} to user ${userId}'s cart`, this.context);
@@ -118,26 +163,25 @@ export class CartController {
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
   @Post('remove')
-  @ApiOperation({ summary: 'Remove/decrease item quantity from user cart' })
+  @ApiOperation({ summary: 'Remove or decrease item quantity from user cart' })
   @ApiBody({
     description: 'Payload to remove or decrease the quantity of an item in the cart',
-    schema: {
-      type: 'object',
-      properties: {
-        itemId: {
-          type: 'string',
-          description: 'The ID of the item to be removed or decreased in quantity',
-          example: '63d3dcb6728e2e8cc8dd6e4',
+    type: RemoveItemDto,
+    examples: {
+      removeExample: {
+        summary: 'Remove a pizza item from cart',
+        value: {
+          itemId: '63d3dcb6728e2e8cc8dd6e4',
         },
       },
     },
   })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Item removed or quantity decreased successfully',
     schema: {
       example: {
-        _id: '6851b7b5786ecbff4c06e854 //THIS IS CARTId',
+        _id: '6851b7b5786ecbff4c06e854',
         userId: '684d51abab85e4eea0294410',
         couponCode: null,
         couponId: null,
@@ -162,7 +206,59 @@ export class CartController {
       },
     },
   })
-  @ApiResponse({ status: 404, description: 'Cart or item not found in cart' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Cart or item not found in cart',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Item not found in cart',
+        path: '/cart/remove',
+        method: 'POST',
+        timestamp: '2025-06-11T10:00:00.000Z',
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input provided',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['itemId must be a valid MongoDB ObjectId'],
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing token',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  @ApiForbiddenResponse({
+    description: 'User does not have permission to access this resource',
+    schema: {
+      example: {
+        statusCode: 403,
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Server error while updating the cart',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'An unknown error occurred',
+        error: 'Internal Server Error',
+      },
+    },
+  })
   async removeItem(@Body() removeItemDTO: RemoveItemDto, @Req() req: any) {
     const userId = req.user.sub;
     this.logger.log(`Removing item ${removeItemDTO.itemId} from user ${userId}'s cart`, this.context);
@@ -189,7 +285,7 @@ export class CartController {
   @Delete('delete')
   @ApiOperation({ summary: 'Delete user’s active cart' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Cart deleted successfully',
     schema: {
       example: {
@@ -198,7 +294,46 @@ export class CartController {
       },
     },
   })
-  @ApiResponse({ status: 404, description: 'Cart not found for user' })
+  @ApiNotFoundResponse({
+    description: 'No cart found for user',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Cart not found',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing JWT token',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - User lacks necessary permissions',
+    schema: {
+      example: {
+        statusCode: 403,
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Server error while deleting the cart',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'An unexpected error occurred',
+        error: 'Internal Server Error',
+      },
+    },
+  })
   async deleteCart(@Req() req: any) {
     const userId = req.user.sub;
     this.logger.warn(`Deleting cart for user ${userId}`, this.context);
@@ -226,11 +361,11 @@ export class CartController {
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
   @Get('get')
-  @ApiTags('Cart')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user’s active cart' })
   @ApiResponse({
-    status: 200,
-    description: 'Cart retrieved successfully',
+    status: HttpStatus.OK,
+    description: 'Cart is up to date',
     schema: {
       example: {
         cart: {
@@ -262,27 +397,56 @@ export class CartController {
     },
   })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Cart updated with latest prices, availability, taxes, and totals',
   })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Cart is empty',
     schema: {
       example: {
         cart: null,
-        message: 'Your cart is empty',
+        message: 'Your cart has been deleted as all items are unavailable or removed.',
       },
     },
   })
-  @ApiResponse({
-    status: 404,
-    description: 'Cart not found for user',
+  @ApiNotFoundResponse({
+    description: 'No active cart found for user',
     schema: {
       example: {
         statusCode: 404,
         message: 'No active cart found',
         error: 'Not Found',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing token',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - Access denied due to insufficient role',
+    schema: {
+      example: {
+        statusCode: 403,
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Unexpected server error',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Unexpected server error occurred',
+        error: 'Internal Server Error',
       },
     },
   })
@@ -312,15 +476,17 @@ export class CartController {
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
   @Get('coupons/:restaurantId')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all available coupons for a restaurant' })
   @ApiParam({
     name: 'restaurantId',
     type: 'string',
     required: true,
-    description: 'The ID of the restaurant for which to fetch coupons',
+    description: 'The ID of the restaurant to fetch coupons for',
+    example: '684ab18ed5e1127595270ebc',
   })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Coupons retrieved successfully',
     schema: {
       example: [
@@ -340,9 +506,45 @@ export class CartController {
       ],
     },
   })
-  @ApiResponse({
-    status: 404,
-    description: 'Restaurant or coupons not found',
+  @ApiNotFoundResponse({
+    description: 'No coupons found for this restaurant',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'No active coupons available',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Missing or invalid JWT token',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - Access denied due to role restrictions',
+    schema: {
+      example: {
+        statusCode: 403,
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Unexpected server error',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Internal server error',
+        error: 'Internal Server Error',
+      },
+    },
   })
   async getCoupons(@Param('restaurantId', ValidationPipe) restaurantDto: string) {
     this.logger.debug(`Fetching coupons for restaurant ${restaurantDto}`, this.context);
@@ -374,15 +576,17 @@ export class CartController {
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
   @Post('applyCoupon/:couponId')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Apply a coupon to the user’s cart' })
   @ApiParam({
     name: 'couponId',
     type: 'string',
     required: true,
     description: 'The ID of the coupon to apply',
+    example: '684ab18ed5e1127595270ebc',
   })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Coupon applied successfully',
     schema: {
       example: {
@@ -393,13 +597,55 @@ export class CartController {
       },
     },
   })
-  @ApiResponse({
-    status: 404,
-    description: 'Cart or coupon not found',
-  })
-  @ApiResponse({
-    status: 400,
+  @ApiBadRequestResponse({
     description: 'Coupon not applicable or already applied',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'A coupon has already been applied to this cart.',
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'Cart or coupon not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Coupon not found',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing token.',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have access rights.',
+    schema: {
+      example: {
+        statusCode: 403,
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Unexpected server error',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Internal server error',
+        error: 'Internal Server Error',
+      },
+    },
   })
   async applyCoupon(@Param('couponId') couponId: string, @Req() req: any) {
     const userId = req.user.sub;
@@ -432,9 +678,10 @@ export class CartController {
   @UseGuards(GrpcAuthGuard)
   @Roles(Role.USER)
   @Post('removeCoupon')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove the applied coupon from the user’s cart' })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'Coupon removed successfully',
     schema: {
       example: {
@@ -444,8 +691,56 @@ export class CartController {
       },
     },
   })
-  @ApiResponse({ status: 404, description: 'Cart not found' })
-  @ApiResponse({ status: 400, description: 'No coupon was applied to the cart' })
+  @ApiBadRequestResponse({
+    description: 'No coupon was applied to the cart',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'No coupon is currently applied to the cart.',
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'Cart not found for user',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Cart not found',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized. Invalid or missing JWT token.',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden. User does not have the right role.',
+    schema: {
+      example: {
+        statusCode: 403,
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+      },
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Internal Server Error. Unexpected error on the server.',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Internal server error',
+        error: 'Internal Server Error',
+      },
+    },
+  })
   async removeCoupon(@Req() req: any) {
     const userId = req.user.sub;
     this.logger.log(`Removing coupon from cart for user ${userId}`, this.context);
@@ -506,9 +801,49 @@ export class CartController {
       },
     },
   })
-  @ApiResponse({ status: 404, description: 'Restaurant or menu item not found' })
-  @ApiResponse({ status: 409, description: 'Restaurant mismatch or item unavailable' })
-  @ApiResponse({ status: 500, description: 'Internal server error while updating cart' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cart is empty and has been deleted',
+    schema: {
+      example: {
+        message: 'Cart is empty and has been deleted',
+        cart: null,
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Restaurant or one or more menu items not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Item with ID 64b1234567890abcdef12345 not found',
+        error: 'Not Found',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Restaurant mismatch or item unavailable',
+    schema: {
+      example: {
+        statusCode: 409,
+        message: 'Item Chicken Burger is unavailable',
+        error: 'Conflict',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error while updating cart',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Failed to update or create cart',
+        error: 'Internal Server Error',
+      },
+    },
+  })
   async updateCart(@Req() req: any, @Body() body: MultipleItemDto) {
     const userId = req.user.sub;
     this.logger.log(`Updating cart for user ${userId}`, this.context);

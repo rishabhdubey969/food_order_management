@@ -49,7 +49,7 @@ export class Order {
   @Prop({ required: true, index: true })
   restaurantId: string;
 
-  @Prop({ required: true, index: true })
+  @Prop({ required: true ,index:true})
   cartId: string;
 
   @Prop({required: true, index: true })

@@ -10,6 +10,7 @@ export const winstonLoggerConfig: WinstonModuleOptions = {
       filename: path.join(__dirname, '../../../../logs/error-%DATE%.log'),
       datePattern: 'YYYY-MM-DD',
       level: 'error',
+      
       maxFiles: '7d', // Keep logs for 7 days
       zippedArchive: false,
     }),
@@ -31,4 +32,5 @@ export const winstonLoggerConfig: WinstonModuleOptions = {
     }),
   ),
 };
+   
 
