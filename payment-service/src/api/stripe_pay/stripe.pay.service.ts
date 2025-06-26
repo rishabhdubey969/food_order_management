@@ -68,6 +68,7 @@ export class StripePayService {
         throw new BadRequestException(ERROR.PAYMENT_ALREADY_DONE);
       }
 
+
       if(duplicatePayment && duplicatePayment.status==PaymentStatus.PENDING){
         throw new BadRequestException(ERROR.PAYMENT_REQUIRED);
       }
@@ -83,7 +84,7 @@ export class StripePayService {
       }
 
       const session = await this.stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
+        payment_method_types: ['card','afterpay_clearpay'],
         line_items: [
           {
             price_data: {
@@ -214,92 +215,6 @@ export class StripePayService {
   }
 
   async requestPayment(payload: CreatePaymentDto) {
-    try {
-      if (!payload.orderId) {
-        throw new BadRequestException(ERROR.NOT_PROVIDED);
-      }
-      const orderId = payload.orderId;
-      if (!ObjectId.isValid(orderId)) {
-        throw new BadRequestException(ERROR.INVALID);
-      }
-      const orderData = await this.connection
-        .collection('orders')
-        .findOne({ _id: new ObjectId(orderId) });
-      if (!orderData) {
-        throw new BadRequestException(ERROR.NOT_EXIST);
-      }
-      const total_amount = orderData?.total;
-      const userId = orderData.userId;
-      if (!total_amount || isNaN(total_amount)) {
-        throw new BadRequestException(ERROR.AMOUNT_INVALID);
-      }
-
-      const session = await this.stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: 'Order Payment',
-              },
-              unit_amount: total_amount,
-            },
-            quantity: 1,
-          },
-        ],
-        mode: 'payment',
-        success_url: 'http://localhost:5173/order-success',
-        cancel_url: 'http://localhost:5173/order-failure',
-        metadata: {
-          orderId: orderId,
-        },
-        payment_intent_data: {
-          metadata: {
-            orderId: orderId,
-            userId: userId,
-          },
-        },
-      });
-
-      const payment = new this.paymentModel({
-        orderId: orderId,
-        amount: total_amount,
-        currency: 'usd',
-        sessionId: session.id,
-        status: PaymentStatus.PENDING,
-      });
-
-      await payment.save();
-
-      const paymentHistory = new this.paymentHistoryModel({
-        orderId: orderId,
-        amount: total_amount,
-        currency: 'usd',
-        sessionId: session.id,
-        status: PaymentStatus.PENDING,
-        userId: userId,
-      });
-
-      await paymentHistory.save();
-
-      return { url: session.url };
-    } catch (error) {
-      this.logger.error(
-        `Checkout session failed for order ${payload?.orderId}:`,
-        error.message,
-        error.stack,
-      );
-      Logger.error('Error creating checkout session:', error);
-      if (error instanceof Stripe.errors.StripeError) {
-        throw new BadRequestException(
-          `Payment processing error: ${error.message}`,
-        );
-      }
-      if (error) {
-        throw error;
-      }
-      throw new BadRequestException(ERROR.FAILED_CHECKOUT_SESSION);
-    }
+    return this.createCheckoutSession(payload);
   }
 }

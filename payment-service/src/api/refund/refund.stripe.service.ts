@@ -32,15 +32,15 @@ export class RefundStripeService {
   async createRefund(
     payload: CreateRefundDto,
   ): Promise<Stripe.Response<Stripe.Refund>> {
-    const orderId = payload.orderId;
-    const paymentdetails =
-      await this.stripePayService.extractPaymentDetails(orderId);
-    const session = await this.stripe.checkout.sessions.retrieve(
-      paymentdetails.sessionId,
-    );
-    const paymentIntentId = session.payment_intent as string;
-
     try {
+      const orderId = payload.orderId;
+      const paymentdetails =
+        await this.stripePayService.extractPaymentDetails(orderId);
+      const session = await this.stripe.checkout.sessions.retrieve(
+        paymentdetails.sessionId,
+      );
+      const paymentIntentId = session.payment_intent as string;
+
       const refund = await this.stripe.refunds.create({
         payment_intent: paymentIntentId,
         ...(paymentdetails.amount ? { amount: paymentdetails.amount } : {}),
@@ -59,7 +59,7 @@ export class RefundStripeService {
       return refund;
     } catch (error) {
       Logger.error(
-        `Failed to create refund for paymentIntent ${paymentIntentId}: ${error.message}`,
+        `Failed to create refund: ${error.message}`,
       );
       throw error;
     }

@@ -55,12 +55,14 @@ async function bootstrap() {
       },
     }),
   );
+  
   app.enableCors({
     origin: '*',
     methods: 'GET,POST,PUT,DELETE',
     credentials: true,
     allowedHeaders: 'Content-Type, Authorization',
   });
+
   const httpAdapterHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
   app.useGlobalInterceptors(
