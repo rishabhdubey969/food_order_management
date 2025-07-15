@@ -4,6 +4,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { MongooseError } from 'mongoose';
+import { GlobalExceptionFilter } from './common/filter/globalExceptionFilter';
 
 async function bootstrap() {
   const logger = new Logger('Main');
@@ -37,6 +38,12 @@ async function bootstrap() {
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
   logger.log('Global validation pipes set');
+
+
+  // set global exception filter
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  logger.log('Global validation pipes set');
+
 
   // Configure Kafka microservice
   const kafkaBrokers = ['localhost:29092'];
